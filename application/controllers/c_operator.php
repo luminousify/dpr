@@ -144,6 +144,10 @@ class c_operator extends CI_Controller
 			}
 			// ------------------------------------------------
 
+			// CRITICAL FIX: Clear query cache after insert so new data shows immediately!
+			$this->db->cache_delete_all();
+			log_message('debug', 'DPR saved and cache cleared for: ' . $id_production);
+
 			redirect('c_operator/hasil_input/' . $id_production);
 		} else {
 			redirect('login_op/input_dpr');

@@ -306,6 +306,11 @@ class c_dpr extends CI_Controller {
             'cek_kanit'       => 1,
         );                
         $this->mm->update($data,$id);
+        
+        // Clear query cache after verification update
+        $this->db->cache_delete_all();
+        log_message('debug', 'Kanit verification updated and cache cleared for: ' . $id);
+        
         redirect('c_dpr/dpr'); 
       } 
 
@@ -319,6 +324,11 @@ class c_dpr extends CI_Controller {
             'pic_kasi'       => $pic_kasi,
         );                
         $this->mm->update_verif_kasi($data,$tanggal,$shift);
+        
+        // Clear query cache after verification update
+        $this->db->cache_delete_all();
+        log_message('debug', 'Kasi verification updated and cache cleared');
+        
         redirect('c_dpr/dpr'); 
       } 
 

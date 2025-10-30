@@ -18,6 +18,31 @@ class c_report extends CI_Controller
 	}
 
 
+	// Daily OK Report - New function based on c_dpr/report/qty_ok/qty_ok but daily basis
+	function report_daily_ok()
+	{
+		if ($this->input->post('show')) {
+			$dari = $this->input->post('tanggal_dari');
+			$sampai = $this->input->post('tanggal_sampai');
+			$shift = $this->input->post('shift');
+		} else {
+			$dari = date('Y-m-d');
+			$sampai = date('Y-m-d');
+			$shift = 'All';
+		}
+
+		$data = [
+			'data'       => $this->data,
+			'aktif'      => 'report',
+			'data_tabel' => $this->mr->get_daily_ok_report($dari, $sampai, $shift),
+			'dari'       => $dari,
+			'sampai'     => $sampai,
+			'shift'      => $shift
+		];
+		
+		$this->load->view('report/daily_ok', $data);
+	}
+
 	function productivity()
 	{
 		if ($this->input->post('show') == 'Show') {

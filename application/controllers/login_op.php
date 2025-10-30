@@ -72,16 +72,25 @@
   function input_dpr()
   {
     $this->mm->cek_login_user();
+    
+    // Enable query caching for kanit dropdown (cached for 1 hour)
+    $this->db->cache_on();
+    $kanit_data = $this->mm->tampil_select_group('t_operator','jabatan','kanit','nama_operator');
+    $this->db->cache_off();
+    
+    // Optimize session data retrieval - get all at once
+    $session_data = $this->session->userdata();
+    
     $data = [
                 //'mesin'     => $this->m_master->tampil_mesin(),
-                'kanit'             => $this->mm->tampil_select_group('t_operator','jabatan','kanit','nama_operator'),
-                'id_operator'       => $this->session->userdata('id_operator'),
-                'nik'               => $this->session->userdata('nik'),
-                'password_op'       => $this->session->userdata('password_op'),
-                'nama'              => $this->session->userdata('nama_operator'),
-                'jabatan'           => $this->session->userdata('jabatan'),
-                'nama_kanit'        => $this->session->userdata('nama_kanit'),
-                'divisi'            => $this->session->userdata('divisi'),
+                'kanit'             => $kanit_data,
+                'id_operator'       => $session_data['id_operator'],
+                'nik'               => $session_data['nik'],
+                'password_op'       => $session_data['password_op'],
+                'nama'              => $session_data['nama_operator'],
+                'jabatan'           => $session_data['jabatan'],
+                'nama_kanit'        => $session_data['nama_kanit'],
+                'divisi'            => $session_data['divisi'],
       ];
     $this->load->view('online/input_dpr',$data);
   }

@@ -23,6 +23,26 @@ class m_report extends CI_Model
     }
   }
 
+  // Daily OK Report - Get total OK by product for date range
+  public function get_daily_ok_report($dari, $sampai, $shift = 'All')
+  {
+    $shift_condition = ($shift == 'All') ? "" : "AND po.shift = '$shift'";
+    
+    $query = "SELECT 
+                p.kode_product,
+                p.nama_product,
+                SUM(po.qty_ok) as total_ok
+              FROM t_production_op po
+              LEFT JOIN t_bom b ON po.id_bom = b.id_bom
+              LEFT JOIN t_product p ON b.id_product = p.id_product
+              WHERE po.tanggal BETWEEN '$dari' AND '$sampai'
+              $shift_condition
+              GROUP BY p.kode_product, p.nama_product
+              ORDER BY total_ok DESC";
+    
+    return $this->db->query($query);
+  }
+
 
   public function tampil_production($tahun)
   {
@@ -2167,7 +2187,7 @@ function tampil_7Table(){
     MONTH(op.tanggal) AS mnth,
     CONCAT(YEAR(op.tanggal), '-', LPAD(MONTH(op.tanggal), 2, '0')) AS period,
     dl.kategori AS losstime_category,
-    ROUND(SUM(dl.qty), 2) AS total_hours
+    ROUND(SUM(dl.qty), 2) AS total_minutes
 FROM 
     t_production_op_dl dl
 INNER JOIN 
@@ -2196,7 +2216,7 @@ function tampil_7Table_table(){
           CONCAT(YEAR(op.tanggal), '-', LPAD(MONTH(op.tanggal), 2, '0')) AS period,
           dl.kategori AS losstime_category,
           dl.`nama`,
-          ROUND(SUM(dl.qty), 2) AS total_hours
+          ROUND(SUM(dl.qty), 2) AS total_minutes
       FROM 
           t_production_op_dl dl
       INNER JOIN 

@@ -359,7 +359,7 @@
                         <div class="input-group">
                          <input type="number" name="" id="qtyLT" class="form-control formLT"  aria-describedby="inputGroupPrepend2" onkeypress="convertJam()">
                          <div class="input-group-prepend">
-                          <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
+                          <span class="input-group-text" id="inputGroupPrepend2">Menit</span>
                          </div>
                          <!-- <input type="number" name="" id="qtyLT_jam" class="form-control ml-3"  aria-describedby="inputGroupPrepend2" readonly>
                          <div class="input-group-prepend2">
@@ -804,8 +804,9 @@
         var hasil = hasil_time.toFixed(1);
         $('#production_time').val(hasil);
         //$('#nett_produksi').val(hasil);
-        var LT = $('#amountLT').val();
-        var LT_new = $('#amountLT').val()/60;
+        // LT is now stored in MINUTES, convert to hours for calculations
+        var LT = $('#amountLT').val(); // Loss Time in minutes
+        var LT_new = parseFloat(LT) / 60; // Convert minutes to hours
         var calcDT = $('#amountIdle').val()/60;
 
         var nwt = $('#nwt').val();
@@ -813,7 +814,7 @@
         var nwt_new = parseInt(nwt) + parseInt(ot);
 
         var calDT_new = nwt_new - hasil;
-        var calDT_new_lagi = calDT_new - LT;
+        var calDT_new_lagi = calDT_new - LT_new; // Use LT_new (hours)
         //var cek = nwt - calDT_new;
         var raw_nilaiGross = 3600*(nwt_new-calDT_new_lagi)/qty*cavity;
         var raw_nilaiGross_2 = 3600*nwt_new/qty*cavity2;

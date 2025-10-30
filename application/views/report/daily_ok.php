@@ -70,26 +70,32 @@
                             </thead>
                             <tbody>
                                 <?php
+                                $grand_total = 0;
                                 foreach ($data_tabel->result_array() as $data) {
-
+                                    $grand_total += $data['total_ok'];
 
                                     $background = '#02b2c2';
 
                                     echo '<tr >';
                                     echo '<td style="text-align: center;"><b>' . $data['kode_product'] . '</b></td>';
                                     echo '<td style="text-align: center;"><b>' . $data['nama_product'] . '</b></td>';
-                                    echo '<td style="text-align: center;"><b>' . $data['total_ok'] . '</b></td>';
+                                    echo '<td style="text-align: center;"><b>' . number_format($data['total_ok']) . '</b></td>';
 
                                     echo '</tr>';
                                 }
                                 ?>
                             </tbody>
                             <tfoot>
+                                <!-- Grand Total Row -->
+                                <tr style="background-color: #1ab394; color: white; font-weight: bold;">
+                                    <td colspan="2" style="text-align: right; padding: 10px;"><b>GRAND TOTAL:</b></td>
+                                    <td style="text-align: center; padding: 10px;"><b><?php echo number_format($grand_total); ?></b></td>
+                                </tr>
+                                <!-- Search Row -->
                                 <tr style="text-align: center;">
                                     <th>Part Code</th>
                                     <th>Nama Part</th>
                                     <th>Total OK</th>
-
                                 </tr>
                             </tfoot>
                         </table>

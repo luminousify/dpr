@@ -56,10 +56,29 @@
                              <i class="fa fa-chevron-up"></i>
                          </a>
                      </div>
-                 </div>
-                 <div class="ibox-content">
-                     <?= form_open('c_dpr/dpr'); ?>
-                     <div class="card rounded mb-4">
+                </div>
+                <div class="ibox-content">
+                    <!-- Success/Error Messages -->
+                    <?php if ($this->session->flashdata('success')): ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <strong>Success!</strong> <?php echo $this->session->flashdata('success'); ?>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($this->session->flashdata('error')): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error!</strong> <?php echo $this->session->flashdata('error'); ?>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?= form_open('c_dpr/dpr'); ?>
+                    <div class="card rounded mb-4">
                          <div class="card-header">
                              <h2>Filter Data</h2>
                          </div>
@@ -243,9 +262,8 @@
                                     $no = 0;
                                     foreach ($data_tabel->result_array() as $data) {
                                         $no++;
-                                        $convertLT = $data['qty_lt'] / 60;
-                                        $lt_new = round($convertLT, 2);
-                                        $cdt = (($data['nwt_mp'] + $data['ot_mp']) - ($data['production_time'] + $data['qty_lt']));
+                                        // qty_lt is now in MINUTES, convert to hours for CDT calculation
+                                        $cdt = (($data['nwt_mp'] + $data['ot_mp']) - ($data['production_time'] + ($data['qty_lt'] / 60)));
                                         $cdt_new = round($cdt, 1);
                                         $hasil = $data['cek_kanit'];
                                         $hasil2 = $data['cek_kasi'];

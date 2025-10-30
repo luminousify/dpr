@@ -96,11 +96,15 @@
                                      <?php } ?>
                                  </tr>
                              </thead>
-                             <tbody>
-                                 <?php $total = 0;
-                                    $total_ng = 0;
-                                    $no = 0;
-                                    foreach ($data_production->result_array() as $data) {
+                            <tbody>
+                                <?php $total = 0;
+                                   $total_ng = 0;
+                                   // Aggregates for GRAND TOTAL
+                                   $grand_total_overall = 0;
+                                   $grand_total_days = array();
+                                   for ($gi = 1; $gi <= $angka; $gi++) { $grand_total_days[$gi] = 0; }
+                                   $no = 0;
+                                   foreach ($data_production->result_array() as $data) {
                                         $no++;
                                         echo '<tr>';
                                         echo '<td>' . $no;
@@ -125,10 +129,14 @@
                                             echo '<td>' . ($data['cyt_mc'] + $data['cyt_mp']), '</td>';
                                             echo '<td>' . ($data['ct_mc_aktual'] + $data['ct_mp_aktual']), '</td>';
                                         }
-                                        echo '<td>' . round($data['total'], 2), '</td>';
-                                        for ($i = 1; $i <= $angka; $i++) {
-                                            echo '<td>' . round($data['t' . $i . $name], 2) . '</td>';
-                                        }
+                                       $row_total = round($data['total'], 2);
+                                       echo '<td>' . $row_total, '</td>';
+                                       $grand_total_overall += $row_total;
+                                       for ($i = 1; $i <= $angka; $i++) {
+                                           $dayVal = round($data['t' . $i . $name], 2);
+                                           echo '<td>' . $dayVal . '</td>';
+                                           $grand_total_days[$i] += $dayVal;
+                                       }
                                         if ($valueNya > 0 && $valueNya < 6) {
                                             echo '<td>' . $data['alias_bom'], '</td>';
                                             echo '<td>' . $data['id_bom'], '</td>';
@@ -137,8 +145,9 @@
                                     }
                                     ?>
                              </tbody>
-                             <tfoot>
-                                 <tr>
+                            <tfoot>
+                                <!-- Search Row - Must come FIRST (DataTables needs it for functionality) -->
+                                 <tr class="search-row">
                                      <th><b>No</b></th>
                                      <th><b>Product ID</b></th>
                                      <th><b>Product Name</b></th>
@@ -170,6 +179,29 @@
                                          <th><b>ID BOM</b></th>
                                      <?php } ?>
                                  </tr>
+                               <!-- GRAND TOTAL Row - Must be LAST for export -->
+                                <tr class="grand-total-row" style="background-color:#1ab394;color:#ffffff;font-weight:bold;">
+                                    <?php
+                                    // Columns before the measure column - must match header exactly
+                                    echo '<th></th>'; // No
+                                    echo '<th></th>'; // Product ID
+                                    echo '<th style="text-align:right;">GRAND TOTAL:</th>'; // Product Name as label
+                                    if ($valueNya > 5) { echo '<th></th>'; } // Customer (1 column)
+                                    if ($valueNya > 1 && $valueNya < 5) { echo '<th></th>'; } // Proses (1 column)
+                                    if ($valueNya > 1 && $valueNya < 5) { echo '<th></th>'; } // Machine (1 column)
+                                    if ($valueNya > 2 && $valueNya < 5) { echo '<th></th>'; } // Shift (1 column)
+                                    if ($valueNya > 3 && $valueNya < 5) { 
+                                        echo '<th></th><th></th><th></th><th></th>'; // Group, Target, CT Standar, CT Aktual (4 columns)
+                                    }
+                                    // Measure column - qty_ok or other metric
+                                    echo '<th style="text-align:center;"><b>' . number_format($grand_total_overall, 2) . '</b></th>';
+                                    // Day columns
+                                    for ($i = 1; $i <= $angka; $i++) {
+                                        echo '<th style="text-align:center;"><b>' . number_format($grand_total_days[$i], 2) . '</b></th>';
+                                    }
+                                    if ($valueNya > 0 && $valueNya < 6) { echo '<th></th><th></th>'; } // Alias BOM, ID BOM (2 columns)
+                                    ?>
+                                </tr>
                              </tfoot>
                          </table>
                      </div>
@@ -530,8 +562,8 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                  });
              }
              
-             // Initialize DataTables
-             $('.dataTables-example tfoot th').each(function() {
+             // Initialize DataTables - Add search inputs to FIRST footer row only (not grand total row)
+             $('.dataTables-example tfoot tr.search-row th').each(function() {
                  $(this).html('<input type="text" placeholder="Search" style="width:100%" />');
              });
              var iniValue = parseInt($('#iniValue').val()) + 3;
@@ -550,33 +582,94 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                      left: iniValue,
                  },
                  dom: '<"html5buttons"B>lTfgitp',
-                 buttons: [{
-                         extend: 'copy'
-                     },
-                     {
-                         extend: 'csv'
-                     },
-                     {
-                         extend: 'excel',
-                         title: 'ExampleFile'
-                     },
-                     {
-                         extend: 'pdf',
-                         title: 'ExampleFile'
-                     },
+                buttons: [{
+                        extend: 'copy',
+                        footer: true,
+                        exportOptions: {
+                            orthogonal: 'export',
+                            format: {
+                                footer: function(data, row, column, node) {
+                                    // Only export grand total row (last row), skip search row
+                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
+                                        return data;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        extend: 'csv',
+                        footer: true,
+                        exportOptions: {
+                            orthogonal: 'export',
+                            format: {
+                                footer: function(data, row, column, node) {
+                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
+                                        return data;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        extend: 'excel',
+                        title: 'ExampleFile',
+                        footer: true,
+                        exportOptions: {
+                            orthogonal: 'export',
+                            format: {
+                                footer: function(data, row, column, node) {
+                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
+                                        return data;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        extend: 'pdf',
+                        title: 'ExampleFile',
+                        footer: true,
+                        exportOptions: {
+                            orthogonal: 'export',
+                            format: {
+                                footer: function(data, row, column, node) {
+                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
+                                        return data;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
 
-                     {
-                         extend: 'print',
-                         customize: function(win) {
-                             $(win.document.body).addClass('white-bg');
-                             $(win.document.body).css('font-size', '10px');
+                    {
+                        extend: 'print',
+                        footer: true,
+                        exportOptions: {
+                            orthogonal: 'export',
+                            format: {
+                                footer: function(data, row, column, node) {
+                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
+                                        return data;
+                                    }
+                                    return '';
+                                }
+                            }
+                        },
+                        customize: function(win) {
+                            $(win.document.body).addClass('white-bg');
+                            $(win.document.body).css('font-size', '10px');
 
-                             $(win.document.body).find('table')
-                                 .addClass('compact')
-                                 .css('font-size', 'inherit');
-                         }
-                     }
-                 ],
+                            $(win.document.body).find('table')
+                                .addClass('compact')
+                                .css('font-size', 'inherit');
+                        }
+                    }
+                ],
                  initComplete: function() {
                      // Apply the search
                      this.api().columns().every(function() {

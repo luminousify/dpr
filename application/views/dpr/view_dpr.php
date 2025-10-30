@@ -377,7 +377,7 @@
 								         </div>
 											   <input type="text" name="user[0][qty_lt]" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" value="<?= $data->qty_lt; ?>">
 											   <div class="input-group-prepend">
-								          <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
+								          <span class="input-group-text" id="inputGroupPrepend2">Menit</span>
 								         </div>
 												</div>
 										</div>
