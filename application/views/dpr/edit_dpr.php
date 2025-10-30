@@ -103,15 +103,9 @@
                                                 <label><b>Kanit <font style="color: red">*</font></b></label>
                                                <select name="user[0][kanit]" class="form-control" id="kanit" required=""  >
                                                   <option value="">-Choose-</option>
-                                                  <option <?php if( $data->kanit =='ABDUL BASIR B W'){echo "selected"; } ?> value='ABDUL BASIR B W'>ABDUL BASIR B W</option>
-                                                  <option <?php if( $data->kanit =='AGUS MARTANTO'){echo "selected"; } ?> value='AGUS MARTANTO'>AGUS MARTANTO</option>
-                                                  <option <?php if( $data->kanit =='AGUS SALIM'){echo "selected"; } ?> value='AGUS SALIM'>AGUS SALIM</option>
-                                                  <option <?php if( $data->kanit =='ALBERTO HUTABARAT'){echo "selected"; } ?> value='ALBERTO HUTABARAT'>ALBERTO HUTABARAT</option>
-                                                  <option <?php if( $data->kanit =='ASROFI'){echo "selected"; } ?> value='ASROFI'>ASROFI</option>
-                                                  <option <?php if( $data->kanit =='MARIDIN'){echo "selected"; } ?> value='MARIDIN'>MARIDIN</option>
-                                                  <option <?php if( $data->kanit =='MITUHU'){echo "selected"; } ?> value='MITUHU'>MITUHU</option>
-                                                  <option <?php if( $data->kanit =='RIDWAN EFENDI'){echo "selected"; } ?> value='RIDWAN EFENDI'>RIDWAN EFENDI</option>
-                                                  <option <?php if( $data->kanit =='SUKIRMAN'){echo "selected"; } ?> value='SUKIRMAN'>SUKIRMAN</option>
+                                                  <?php foreach($kanit as $k): ?>
+                                                    <option <?php if($data->kanit == $k['nama_actor']){echo "selected";} ?> value='<?= $k['nama_actor'] ?>'><?= $k['nama_actor'] ?></option>
+                                                  <?php endforeach; ?>
                                                </select>
                                         </div>
                                 </div>

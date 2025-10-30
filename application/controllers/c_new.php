@@ -614,7 +614,7 @@ class c_new extends CI_Controller
       'data_productionRelease'  => $this->op->tampil_productionRelease($id_production),
       'data_productionNG'       => $this->op->tampil_productionDL($id_production, 'NG'),
       'data_productionLT'       => $this->op->tampil_productionDL($id_production, 'LT'),
-      'kanit'                   => $this->op->tampil_select_group('t_operator', 'jabatan', 'kanit', 'nama_operator'),
+      'kanit'                   => $this->op->tampil_select_group('user', 'posisi', 'Kanit', 'nama_actor'),
       'id_operator'             => $this->session->userdata('id_operator'),
       'nik'                     => $this->session->userdata('nik'),
       'password_op'             => $this->session->userdata('password_op'),
@@ -631,10 +631,46 @@ class c_new extends CI_Controller
 
   function del_production_reporting_op($id_production)
   {
-    $this->mm->delete_production_op($id_production);
-    $this->mm->delete_production_detail($id_production);
-    $this->mm->delete_production_op_release($id_production);
-    $this->session->set_flashdata('success', 'Data berhasil dihapus!');
+    // Add logging to diagnose the issue
+    log_message('debug', 'Attempting to delete production: ' . $id_production);
+    
+    // Check if cutting tools usage exists
+    $cutting_tools_check = $this->db->get_where('t_production_op_cutting_tools_usage', 
+      array('id_production' => $id_production))->num_rows();
+    log_message('debug', 'Cutting tools usage records found: ' . $cutting_tools_check);
+    
+    try {
+      // Delete in correct order (child records first)
+      
+      // 1. Delete cutting tools usage (if exists)
+      if ($cutting_tools_check > 0) {
+        $this->db->where('id_production', $id_production);
+        $this->db->delete('t_production_op_cutting_tools_usage');
+        log_message('debug', 'Deleted cutting tools usage');
+      }
+      
+      // 2. Delete production details (t_production_op_release)
+      $this->mm->delete_production_detail($id_production);
+      log_message('debug', 'Deleted production details');
+      
+      // 3. Delete production op release (t_production_op_dl)
+      $this->mm->delete_production_op_release($id_production);
+      log_message('debug', 'Deleted production op dl');
+      
+      // 4. Delete main production record (t_production_op)
+      $this->mm->delete_production_op($id_production);
+      log_message('debug', 'Deleted production op - SUCCESS');
+      
+      // CRITICAL FIX: Clear query cache after delete!
+      $this->db->cache_delete_all();
+      log_message('debug', 'Cleared query cache');
+      
+      $this->session->set_flashdata('success', 'Data berhasil dihapus!');
+    } catch (Exception $e) {
+      log_message('error', 'Delete failed: ' . $e->getMessage());
+      $this->session->set_flashdata('error', 'Gagal menghapus data: ' . $e->getMessage());
+    }
+    
     redirect('c_dpr/dpr');
   }
 
@@ -669,6 +705,11 @@ class c_new extends CI_Controller
     $this->m_dpr->sync_cutting_tools_by_production($id_production, $cutting_tools);
 
     $this->mm->update_dpr_online_all();
+    
+    // CRITICAL FIX: Clear query cache after update so changes show immediately!
+    $this->db->cache_delete_all();
+    log_message('debug', 'DPR updated and cache cleared for: ' . $id_production);
+    
     // Refresh the same edit page after successful edit
     redirect(base_url('c_dpr/dpr'));
   }
