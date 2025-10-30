@@ -80,7 +80,7 @@
                                 <div class="col">
                                  <div class="form-group">
                                                 <label><b>NWT <font style="color: red">*</font></b></label>
-                                              <input type="text" name="user[0][nwt_mp]" id="nwt" class="form-control" required="" value="<?= $data->nwt_mp; ?>">
+                                              <input type="text" name="user[0][nwt_mp]" id="nwt" class="form-control" required="" value="<?= $data->nwt_mp; ?>" pattern="[0-9]+(\.[0-9]+)?" title="Please enter a valid number (e.g., 8 or 8.5). Comma is not allowed." oninput="this.value = this.value.replace(/,/g, '')">
                                         </div>
                                 </div>
                                 <div class="col">
@@ -404,9 +404,9 @@
                               <div class="col">
                                  <div class="form-group">
                                                 <div class="input-group">
-                                               <input type="number" name="" id="qtyLT" class="form-control formLT"  aria-describedby="inputGroupPrepend2" >
+                                               <input type="number" name="" id="qtyLT" class="form-control formLT"  aria-describedby="inputGroupPrepend2" step="0.01" placeholder="0.5">
                                                <div class="input-group-prepend">
-                                          <span class="input-group-text" id="inputGroupPrepend2">Menit</span>
+                                          <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
                                          </div>
                                                 </div>
                                                 <input type="hidden" name="" id="kategoriLT" class="form-control formLT" placeholder="qty" style="width:25%;height: 100%"> 
@@ -637,7 +637,7 @@
 
                     var nwt = $('#nwt_mp').val();
                     var ot = $('#ot_mp').val();
-                    var target = (((parseInt(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
+                    var target = (((parseFloat(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
                     //var target = (nwt + ot)
                     $('#Target').val(parseInt(target));
 
@@ -700,7 +700,7 @@
         var cavity = $('#cavity').val();
         var nwt = $('#nwt').val();
         var ot = $('#ot_mp').val();
-        let nwt_plus_ot = parseInt(nwt) + parseInt(ot);
+        let nwt_plus_ot = parseFloat(nwt) + parseInt(ot);
         // alert(nwt_plus_ot);
         var hasil = ((3600/ct_aktual)*(cavity*nwt_plus_ot));
         $('#target_mc').val(hasil.toFixed(2));
@@ -846,17 +846,17 @@
         var hasil = hasil_time.toFixed(1);
         $('#production_time').val(hasil);
         //$('#nett_produksi').val(hasil);
-        // LT is now stored in MINUTES, convert to hours for calculations
-        var LT = $('#amountLT').val(); // Loss Time in minutes
-        var LT_new = parseFloat(LT) / 60; // Convert minutes to hours
+        // LT input is in HOURS (user-friendly), calculations use hours directly
+        var LT = parseFloat($('#amountLT').val()) || 0; // Loss Time in hours (user input)
+        var LT_new = LT; // Already in hours
         var calcDT = $('#amountIdle').val()/60;
 
         var nwt = $('#nwt').val();
         var ot = $('#ot_mp').val();
-        var nwt_new = parseInt(nwt) + parseInt(ot);
+        var nwt_new = parseFloat(nwt) + parseInt(ot);
 
         var calDT_new = nwt_new - hasil;
-        var calDT_new_lagi = calDT_new - LT_new; // Use LT_new (hours)
+        var calDT_new_lagi = calDT_new - LT_new; // LT_new is in hours
         //var cek = nwt - calDT_new;
         var raw_nilaiGross = 3600*(nwt_new-calDT_new_lagi)/qty*cavity;
         var raw_nilaiGross_2 = 3600*nwt_new/qty*cavity2;
@@ -1060,11 +1060,12 @@ $('#gross_produksi').val(customRound(grossProduction).toFixed(2));
         var kategori = $('#kategoriLT').val();
         var type     = $('#typeLT').val();
         var satuan   = $('#satuanLT').val();
-        var qty      = $('#qtyLT').val();
+        var qty_hours = parseFloat($('#qtyLT').val()); // User inputs hours
+        var qty      = qty_hours * 60; // Convert to minutes for storage
         var markup = "<tr><td><input type='button' value='X'></td><td>"+svLT+"</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][nama]' value='"+nama+"''>"+nama+"</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][kategori]' value='"+kategori+"'>"+kategori+"</td>"+
-        "<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty+"</td>"+
+        "<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+" Jam</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
         "</tr>";
         $("#tableLT").append(markup);

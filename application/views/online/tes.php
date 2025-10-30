@@ -612,11 +612,12 @@ only screen and (max-width: 760px),
 		var kategori = $('#kategoriLT').val();
 		var type     = $('#typeLT').val();
 		var satuan   = $('#satuanLT').val();
-		var qty      = $('#qtyLT').val();
+		var qty_hours = parseFloat($('#qtyLT').val()); // User inputs hours
+		var qty      = qty_hours * 60; // Convert to minutes for storage
 		var markup = "<tr><td><input type='button' value='X'></td><td>"+svLT+"</td>"+
 		"<td><input type='hidden' name='detailLT["+saveLT+"][nama]' value='"+nama+"''>"+nama+"</td>"+
 		"<td><input type='hidden' name='detailLT["+saveLT+"][kategori]' value='"+kategori+"'>"+kategori+"</td>"+
-		"<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty+"</td>"+
+		"<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+" Jam</td>"+
 		"<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
 		"</tr>";
 		$("#tableLT").append(markup);

@@ -75,7 +75,7 @@ $(document).ready(function() {
 
             var nwt = $('#nwt_mp').val();
             var ot = $('#ot_mp').val();
-            var target = (((parseInt(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
+            var target = (((parseFloat(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
             $('#Target').val(parseInt(target));
 
             var id_bom = ui.item.id_bom;
@@ -266,7 +266,7 @@ function setTarget(id) {
     var cavity = $('#cavity').val();
     var nwt = $('#nwt').val();
     var ot = $('#ot_mp').val();
-    let nwt_plus_ot = parseInt(nwt) + parseInt(ot);
+    let nwt_plus_ot = parseFloat(nwt) + parseInt(ot);
 
     var hasil = ((3600 / ct_aktual) * (cavity * nwt_plus_ot));
     $('#target_mc').val(hasil.toFixed(2));
@@ -325,17 +325,17 @@ function GrossNett() {
     var hasil = hasil_time.toFixed(1);
     $('#production_time').val(hasil);
     
-    // LT is now stored in MINUTES, convert to hours for calculations
-    var LT = $('#amountLT').val(); // Loss Time in minutes
-    var LT_new = parseFloat(LT) / 60; // Convert minutes to hours
+    // LT input is in HOURS (user-friendly), stored as MINUTES in database
+    var LT = parseFloat($('#amountLT').val()) || 0; // Loss Time in hours (user input)
+    var LT_new = LT; // Already in hours for calculations
     var calcDT = $('#amountIdle').val() / 60;
 
     var nwt = $('#nwt').val();
     var ot = $('#ot_mp').val();
-    var nwt_new = parseInt(nwt) + parseInt(ot);
+    var nwt_new = parseFloat(nwt) + parseInt(ot);
 
     var calDT_new = nwt_new - hasil;
-    var calDT_new_lagi = calDT_new - LT_new; // Use LT_new (hours)
+    var calDT_new_lagi = calDT_new - LT_new; // LT_new is in hours
     
     var raw_nilaiGross = 3600 * (nwt_new - calDT_new_lagi) / qty * cavity;
     var raw_nilaiGross_2 = 3600 * nwt_new / qty * cavity2;
@@ -372,10 +372,10 @@ function GrossNett() {
     $('#nett_produksi').val(nilaiNett.toFixed(2));
     
     if(LT == 0) { LT = 0; }
-    // WorkHour and TotStopTime use LT_new (hours) for calculations
-    var WorkHour = (parseFloat(hasil) + parseFloat(LT_new)) - parseFloat(ot);
+    // LT is already in hours (user input), use directly in calculations
+    var WorkHour = (parseFloat(hasil) + parseFloat(LT)) - parseFloat(ot);
     var Overtime = ot;
-    var TotStopTime = LT_new; // Loss Time in hours for calculations
+    var TotStopTime = LT; // Loss Time in hours (same as user input)
     var OK = qty;
     var ProductCavity = cavity2;
     
@@ -463,12 +463,27 @@ function addLT(id) {
     var kategori = $('#kategoriLT').val();
     var type = $('#typeLT').val();
     var satuan = $('#satuanLT').val();
-    var qty = $('#qtyLT').val();
+    var qty_hours = parseFloat($('#qtyLT').val()); // User inputs in hours
+    
+    // Validate: Loss Time should not exceed 8 hours per shift
+    if(qty_hours > 8) {
+        alert('Loss Time tidak boleh lebih dari 8 jam per shift!');
+        $('#qtyLT').val('');
+        return false;
+    }
+    
+    if(qty_hours <= 0 || isNaN(qty_hours)) {
+        alert('Masukkan nilai Loss Time yang valid (dalam jam)!');
+        $('#qtyLT').val('');
+        return false;
+    }
+    
+    var qty_minutes = qty_hours * 60; // Convert to minutes for storage
     
     var markup = "<tr><td><input type='button' value='X'></td><td>" + svLT + "</td>" +
         "<td><input type='hidden' name='detailLT[" + saveLT + "][nama]' value='" + nama + "''>" + nama + "</td>" +
         "<td><input type='hidden' name='detailLT[" + saveLT + "][kategori]' value='" + kategori + "'>" + kategori + "</td>" +
-        "<td><input type='hidden' name='detailLT[" + saveLT + "][qty]' value=" + qty + " class='nilai'>" + qty + "</td>" +
+        "<td><input type='hidden' name='detailLT[" + saveLT + "][qty]' value=" + qty_minutes + " class='nilai'>" + qty_hours + " Jam</td>" +
         "<td><input type='hidden' name='detailLT[" + saveLT + "][satuan]' value=" + satuan + ">" + satuan + 
         "<input type='hidden' name='detailLT[" + saveLT + "][type]' value=" + type + "></td>" +
         "</tr>";
@@ -482,7 +497,7 @@ function addLT(id) {
     totalLT();
     
     if(kategori == 'START/STOP') {
-        totalStartStop(qty);
+        totalStartStop(qty_minutes); // Pass minutes for consistency
     }
     
     GrossNett();
@@ -499,14 +514,19 @@ function total() {
     });
 }
 
-// Calculate total LT
+// Calculate total LT (sum minutes, display as hours)
 function totalLT() {
-    var sum = 0;
+    var sum_minutes = 0;
     $('#tableLT > tr').each(function() {
-        var price = parseFloat($(this).find('.nilai').val());
-        sum += price;
-        $('#amountLT').val(sum);
+        var minutes = parseFloat($(this).find('.nilai').val()); // Hidden field stores minutes
+        sum_minutes += minutes;
     });
+    var sum_hours = (sum_minutes / 60).toFixed(2); // Convert to hours for display
+    $('#amountLT').val(sum_hours); // Display in hours
+    // Store minutes in hidden field for form submission
+    if($('input[name="user[0][qty_lt]"]').length) {
+        $('input[name="user[0][qty_lt]"]').val(sum_minutes);
+    }
 }
 
 // Calculate total Start/Stop time

@@ -28,16 +28,16 @@ This document outlines the formulas used to calculate `nett_prod` and `gross_pro
 
 ### WorkHour (Actual Available Working Time)
 - **Purpose**: The actual time available for production during the shift
-- **Formula**: `hasil + (LT / 60) - ot` 
+- **Formula**: `hasil + LT - ot` 
 - **Where**: 
   - `hasil` = hasil_time (rounded to 1 decimal)
-  - `LT` = Loss time **stored in MINUTES** in database, **converted to hours** for calculations
-  - `LT / 60` = Conversion from minutes to hours
+  - `LT` = Loss time **input in HOURS** by user (e.g., 0.5, 1.5, 2.0)
+  - `LT` is **stored in MINUTES** in database (converted: hours × 60)
   - `ot` = Overtime in hours
 - **Unit**: Hours
 - **Represents**: The actual production window after accounting for losses and overtime
-- **Example**: If hasil_time = 1.18 hours, LT = 30 minutes (0.5 hours), ot = 0 hours:
-  - WorkHour = 1.18 + (30/60) - 0 = 1.18 + 0.5 = 1.68 hours
+- **Example**: If hasil_time = 1.18 hours, LT = 0.5 hours (stored as 30 minutes), ot = 0 hours:
+  - WorkHour = 1.18 + 0.5 - 0 = 1.68 hours
 
 ### Key Difference
 - **hasil_time** = How long it SHOULD take to produce the parts (based on cycle time)
@@ -183,3 +183,36 @@ These percentages are displayed on the dashboard homepage at `/c_new/home`.
 - `application/models/m_report.php` (query aliases)
 
 **Rollback**: If needed, rollback SQL script available at `migration_lt_hours_to_minutes.sql` (reverse operation: divide by 60)
+
+### UI Adjustment (October 30, 2025 - Later Same Day)
+
+**Background**: After user feedback, UI was adjusted to accept hour input while keeping minute storage for database precision.
+
+**Final Implementation**:
+- **User Input**: Hours (0.5, 1.0, 2.5) - more intuitive for operators
+- **Database Storage**: Minutes (30, 60, 150) - maintains precision
+- **Conversion**: Automatic on save (hours × 60) and display (minutes ÷ 60)
+- **Validation**: Prevents values >8 hours per shift
+
+**Benefits**:
+- Users work in familiar hour format (0.5 hours vs 30 minutes)
+- Database maintains minute precision for calculations
+- Best of both worlds - user-friendly + precise storage
+
+**Technical Details**:
+```javascript
+// Input (user enters hours):
+qty_hours = 0.5  // User input
+
+// Conversion on save:
+qty_minutes = qty_hours * 60  // = 30 (stored in DB)
+
+// Conversion on display/edit:
+qty_hours = qty_minutes / 60  // = 0.5 (shown to user)
+```
+
+**Affected Functions**:
+- `addLT()`: Converts hours to minutes before storing
+- `totalLT()`: Sums minutes, displays as hours  
+- `GrossNett()`: Uses hour values directly in calculations
+- Form displays: All show hours with `/60` conversion from DB minutes
