@@ -32,7 +32,7 @@
     	<table class="table table-bordered stripe row-border order-column" rules="all" style="background:#fff;" id="customFields" style="width: 100%">
         <tr style="background:#1ab394;color: white;text-align: center;">
           <td>Tahun</td>
-          <td>F - Cost Target</td>
+          <td>F - Cost (IDR) Target</td>
           <td><?= $action == "Add" ? '<span class="btn btn-warning" onclick="addMoreRows(this.form);"><i class="fa fa-plus-square-o"></i></span>' : ''; ?></td>
         </tr>
         <?php if($action ==  'Edit') {

@@ -69,7 +69,7 @@
                   <tr style="text-align: center;">
                     <th>No</th>
                     <th>Tahun</th>
-                    <th>F - Cost Target</th>
+                    <th>F - Cost (IDR) Target</th>
                     <th>Edit</th>
                     <th>Delete</th>
                   </tr>
@@ -98,7 +98,7 @@
                   <tr style="text-align: center;">
                     <th>No</th>
                     <th>Tahun</th>
-                    <th>F - Cost Target</th>
+                    <th>F - Cost (IDR) Target</th>
                     <th>Edit</th>
                     <th>Delete</th>
                   </tr>

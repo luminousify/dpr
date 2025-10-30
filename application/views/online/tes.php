@@ -617,8 +617,8 @@ only screen and (max-width: 760px),
 		var markup = "<tr><td><input type='button' value='X'></td><td>"+svLT+"</td>"+
 		"<td><input type='hidden' name='detailLT["+saveLT+"][nama]' value='"+nama+"''>"+nama+"</td>"+
 		"<td><input type='hidden' name='detailLT["+saveLT+"][kategori]' value='"+kategori+"'>"+kategori+"</td>"+
-		"<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+" Jam</td>"+
-		"<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
+		"<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+"</td>"+
+		"<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">Jam<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
 		"</tr>";
 		$("#tableLT").append(markup);
 		//totalLT();

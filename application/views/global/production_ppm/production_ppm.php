@@ -159,7 +159,7 @@
                 foreach ($fcost_target->result_array() as $f_cost_target) {
                     echo '<tr>';
                     echo '<td>8</td>';
-                    echo '<td>F - COST Target</td>';
+                    echo '<td>F - COST (IDR) Target</td>';
                     for ($i = 1; $i <= 12; $i++) {
                         echo '<td>' . $f_cost_target['f_cost_target'] . '</td>';   
                     }
@@ -171,7 +171,7 @@
                 foreach ($f_cost_int_defect->result_array() as $f_cost_int_defect) {
                     echo '<tr>';
                     echo '<td>9</td>';
-                    echo '<td>F - COST (USD) Internal Defect</td>';
+                    echo '<td>F - COST (IDR) Internal Defect</td>';
                     for ($i = 1; $i <= 12; $i++) {
                         echo '<td>' . round($f_cost_int_defect['total' . $i]) . '</td>';   
                     }
@@ -181,31 +181,19 @@
 
                 <tr>
                     <td>10</td>
-                    <td>F - COST (USD) Eksternal Defect</td>
+                    <td>F - COST (IDR) Eksternal Defect</td>
                     <?php for($i=1;$i<=12;$i++) { ?>
                             <td>-</td>
                     <?php } ?> 
                 </tr>
 
                  <?php
-                foreach ($f_cost_int_defect->result_array() as $fcost_usd) {
+                foreach ($f_cost_int_defect->result_array() as $fcost_total) {
                     echo '<tr>';
                     echo '<td>11</td>';
-                    echo '<td>SUM F - COST (USD) Defect</td>';
+                    echo '<td>F - COST (IDR) Total Internal Defect</td>';
                     for ($i = 1; $i <= 12; $i++) {
-                        echo '<td>' . round($fcost_usd['total' . $i]) . '</td>';   
-                    }
-                    echo '</tr>';
-                }
-                ?>
-
-                <?php
-                foreach ($f_cost_int_defect->result_array() as $fcost_idr) {
-                    echo '<tr>';
-                    echo '<td>12</td>';
-                    echo '<td>SUM F - COST (IDR) Defect</td>';
-                    for ($i = 1; $i <= 12; $i++) {
-                        echo '<td>' . round($fcost_idr['total' . $i] * 14285) . '</td>'; 
+                        echo '<td>' . round($fcost_total['total' . $i]) . '</td>';   
                     }
                     echo '</tr>';
                 }

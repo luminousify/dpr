@@ -362,8 +362,8 @@
 													<td><?= $no; ?></td>
 													<td><?= $ng->nama; ?></td>
 													<td><?= $ng->kategori; ?></td>
-													<td><?= $ng->qty; ?></td>
-													<td><?= $ng->satuan; ?></td>
+													<td><?= round($ng->qty / 60, 2); ?></td>
+													<td>Jam</td>
 												</tr>
 											<?php } ?>
 										</tbody>

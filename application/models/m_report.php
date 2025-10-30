@@ -1479,7 +1479,9 @@ WHERE YEAR(q.tanggal) = '$tahun'
   }
 
 
-  // F-Cost Int Defect (USD)
+  // F-Cost Internal Defect (IDR)
+  // Note: Product costs (w.cost) are stored in Indonesian Rupiah (IDR), not USD
+  // Returns monthly totals of failure cost = qty_ng * cost (in IDR)
   public function f_cost_int_defect($tahun)
   {
     $query = $this->db->query("SELECT q.`tahun`,
@@ -1729,6 +1731,8 @@ WHERE YEAR(q.tanggal) = '$tahun'
     return $query;
   }
 
+  // F-Cost Internal Defect Q1 (IDR) - Months 1-4
+  // Note: Product costs (w.cost) are stored in Indonesian Rupiah (IDR)
   public function f_cost_int_defect_q1($tahun)
   {
     $query = $this->db->query("SELECT q.`tahun`,
@@ -1742,6 +1746,8 @@ WHERE YEAR(q.tanggal) = '$tahun'
     return $query;
   }
 
+  // F-Cost Internal Defect Q2 (IDR) - Months 5-8
+  // Note: Product costs (w.cost) are stored in Indonesian Rupiah (IDR)
   public function f_cost_int_defect_q2($tahun)
   {
     $query = $this->db->query("SELECT q.`tahun`,
@@ -1755,6 +1761,8 @@ WHERE YEAR(q.tanggal) = '$tahun'
     return $query;
   }
 
+  // F-Cost Internal Defect Q3 (IDR) - Months 9-12
+  // Note: Product costs (w.cost) are stored in Indonesian Rupiah (IDR)
   public function f_cost_int_defect_q3($tahun)
   {
     $query = $this->db->query("SELECT q.`tahun`,

@@ -444,8 +444,8 @@
                                                     <td><?= $no; ?></td>
                                                     <td><?= $lt->nama; ?></td>
                                                     <td><?= $lt->kategori; ?></td>
-                                                    <td><?= $lt->qty; ?> <input type="hidden" value="<?= $lt->qty; ?>" class="nilai"></td>
-                                                    <td><?= $lt->satuan; ?></td>
+                                                    <td><?= round($lt->qty / 60, 2); ?> <input type="hidden" value="<?= $lt->qty; ?>" class="nilai"></td>
+                                                    <td>Jam</td>
                                                 </tr>
                                             <?php } ?>
                                         </tbody>
@@ -1065,8 +1065,8 @@ $('#gross_produksi').val(customRound(grossProduction).toFixed(2));
         var markup = "<tr><td><input type='button' value='X'></td><td>"+svLT+"</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][nama]' value='"+nama+"''>"+nama+"</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][kategori]' value='"+kategori+"'>"+kategori+"</td>"+
-        "<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+" Jam</td>"+
-        "<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
+        "<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+"</td>"+
+        "<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">Jam<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
         "</tr>";
         $("#tableLT").append(markup);
         

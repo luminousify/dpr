@@ -82,12 +82,14 @@
 							     <div class="form-group">
     <label><b>NWT <font style="color: red">*</font></b></label>
     <input 
-        type="number" 
+        type="text" 
         name="user[0][nwt_mp]" 
         id="nwt" 
         class="form-control" 
         required 
-        oninput="lot(this.value)" 
+        pattern="[0-9]+(\.[0-9]+)?" 
+        title="Please enter a valid number (e.g., 8 or 8.5). Comma is not allowed."
+        oninput="this.value = this.value.replace(/,/g, ''); lot(this.value)" 
     />
 </div>
 							    </div>
