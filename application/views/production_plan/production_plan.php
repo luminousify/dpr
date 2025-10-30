@@ -81,19 +81,24 @@ if ($posisi == 'ppic' || $posisi == 'admin') { ?>
                         <div class="ibox-content">
                             <?= form_open('c_production_plan/production_plan/'); ?>  
                             <div class="card rounded mb-4">
-                                <div class="card-header">
-                                    <h2>Filter Data</h2>
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fa fa-calendar"></i> Filter Data</h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="row" style="margin-left:2px;">
-                                        <div class="col"> <b>Pilih Tanggal</b> 
+                                    <div class="alert alert-warning mb-3">
+                                        <i class="fa fa-info-circle"></i> <strong>Catatan:</strong> Data yang muncul hanya data pada <strong>hari ini saja</strong>. Jika ingin melihat data yang lain, silahkan gunakan fitur <strong>filter</strong> di bawah.
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-2"> 
+                                            <label><b><i class="fa fa-calendar"></i> Pilih Tanggal</b></label>
                                             <input type="date" name="tanggal" class="form-control" value="<?= $tanggal; ?>"> 
                                         </div>
-                                        <div class="col"><input type="submit" name="show" class="btn btn-primary" style="margin-top:20px;" value="Show"></div>
+                                        <div class="col-md-3 mb-2" style="margin-top:27px;">
+                                            <button type="submit" name="show" class="btn btn-primary btn-sm">
+                                                <i class="fa fa-search"></i> Show
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="row ml-4">
-                                    <p><strong>*Catatan :</strong> Data yang muncul hanya data pada <strong>hari ini saja</strong>, jika ingin melihat data yang lain silahkan gunakan fitur <strong>filter</strong>.</p>
                                 </div>
                             </div>
                             <?= form_close(); ?>

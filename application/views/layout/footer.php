@@ -42,6 +42,53 @@
 
     <script>
         $(document).ready(function() {
+            // Auto-dismiss success alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert-success').fadeOut('slow', function() {
+                    $(this).remove();
+                });
+            }, 5000);
+            
+            // Prevent double form submissions with loading state
+            $('form').on('submit', function(e) {
+                var $form = $(this);
+                var $submitBtn = $form.find('button[type="submit"], input[type="submit"]');
+                
+                // Don't prevent if already submitted
+                if ($form.data('submitted') === true) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Mark as submitted
+                $form.data('submitted', true);
+                
+                // Add loading class to button
+                $submitBtn.addClass('btn-loading').prop('disabled', true);
+                
+                // Store original text
+                var originalText = $submitBtn.text() || $submitBtn.val();
+                $submitBtn.data('original-text', originalText);
+                
+                // Change button text
+                if ($submitBtn.is('button')) {
+                    $submitBtn.html('<i class="fa fa-spinner fa-spin"></i> Processing...');
+                } else {
+                    $submitBtn.val('Processing...');
+                }
+                
+                // Re-enable after 3 seconds as fallback
+                setTimeout(function() {
+                    $form.data('submitted', false);
+                    $submitBtn.removeClass('btn-loading').prop('disabled', false);
+                    if ($submitBtn.is('button')) {
+                        $submitBtn.html(originalText);
+                    } else {
+                        $submitBtn.val(originalText);
+                    }
+                }, 3000);
+            });
+            
             setTimeout(function() {
                 toastr.options = {
                     closeButton: true,

@@ -33,24 +33,33 @@ if ($posisi == 'ppic' || $posisi == 'tm' || $posisi =='qa' || $posisi == 'mixerA
 <?php  } else{ ?>
     <?= form_open('c_new/home'); ?>  
 <div class="row wrapper border-bottom white-bg page-heading">
-                <div class="col-lg-10">
-                    <h2>Filter Data</h2>
-                    <div class="row">
-                        <div class="col-3">
-                            <label>Pilih Tanggal</label>
-                            <input type="date" name="tanggal" class="form-control" value="<?= $tanggal; ?>"> 
+                <div class="col-lg-12">
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fa fa-filter"></i> Filter Data</h5>
                         </div>
-                        <div class="col-sm-3">
-                            <label>Shift</label>
-                            <select name="shift"  class="form-control" required="">
-                                <option <?php if( $shift =='All'){echo "selected"; } ?> value='All'>All</option>
-                                <option <?php if( $shift =='1'){echo "selected"; } ?> value='1'>1</option>
-                                <option <?php if( $shift =='2'){echo "selected"; } ?> value='2'>2</option>
-                                <option <?php if( $shift =='3'){echo "selected"; } ?> value='3'>3</option>
-                            </select>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <label><b>Pilih Tanggal</b></label>
+                                    <input type="date" name="tanggal" class="form-control" value="<?= $tanggal; ?>"> 
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label><b>Shift</b></label>
+                                    <select name="shift"  class="form-control" required="">
+                                        <option <?php if( $shift =='All'){echo "selected"; } ?> value='All'>All</option>
+                                        <option <?php if( $shift =='1'){echo "selected"; } ?> value='1'>1</option>
+                                        <option <?php if( $shift =='2'){echo "selected"; } ?> value='2'>2</option>
+                                        <option <?php if( $shift =='3'){echo "selected"; } ?> value='3'>3</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2" style="margin-top: 27px">
+                                    <button type="submit" name="show" class="btn btn-primary btn-sm">
+                                        <i class="fa fa-search"></i> Show
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col" style="margin-top: 27px"><input type="submit" name="show" class="btn btn-primary" value="Show"></div>
-                        
                     </div>
                 </div>
             </div>

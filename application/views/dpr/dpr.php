@@ -78,38 +78,45 @@
                     <?php endif; ?>
                     
                     <?= form_open('c_dpr/dpr'); ?>
-                    <div class="card rounded mb-4">
-                         <div class="card-header">
-                             <h2>Filter Data</h2>
-                         </div>
-                         <div class="card-body">
-                             <div class="row" style="margin-left:2px;">
-                                 <div class="col-sm-4"> <b>Tanggal Dari (mm/dd/yyyy)</b>
-                                     <input type="date" name="tanggal_dari" class="form-control" value="<?= $dari; ?>">
-                                 </div>
-                                 <div class="col-sm-4"> <b>Tanggal Sampai (mm/dd/yyyy)</b>
-                                     <input type="date" name="tanggal_sampai" class="form-control" value="<?= $sampai; ?>">
-                                 </div>
-                                 <div class="col"> <b>Shift</b>
-                                     <select name="shift" class="form-control">
-                                         <option <?php if ($shift == 'All') {
-                                                        echo "selected";
-                                                    } ?> value='All'>All</option>
-                                         <option <?php if ($shift == '1') {
-                                                        echo "selected";
-                                                    } ?> value='1'>1</option>
-                                         <option <?php if ($shift == '2') {
-                                                        echo "selected";
-                                                    } ?> value='2'>2</option>
-                                         <option <?php if ($shift == '3') {
-                                                        echo "selected";
-                                                    } ?> value='3'>3</option>
-                                     </select>
-                                 </div>
-                                 <div class="col"> <br /><input type="submit" name="show" class="btn btn-primary" value="Show"></div>
-                             </div>
-                         </div>
-                     </div>
+                            <div class="card rounded mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Filter Data</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-4 mb-3"> <b>Tanggal Dari</b>
+                                            <input type="date" name="tanggal_dari" class="form-control" value="<?= $dari; ?>">
+                                        </div>
+                                        <div class="col-sm-4 mb-3"> <b>Tanggal Sampai</b>
+                                            <input type="date" name="tanggal_sampai" class="form-control" value="<?= $sampai; ?>">
+                                        </div>
+                                        <div class="col-sm-2 mb-3"> <b>Shift</b>
+                                            <select name="shift" class="form-control">
+                                                <option <?php if ($shift == 'All') {
+                                                            echo "selected";
+                                                        } ?> value='All'>All</option>
+                                                <option <?php if ($shift == '1') {
+                                                            echo "selected";
+                                                        } ?> value='1'>1</option>
+                                                <option <?php if ($shift == '2') {
+                                                            echo "selected";
+                                                        } ?> value='2'>2</option>
+                                                <option <?php if ($shift == '3') {
+                                                            echo "selected";
+                                                        } ?> value='3'>3</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-12 mb-3">
+                                            <button type="submit" name="show" class="btn btn-primary btn-sm">
+                                                <i class="fa fa-search"></i> Show
+                                            </button>
+                                            <a href="<?= base_url('c_dpr/dpr'); ?>" class="btn btn-secondary btn-sm">
+                                                <i class="fa fa-refresh"></i> Reset Filter
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                      <?= form_close(); ?>
 
 

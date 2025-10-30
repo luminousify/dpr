@@ -21,6 +21,62 @@
     <link href="<?= base_url(); ?>template/css/animate.css" rel="stylesheet">
     <link href="<?= base_url(); ?>template/css/style.css" rel="stylesheet">
     <link href="<?= base_url(); ?>template/css/select2.min.css" rel="stylesheet">
+    
+    <!-- Custom DPR Improvements -->
+    <style>
+        /* Improved table headers */
+        .table thead th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        /* Better form spacing */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        /* Loading button state */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.65;
+        }
+        
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spinner 0.6s linear infinite;
+        }
+        
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Compact card headers */
+        .card-header h5,
+        .card-header h2 {
+            margin-bottom: 0;
+        }
+        
+        /* Better focus states for accessibility */
+        input:focus, select:focus, textarea:focus {
+            border-color: #1ab394;
+            box-shadow: 0 0 0 0.2rem rgba(26, 179, 148, 0.25);
+        }
+    </style>
 
 </head>
 
@@ -37,10 +93,6 @@
                                 <span class="text-muted text-xs block"><?= $data['bagian']; ?> <b class="caret"></b></span>
                             </a>
                             <ul class="dropdown-menu animated fadeInRight m-t-xs">
-                                <li><a class="dropdown-item" href="profile.html">Profile</a></li>
-                                <li><a class="dropdown-item" href="contacts.html">Contacts</a></li>
-                                <li><a class="dropdown-item" href="mailbox.html">Mailbox</a></li>
-                                <li class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="<?php echo base_url('login_control/logout') ?>">Logout</a></li>
                             </ul>
                         </div>
@@ -348,11 +400,6 @@
                 <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
                     <div class="navbar-header">
                         <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
-                        <form role="search" class="navbar-form-custom" action="search_results.html">
-                            <div class="form-group">
-                                <input type="text" placeholder="Search for something..." class="form-control" name="top-search" id="top-search">
-                            </div>
-                        </form>
                     </div>
                     <ul class="nav navbar-top-links navbar-right">
                         <li style="padding: 20px">

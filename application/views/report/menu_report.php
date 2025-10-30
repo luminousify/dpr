@@ -2,22 +2,22 @@
 <div class="row wrapper border-bottom white-bg page-heading">
                 <div class="col-lg-10">
                     <h2>Filter Data</h2>
-                    <div class="row" style="margin-left:2px;">
-                        <div class="col-sm3"> <b>Pilih Tahun - Bulan</b> 
-                    	<select name="tahun" style="width: 300px;" value="<?php echo $tahun ?>" class="form-control">
+                    <div class="row">
+                        <div class="col-sm-3 mb-2"> <b>Pilih Tahun - Bulan</b> 
+                    	<select name="tahun" class="form-control">
                                         <?php
-                                        $tahuns = date('Y')-1;
-                                        $now=date('Y');
-                                        for($i=$tahuns; $i<=$now; $i++){
-                                        $monts = array("01","02","03","04","05","06","07","08","09","10","11","12");
-                                           foreach ($monts as $value) { ?>
-                                                <option value="<?php echo $i.'-'.$value?>" <?php if($value == $bulan && $i == $tahun) { echo 'selected="selected"';}?>><?php echo $i.'-'.$value; ?></option>;<?php
-                                           }
+                                        // Show last 12 months only for better performance
+                                        $currentYear = date('Y');
+                                        $currentMonth = date('m');
+                                        for($i = 11; $i >= 0; $i--){
+                                            $date = date('Y-m', strtotime("-$i months"));
+                                            $selected = ($date == $tahun) ? 'selected="selected"' : '';
+                                            echo "<option value='$date' $selected>$date</option>";
                                         }
                                         ?>
                                     </select>
                         </div>
-                        <div class="col">
+                        <div class="col-sm-5 mb-2">
                             <b>Pilih Berdasarkan</b> 
                             <select name="pilihan" class="form-control">
                                 <option value="1" <?php echo $valueNya == 1 ? "selected" : ''; ?>>Production <?= $name; ?> By Product</option>
@@ -28,8 +28,11 @@
                                 <option value="6" <?php echo $valueNya == 6 ? "selected" : ''; ?>>Production <?= $name; ?> By Product & Customer</option>
                             </select>
                         </div>
-                        <div class="col"><br/>
-                        <input type="submit" name="show" class="btn btn-primary" value="Show"></div>
+                        <div class="col-sm-2 mb-2" style="margin-top:27px;">
+                            <button type="submit" name="show" class="btn btn-primary btn-sm">
+                                <i class="fa fa-search"></i> Show
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

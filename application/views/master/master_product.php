@@ -18,16 +18,15 @@
 }
 </style>
 <div class="row wrapper border-bottom white-bg page-heading">
-                <div class="col-lg-10">
+                <div class="col-lg-12">
                     <h2>Action</h2>
                     <div class="row">
-                    	<div class="col">
-                            <a href="<?= base_url('c_new/master_productAct'); ?>"><button class="btn btn-success">Add Master Product</button></a> 
+                    	<div class="col mb-2">
+                            <a href="<?= base_url('c_new/master_productAct'); ?>" class="btn btn-success btn-sm">
+                                <i class="fa fa-plus"></i> Add Master Product
+                            </a> 
                     	</div>
                     </div>
-                </div>
-                <div class="col-lg-2">
-
                 </div>
             </div>
         <div class="wrapper wrapper-content animated fadeInRight">
@@ -48,16 +47,20 @@
                                 <div class="col-sm-9">       
                                   <form action="<?= base_url('c_new/search_master_product'); ?>" method="POST">
                                   <div class="input-group">
-                                        <input type="text" class="form-control" name="keyword" placeholder="Cari disini ..." value="<?php echo $keyword ?>" required>
+                                        <input type="text" class="form-control" name="keyword" placeholder="Cari Kode Product atau Nama Product..." value="<?php echo $keyword ?>" required>
                                         <span class="input-group-btn ml-1">
-                                            <input type="submit" class="btn btn-lg btn-success text-white" name="tampil" value="Show">
+                                            <button type="submit" class="btn btn-sm btn-success text-white" name="tampil">
+                                                <i class="fa fa-search"></i> Search
+                                            </button>
                                         </span>
                                   </div>
                                 </form>
                                 </div>
                               </div>
-                              <div class="row ml-3" style="margin-bottom: -10px;">
-                                <p><strong>*Catatan :</strong> Ketik <strong>Kode Product / Nama Product</strong> untuk menampilkan data produk.</p>
+                              <div class="row ml-3 mt-2">
+                                <div class="alert alert-info py-1">
+                                    <i class="fa fa-info-circle"></i> <strong>Catatan:</strong> Ketik <strong>Kode Product</strong> atau <strong>Nama Product</strong> untuk menampilkan data produk.
+                                </div>
                             </div>
                             </div>
 

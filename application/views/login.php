@@ -38,13 +38,13 @@
                 </p>
 
                 <p>
-                    <small>Jika tejadi kendala , silahkan hubungi tim IT (123) </small>
+                    <small>Jika terjadi kendala, silahkan hubungi tim IT (ext. 101)</small>
                 </p>
 
             </div>
             <div class="col-md-6">
                 <div class="ibox-content">
-                    <form class="m-t" role="form" action="index.html">
+                    <form class="m-t" role="form">
                         <div class="form-group">
                             <input type="text" class="form-control" placeholder="Username" required="" name="user" onkeyup="getDiv(this.value)">
                         </div>
@@ -83,7 +83,7 @@
 	{
 		$.ajax({
           type    : "POST",
-          url     : "<?php echo base_url(); ?>/login_control/getDataDetail/user/user_name/", 
+          url     : "<?php echo base_url(); ?>login_control/getDataDetail/user/user_name/", 
           dataType: "JSON",
           data    : "id=" + id,
           success : function(data){

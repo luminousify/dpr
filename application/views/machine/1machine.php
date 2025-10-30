@@ -41,7 +41,7 @@
         <div class="col-sm-40">
             <h2>Copy Transaksi</h2>
             <div class="row">
-                        <div class="col-sm-5">
+                        <div class="col-sm-5 mb-2">
                             <input type="date" name="tanggal" class="form-control" value="<?= $dari; ?>"> 
                         </div>
                         <div class="col-sm-3">
@@ -68,13 +68,16 @@
         <div class="col-sm-60" style="margin-left:100px;">
             <h2>Filter</h2>
             <div class="row">
-                        <div class="col-sm-4">
+                        <div class="col-sm-4 mb-2">
+                            <label><b>Tanggal Dari</b></label>
                             <input type="date" name="tanggal_dari" class="form-control" value="<?= $dari; ?>"> 
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-4 mb-2">
+                            <label><b>Tanggal Sampai</b></label>
                             <input type="date" name="tanggal_sampai" class="form-control" value="<?= $sampai; ?>"> 
                         </div>
-                        <div class="col-sm-2">
+                        <div class="col-sm-2 mb-2">
+                            <label><b>Line</b></label>
                             <select name="line_new"  class="form-control" required=""  >
                                 <option value="All">All</option>
                                 <option value="A">A</option>
@@ -82,7 +85,12 @@
                                 <option value="C">C</option>
                             </select>
                         </div>
-                        <div class="col-sm-2"><input type="submit" name="show" class="btn btn-warning" value="Show"></div>
+                        <div class="col-sm-2 mb-2">
+                            <label>&nbsp;</label>
+                            <button type="submit" name="show" class="btn btn-warning btn-sm form-control">
+                                <i class="fa fa-search"></i> Show
+                            </button>
+                        </div>
                     </div>
         </div>
         <?= form_close(); ?>
