@@ -87,6 +87,10 @@ class c_inventory extends CI_Controller {
             $this->load->view('inventory/total_prod' , $data);
   }
   public function total_prod_filter(){
+        // Check if this is a POST request AND tahun parameter exists (more robust than checking button)
+        $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
+                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
+        
         // Retrieve $id_product FIRST - available in both if/else blocks
         $id_product = $this->input->post('id_product');
         
@@ -95,7 +99,7 @@ class c_inventory extends CI_Controller {
             redirect('c_inventory/index');
         }
         
-        if($this->input->post('show') == 'Show')
+        if($isFilterPost)
         {
             $tahun = $this->input->post('tahun');
             $tahuns = substr($tahun,0,4);
@@ -145,6 +149,10 @@ class c_inventory extends CI_Controller {
   }
 
   public function total_prod_analisis(){
+        // Check if this is a POST request AND tahun parameter exists (more robust than checking button)
+        $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
+                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
+        
         // Retrieve $id_product FIRST - available in both if/else blocks
         $id_product = $this->input->post('id_product');
         
@@ -153,7 +161,7 @@ class c_inventory extends CI_Controller {
             redirect('c_inventory/index');
         }
         
-        if($this->input->post('show') == 'Show')
+        if($isFilterPost)
         {
             $tahun = $this->input->post('tahun');
             $data = [
