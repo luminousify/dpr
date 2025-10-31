@@ -21,7 +21,7 @@ class c_report extends CI_Controller
 	// Daily OK Report - New function based on c_dpr/report/qty_ok/qty_ok but daily basis
 	function report_daily_ok()
 	{
-		if ($this->input->post('show')) {
+		if ($this->input->post('show') == 'Show') {
 			$dari = $this->input->post('tanggal_dari');
 			$sampai = $this->input->post('tanggal_sampai');
 			$shift = $this->input->post('shift');
