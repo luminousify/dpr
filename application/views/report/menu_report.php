@@ -1,4 +1,4 @@
-<?= form_open('c_dpr/report/'.$jenis.'/'.$name); ?>  
+<?= form_open(site_url('c_dpr/report/'.$jenis.'/'.$name), array('method' => 'post', 'autocomplete' => 'off')); ?>  
 <div class="row wrapper border-bottom white-bg page-heading">
                 <div class="col-lg-10">
                     <h2>Filter Data</h2>
@@ -9,7 +9,8 @@
                                         // Show last 12 months, most recent first
                                         for($i = 0; $i < 12; $i++){
                                             $date = date('Y-m', strtotime("first day of -$i months"));
-                                            $selected = ($date == $tanggal) ? 'selected="selected"' : '';
+                                            // Ensure consistent string comparison with explicit casting and trim
+                                            $selected = (strval($date) == strval(trim($tanggal))) ? 'selected="selected"' : '';
                                             echo "<option value='$date' $selected>$date</option>";
                                         }
                                         ?>

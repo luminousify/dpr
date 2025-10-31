@@ -108,21 +108,23 @@ class c_dpr extends CI_Controller {
 
   function report($jenis,$name) //qty_ok , ok
   {
-    // Debug logging
-    log_message('debug', 'Report function called - POST data: ' . print_r($_POST, true));
-    log_message('debug', 'show value: ' . $this->input->post('show'));
-    log_message('debug', 'tahun value: ' . $this->input->post('tahun'));
-    
-    if($this->input->post('show') == 'Show')
-      {
-        $tahun = $this->input->post('tahun');  
-        log_message('debug', 'Using POST tahun: ' . $tahun);
-      }
-      else
-      {
+    // Check if this is a POST request AND tahun parameter exists (more robust than checking button)
+    $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
+                    ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
+
+    if($isFilterPost) {
+        $tahun = $this->input->post('tahun');
+        // Validate format to ensure it's Y-m
+        if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+            $tahun = date('Y-m');
+            log_message('debug', 'Invalid tahun format, using default: ' . $tahun);
+        } else {
+            log_message('debug', 'Using POST tahun: ' . $tahun);
+        }
+    } else {
         $tahun = date('Y-m');
         log_message('debug', 'Using default tahun: ' . $tahun);
-      }
+    }
 
       $tahuns = substr($tahun,0,4);
       $bulan  = substr($tahun,5,2);
