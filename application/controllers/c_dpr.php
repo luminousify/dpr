@@ -194,15 +194,38 @@ class c_dpr extends CI_Controller {
 
   function productivity()
     {
-      if($this->input->post('show') == 'Show')
-      {
-        $tahun = $this->input->post('tahun');
-          
-      }
-      else
-      {
-        $tahun = date('Y-m');
-      }
+        // Check if this is a POST request AND tahun parameter exists
+        $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
+                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
+
+        // Handle POST request - Process and Redirect (PRG Pattern)
+        if($isFilterPost) {
+            $tahun = $this->input->post('tahun');
+            
+            // Validate format to ensure it's Y-m
+            if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+                $tahun = date('Y-m');
+            }
+            
+            // Build GET URL with parameters and redirect (PRG Pattern)
+            $redirect_url = site_url('c_dpr/productivity?tahun=' . urlencode($tahun));
+            redirect($redirect_url);
+            return; // Stop execution after redirect
+        }
+        
+        // Handle GET request - Display results
+        $tahun = $this->input->get('tahun');
+        
+        // Default value if no GET parameter
+        if (empty($tahun)) {
+            $tahun = date('Y-m');
+        }
+        
+        // Validate format to ensure it's Y-m
+        if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+            $tahun = date('Y-m');
+        }
+        
         $tahuns = substr($tahun,0,4);
         $bulan  = substr($tahun,5,2);
 
@@ -216,20 +239,42 @@ class c_dpr extends CI_Controller {
                   'tahun'       => $tahuns,
                   'bulan'       => $bulan
                   ];
-      $this->load->view('report/1productivity' , $data);
+        $this->load->view('report/1productivity' , $data);
     }
 
     function productivity_detail()
     {
-      if($this->input->post('show') == 'Show')
-      {
-        $tahun = $this->input->post('tahun');
-          
-      }
-      else
-      {
-        $tahun = date('Y');
-      }
+        // Check if this is a POST request AND tahun parameter exists
+        $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
+                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
+
+        // Handle POST request - Process and Redirect (PRG Pattern)
+        if($isFilterPost) {
+            $tahun = $this->input->post('tahun');
+            
+            // Validate format to ensure it's Y (this method uses Y format)
+            if (!preg_match('/^\d{4}$/', $tahun)) {
+                $tahun = date('Y');
+            }
+            
+            // Build GET URL with parameters and redirect (PRG Pattern)
+            $redirect_url = site_url('c_dpr/productivity_detail?tahun=' . urlencode($tahun));
+            redirect($redirect_url);
+            return; // Stop execution after redirect
+        }
+        
+        // Handle GET request - Display results
+        $tahun = $this->input->get('tahun');
+        
+        // Default value if no GET parameter (this method uses Y format)
+        if (empty($tahun)) {
+            $tahun = date('Y');
+        }
+        
+        // Validate format to ensure it's Y
+        if (!preg_match('/^\d{4}$/', $tahun)) {
+            $tahun = date('Y');
+        }
 
         $tahuns = substr($tahun,0,4);
         $bulan  = substr($tahun,5,2);
@@ -240,20 +285,43 @@ class c_dpr extends CI_Controller {
                   'tahun'       => $tahuns,
                   'bulan'       => $bulan
                   ];
-      $this->load->view('report/detail_productivity' , $data);
+        $this->load->view('report/detail_productivity' , $data);
     }
 
     function productivity_detail_by_part_by_month()
     {
-      if($this->input->post('show') == 'Show')
-      {
-        $tahun = $this->input->post('tahun');
-          
-      }
-      else
-      {
-        $tahun = date('Y-m');
-      }
+        // Check if this is a POST request AND tahun parameter exists
+        $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
+                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
+
+        // Handle POST request - Process and Redirect (PRG Pattern)
+        if($isFilterPost) {
+            $tahun = $this->input->post('tahun');
+            
+            // Validate format to ensure it's Y-m
+            if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+                $tahun = date('Y-m');
+            }
+            
+            // Build GET URL with parameters and redirect (PRG Pattern)
+            $redirect_url = site_url('c_dpr/productivity_detail_by_part_by_month?tahun=' . urlencode($tahun));
+            redirect($redirect_url);
+            return; // Stop execution after redirect
+        }
+        
+        // Handle GET request - Display results
+        $tahun = $this->input->get('tahun');
+        
+        // Default value if no GET parameter
+        if (empty($tahun)) {
+            $tahun = date('Y-m');
+        }
+        
+        // Validate format to ensure it's Y-m
+        if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+            $tahun = date('Y-m');
+        }
+        
         $tahuns = substr($tahun,0,4);
         $bulan  = substr($tahun,5,2);
 
@@ -264,7 +332,7 @@ class c_dpr extends CI_Controller {
                   'tahun'       => $tahuns,
                   'bulan'       => $bulan
                   ];
-      $this->load->view('report/productivity_detail_by_part_by_month' , $data);
+        $this->load->view('report/productivity_detail_by_part_by_month' , $data);
     }
 
     function view_detail_worst_nett($kode_product,$bulan)  
