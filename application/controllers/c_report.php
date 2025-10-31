@@ -21,7 +21,11 @@ class c_report extends CI_Controller
 	// Daily OK Report - New function based on c_dpr/report/qty_ok/qty_ok but daily basis
 	function report_daily_ok()
 	{
-		if ($this->input->post('show') == 'Show') {
+		// Check if this is a filter POST request (same pattern as c_dpr/dpr)
+		$isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') &&
+						($this->input->post('tanggal_dari') !== null || $this->input->post('tanggal_sampai') !== null || $this->input->post('shift') !== null);
+
+		if ($isFilterPost) {
 			$dari = $this->input->post('tanggal_dari');
 			$sampai = $this->input->post('tanggal_sampai');
 			$shift = $this->input->post('shift');
