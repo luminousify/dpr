@@ -32,3 +32,10 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 
 # Database configuration (local only)
 application/config/database.php
+
+# Temporary files with credentials
+*.bat
+backup_before_*.sql
+check_*.sql
+check_*.php
+t_data.php
