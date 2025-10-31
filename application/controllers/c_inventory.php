@@ -145,9 +145,16 @@ class c_inventory extends CI_Controller {
   }
 
   public function total_prod_analisis(){
+        // Retrieve $id_product FIRST - available in both if/else blocks
+        $id_product = $this->input->post('id_product');
+        
+        // Add validation: redirect if no id_product
+        if(empty($id_product)) {
+            redirect('c_inventory/index');
+        }
+        
         if($this->input->post('show') == 'Show')
         {
-            $id_product = $this->input->post('id_product');
             $tahun = $this->input->post('tahun');
             $data = [
               'data'          => $this->data,
