@@ -151,15 +151,38 @@ class c_inventory extends CI_Controller {
 
     public function view_analisis($id_product){
     $tahun = date('Y-m');
-            $data = [
-              'data'          => $this->data,
-              'aktif'         => 'global',
-              'data_header'   => $this->mi->getProduk($id_product),
-              'data_tabel'    => $this->mi->tampil_analisis($id_product),
-              'data_detail'   => $this->mi->tampil_total_analisis($id_product),
-              'tanggal'       => $tahun,
-            ];
-            $this->load->view('inventory/prod_analisis' , $data);
+    
+    // Validate id_product
+    if (empty($id_product) || !is_numeric($id_product)) {
+        redirect('c_inventory/index');
+        return;
+    }
+    
+    // Retrieve and validate data
+    $data_detail = $this->mi->tampil_total_analisis($id_product);
+    
+    // Check if data exists and has valid total_qty
+    if (empty($data_detail) || $data_detail->num_rows() == 0) {
+        redirect('c_inventory/index');
+        return;
+    }
+    
+    // Get first row and validate total_qty
+    $detail_row = $data_detail->row_array();
+    if (!isset($detail_row['total_qty']) || empty($detail_row['total_qty']) || $detail_row['total_qty'] == 0) {
+        redirect('c_inventory/index');
+        return;
+    }
+    
+    $data = [
+      'data'          => $this->data,
+      'aktif'         => 'global',
+      'data_header'   => $this->mi->getProduk($id_product),
+      'data_tabel'    => $this->mi->tampil_analisis($id_product),
+      'data_detail'   => $data_detail,
+      'tanggal'       => $tahun,
+    ];
+    $this->load->view('inventory/prod_analisis' , $data);
   }
 
   public function total_prod_analisis(){
