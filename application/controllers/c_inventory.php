@@ -87,9 +87,16 @@ class c_inventory extends CI_Controller {
             $this->load->view('inventory/total_prod' , $data);
   }
   public function total_prod_filter(){
+        // Retrieve $id_product FIRST - available in both if/else blocks
+        $id_product = $this->input->post('id_product');
+        
+        // Add validation: redirect if no id_product
+        if(empty($id_product)) {
+            redirect('c_inventory/index');
+        }
+        
         if($this->input->post('show') == 'Show')
         {
-            $id_product = $this->input->post('id_product');
             $tahun = $this->input->post('tahun');
             $tahuns = substr($tahun,0,4);
             $bulan  = substr($tahun,5,2);
@@ -108,6 +115,8 @@ class c_inventory extends CI_Controller {
         else
         {
             $tahun = date('Y-m');
+            $tahuns = substr($tahun,0,4);
+            $bulan = substr($tahun,5,2);
             $data = [
               'data'              => $this->data,
               'aktif'             => 'global',
@@ -115,6 +124,8 @@ class c_inventory extends CI_Controller {
               'data_tabel'        => $this->mi->tampil_production($id_product),
               'total_analisis'    => $this->mi->total_analisis_default($id_product),
               'tanggal'           => $tahun,
+              'tahun'             => $tahuns,
+              'bulan'             => $bulan
             ];
             $this->load->view('inventory/total_prod' , $data);
         } 
