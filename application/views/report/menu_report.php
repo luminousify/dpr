@@ -6,12 +6,10 @@
                         <div class="col-sm-3 mb-2"> <b>Pilih Tahun - Bulan</b> 
                     	<select name="tahun" class="form-control">
                                         <?php
-                                        // Show last 12 months only for better performance
-                                        $currentYear = date('Y');
-                                        $currentMonth = date('m');
-                                        for($i = 11; $i >= 0; $i--){
-                                            $date = date('Y-m', strtotime("-$i months"));
-                                            $selected = ($date == $tahun) ? 'selected="selected"' : '';
+                                        // Show last 12 months, most recent first
+                                        for($i = 0; $i < 12; $i++){
+                                            $date = date('Y-m', strtotime("first day of -$i months"));
+                                            $selected = ($date == $tanggal) ? 'selected="selected"' : '';
                                             echo "<option value='$date' $selected>$date</option>";
                                         }
                                         ?>
@@ -29,7 +27,7 @@
                             </select>
                         </div>
                         <div class="col-sm-2 mb-2" style="margin-top:27px;">
-                            <button type="submit" name="show" class="btn btn-primary btn-sm">
+                            <button type="submit" name="show" value="Show" class="btn btn-primary btn-sm">
                                 <i class="fa fa-search"></i> Show
                             </button>
                         </div>

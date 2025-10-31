@@ -108,13 +108,20 @@ class c_dpr extends CI_Controller {
 
   function report($jenis,$name) //qty_ok , ok
   {
+    // Debug logging
+    log_message('debug', 'Report function called - POST data: ' . print_r($_POST, true));
+    log_message('debug', 'show value: ' . $this->input->post('show'));
+    log_message('debug', 'tahun value: ' . $this->input->post('tahun'));
+    
     if($this->input->post('show') == 'Show')
       {
         $tahun = $this->input->post('tahun');  
+        log_message('debug', 'Using POST tahun: ' . $tahun);
       }
       else
       {
         $tahun = date('Y-m');
+        log_message('debug', 'Using default tahun: ' . $tahun);
       }
 
       $tahuns = substr($tahun,0,4);
