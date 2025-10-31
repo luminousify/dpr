@@ -223,16 +223,16 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                     <?= form_close(); ?>
                     <div class="tabs-container">
                         <ul class="nav nav-tabs">
-                                <li><a class="nav-link" data-toggle="tab" href="#tab-1">Productivity Chart</a></li>
-                                <li><a class="nav-link active" data-toggle="tab" href="#tab-2">Annual Productivity</a></li>
+                                <li><a class="nav-link active" data-toggle="tab" href="#tab-1">Productivity Chart</a></li>
+                                <li><a class="nav-link" data-toggle="tab" href="#tab-2">Annual Productivity</a></li>
                             </ul>
                         <div class="tab-content">
-                            <div role="tabpanel" id="tab-1" class="tab-pane">
+                            <div role="tabpanel" id="tab-1" class="tab-pane active">
                                 <div class="panel-body">
                                     <?php $this->load->view('global/productivity/productivity_q1'); ?>
                                 </div>
                             </div>
-                            <div role="tabpanel" id="tab-2" class="tab-pane active">
+                            <div role="tabpanel" id="tab-2" class="tab-pane">
                                 <div class="panel-body">
                                     <?php $this->load->view('global/productivity/annual_productivity'); ?>
                                 </div>
@@ -420,11 +420,11 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
    
 $(document).ready(function() {         
    var table = document.getElementById('datatable1');
+   if (!table) return; // Exit if table doesn't exist
    
-   // Get current date and previous month
+   // Get current month (not previous month)
    var currentDate = new Date();
-   var lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-   var lastMonthIndex = lastMonth.getMonth() + 1; // JavaScript months are 0-based, convert to 1-based for comparison
+   var currentMonthIndex = currentDate.getMonth() + 1; // JavaScript months are 0-based, convert to 1-based for comparison
    
    var options = {
          chart: {
@@ -555,13 +555,14 @@ $(document).ready(function() {
       var chart = new Highcharts.Chart(options);
    };
    
-   // Use our custom visualization that limits data to previous month
-   customVisualize(table, options, lastMonthIndex);
+   // Use our custom visualization that limits data to current month
+   customVisualize(table, options, currentMonthIndex);
 });
 
 $(document).ready(function() {         
-   var table = document.getElementById('datatable3'),
-   options = {
+   var table = document.getElementById('datatable3');
+   if (!table) return; // Exit if table doesn't exist
+   var options = {
          chart: {
             renderTo: 'container3',
             defaultSeriesType: 'column'
@@ -628,8 +629,9 @@ $(document).ready(function() {
 });
 
 $(document).ready(function() {         
-   var table = document.getElementById('datatable4'),
-   options = {
+   var table = document.getElementById('datatable4');
+   if (!table) return; // Exit if table doesn't exist
+   var options = {
          chart: {
             renderTo: 'container4',
             defaultSeriesType: 'column'

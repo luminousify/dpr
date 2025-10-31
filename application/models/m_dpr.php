@@ -52,9 +52,10 @@ class m_dpr extends CI_Model
 
   public function tampil_production_rev($tanggal_dari, $tanggal_sampai, $shift)
   {
-    $nama = $_SESSION['nama_actor'];
+    $nama = isset($_SESSION['nama_actor']) ? $_SESSION['nama_actor'] : '';
+    $posisi = isset($_SESSION['posisi']) ? $_SESSION['posisi'] : '';
 
-    if ($_SESSION['posisi'] == 'kanit') {
+    if ($posisi == 'kanit') {
       if ($shift == 'All') {
         $shiftNya = '';
       } else {
@@ -132,6 +133,7 @@ class m_dpr extends CI_Model
               $shiftNya
               GROUP BY q.`id_production`
               ORDER BY q.`cek_kanit` DESC, q.`tanggal`, q.`mesin` ASC");
+      
       return $query;
     } else {
       if ($shift == 'All') {
@@ -211,6 +213,7 @@ class m_dpr extends CI_Model
             $shiftNya
             GROUP BY q.`id_production`
             ORDER BY q.`cek_kanit` DESC, q.`kanit`, q.`tanggal`, q.`mesin` ASC");
+      
       return $query;
     }
   }

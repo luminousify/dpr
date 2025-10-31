@@ -25,10 +25,10 @@
                                // echo '<td>'.number_format($nett,2).'</td>';
                                // $gross = ($data['nett'.$i] != 0) ? ($data['ct_std'.$i]/$data['gross'.$i])*100 : 0;
                                // $gross_fix = round($gross,2);
-                               echo '<td>'.round($data['persen_nett'.$i],1).'</td>';
-                               echo '<td>'.round($data['persen_gross'.$i],1).'</td>';
-                               echo '<td>'.$data['target_nett'].'</td>';
-                               echo '<td>'.$data['target_gross'].'</td>';
+                               echo '<td>'.round($data['persen_nett'.$i] ?? 0, 1).'</td>';
+                               echo '<td>'.round($data['persen_gross'.$i] ?? 0, 1).'</td>';
+                               echo '<td>'.($data['target_nett'] ?? 0).'</td>';
+                               echo '<td>'.($data['target_gross'] ?? 0).'</td>';
                             echo '</tr>'; 
                             //$total += $nett;
                             //$total_gross += $nett;
@@ -59,7 +59,7 @@
                               for($i=1;$i<=12;$i++) 
                             {
                                //$nett = ($data['nett'.$i] != 0) ? ($data['ct_std'.$i]/$data['nett'.$i])*100 : 0;
-                               echo '<td>'.round($data['persen_nett'.$i],1).'</td>';
+                               echo '<td>'.round($data['persen_nett'.$i] ?? 0, 1).'</td>';
                             }
                              echo '</tr>';
                         } ?>
@@ -70,7 +70,7 @@
                               for($i=1;$i<=12;$i++) 
                             {
                                //$gross = ($data['nett'.$i] != 0) ? ($data['ct_std'.$i]/$data['gross'.$i])*100 : 0;
-                               echo '<td>'.round($data['persen_gross'.$i],1).'</td>';
+                               echo '<td>'.round($data['persen_gross'.$i] ?? 0, 1).'</td>';
                             }
                              echo '</tr>';
                         } 
@@ -78,7 +78,7 @@
                         echo '<td>Net Prod Target (%)</td>';
                             for($i=1;$i<=12;$i++) 
                             {  
-                               echo '<td>'.$data['target_nett'].'</td>';
+                               echo '<td>'.($data['target_nett'] ?? 0).'</td>';
                                
                             }
                         echo '</tr>';
@@ -87,7 +87,7 @@
                         echo '<td>Gross Prod Target (%)</td>';
                             for($i=1;$i<=12;$i++) 
                             {  
-                               echo '<td>'.$data['target_gross'].'</td>';
+                               echo '<td>'.($data['target_gross'] ?? 0).'</td>';
                                
                             }
                             echo '</tr>';

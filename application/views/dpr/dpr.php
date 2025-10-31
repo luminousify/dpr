@@ -107,7 +107,7 @@
                                             </select>
                                         </div>
                                         <div class="col-sm-12 mb-3">
-                                            <button type="submit" name="show" class="btn btn-primary btn-sm">
+                                            <button type="submit" name="show" value="1" class="btn btn-primary btn-sm">
                                                 <i class="fa fa-search"></i> Show
                                             </button>
                                             <a href="<?= base_url('c_dpr/dpr'); ?>" class="btn btn-secondary btn-sm">
@@ -297,7 +297,7 @@
                                             echo '<td style="background-color:' . $background . '">' . $data['shift'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['kanit'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['ct_mc'] . '</td>';
-                                            echo '<td style="background-color:' . $background . '">a' . $data['gross_prod'] . '</td>';
+                                            echo '<td style="background-color:' . $background . '">' . $data['gross_prod'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['nett_prod'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['kode_product'] . ' - ' . $data['nama_product'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['qty_ok'] . '</td>';

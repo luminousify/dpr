@@ -22,15 +22,21 @@ class c_dpr extends CI_Controller {
  
   public function dpr()
   {
-      if($this->input->post('show'))
+      // Treat any POST with filter fields as an explicit filter request
+      $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') &&
+                      ($this->input->post('tanggal_dari') !== null || $this->input->post('tanggal_sampai') !== null || $this->input->post('shift') !== null);
+
+      if($isFilterPost)
       {
       $dari = $this->input->post('tanggal_dari');
       $sampai = $this->input->post('tanggal_sampai');
       $shift = $this->input->post('shift');
+      $data_tabel = $this->mm->tampil_production_rev($dari , $sampai,$shift);
+      
       $data = [
               'data'              => $this->data,
               'aktif'             => 'dpr',
-              'data_tabel'        => $this->mm->tampil_production_rev($dari , $sampai,$shift),
+              'data_tabel'        => $data_tabel,
               'verif_kasi'        => $this->mm->verif_kasi($dari,$sampai,$shift),
               'data_verif_kanit'  => $this->mm->data_verif_kanit($dari,$sampai,$shift),
               'data_verif_kasi'  => $this->mm->data_verifikasi_kasi($dari,$sampai),
@@ -46,10 +52,13 @@ class c_dpr extends CI_Controller {
         $dari      = date('Y-m-d');
         $sampai    = date('Y-m-d');
         $shift = 'All';
+        
+        $data_tabel = $this->mm->tampil_production_rev($dari , $sampai , 'All');
+        
         $data = [
                 'data'              => $this->data,
                 'aktif'             => 'dpr',
-                'data_tabel'        => $this->mm->tampil_production_rev($dari , $sampai , 'All'),
+                'data_tabel'        => $data_tabel,
                 'dari'              => $dari,
                 'sampai'            => $sampai,
                 'shift'             => $shift,

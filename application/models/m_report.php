@@ -1552,13 +1552,14 @@ WHERE YEAR(q.tanggal) = '$tahun'
               q.*
               FROM `v_productivity_q1` AS w
               LEFT JOIN target_produksi AS q ON q.`tahun` = w.`tahun`
-              WHERE w.tahun = '$tahun'");
+              WHERE w.tahun = '$tahun'
+              GROUP BY w.tahun");
     return $query;
   }
 
   public function productivity_q1($tahun)
   {
-    $query = $this->db->query("SELECT w.tahun,
+    $query = $this->db->query("SELECT MAX(w.tahun) as tahun,
               ((AVG(CASE WHEN w.`bulan` = '01' THEN w.`cyt_quo` END)/ AVG(CASE WHEN w.`bulan` = '01' THEN w.`nett` END)) * 100) AS persen_nett1,
               ((AVG(CASE WHEN w.`bulan` = '01' THEN w.`cyt_quo` END)/ AVG(CASE WHEN w.`bulan` = '01' THEN w.`gross` END)) * 100) AS persen_gross1,
               ((AVG(CASE WHEN w.`bulan` = '02' THEN w.`cyt_quo` END)/ AVG(CASE WHEN w.`bulan` = '02' THEN w.`nett` END)) * 100) AS persen_nett2,
@@ -1583,10 +1584,12 @@ WHERE YEAR(q.tanggal) = '$tahun'
               ((AVG(CASE WHEN w.`bulan` = '11' THEN w.`cyt_quo` END)/ AVG(CASE WHEN w.`bulan` = '11' THEN w.`gross` END)) * 100) AS persen_gross11,
               ((AVG(CASE WHEN w.`bulan` = '12' THEN w.`cyt_quo` END)/ AVG(CASE WHEN w.`bulan` = '12' THEN w.`nett` END)) * 100) AS persen_nett12,
               ((AVG(CASE WHEN w.`bulan` = '12' THEN w.`cyt_quo` END)/ AVG(CASE WHEN w.`bulan` = '12' THEN w.`gross` END)) * 100) AS persen_gross12,
-              q.*
+              MAX(q.target_nett) as target_nett,
+              MAX(q.target_gross) as target_gross
               FROM `v_productivity_q1` AS w
               LEFT JOIN target_produksi AS q ON q.`tahun` = w.`tahun`
-              WHERE w.tahun = '$tahun'");
+              WHERE w.tahun = '$tahun'
+              GROUP BY w.tahun");
     return $query;
   }
 
@@ -1644,7 +1647,8 @@ WHERE YEAR(q.tanggal) = '$tahun'
               q.*
               FROM `v_productivity_q2` AS w
               LEFT JOIN target_produksi AS q ON q.`tahun` = w.`tahun`
-              WHERE w.tahun = '$tahun'");
+              WHERE w.tahun = '$tahun'
+              GROUP BY w.tahun");
     return $query;
   }
 
@@ -1663,7 +1667,8 @@ WHERE YEAR(q.tanggal) = '$tahun'
               q.*
               FROM `v_productivity_q3` AS w
               LEFT JOIN target_produksi AS q ON q.`tahun` = w.`tahun`
-              WHERE w.tahun = '$tahun'");
+              WHERE w.tahun = '$tahun'
+              GROUP BY w.tahun");
     return $query;
   }
 
