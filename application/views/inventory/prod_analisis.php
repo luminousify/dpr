@@ -1,5 +1,23 @@
  <title>DPR | Inventory</title>
-<?php $this->load->view('layout/sidebar'); ?>
+<?php 
+// Helper function to safely calculate percentages (prevents division by zero)
+function safePercentage($value, $total, $decimal_places = 3) {
+    if (!isset($total) || !isset($value) || $total <= 0) {
+        return 0;
+    }
+    return round(($value / $total) * 100, $decimal_places);
+}
+
+// Helper function to safely calculate PPM (parts per million)
+function safePPM($value, $total) {
+    if (!isset($total) || !isset($value) || $total <= 0) {
+        return 0;
+    }
+    return round(($value / $total) * 1000000);
+}
+
+$this->load->view('layout/sidebar'); 
+?>
 
 
 <link href="<?= base_url(); ?>template/css/plugins/dataTables/datatables.min.css" rel="stylesheet">
@@ -308,267 +326,119 @@ $no = 0; foreach ($data_tabel->result_array() as $data): $no++; ?>
                                                 <tr>
                                                     <td><strong>NG %</strong></td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_ng = ($data['total_ng'] / $data['total_qty']) * 100;
-                                                        $total_ng_persen = round($hitung_total_ng,3);
-                                                        ?>
-                                                        <?php echo $total_ng_persen ?>
+                                                        <?php echo safePercentage($data['total_ng'], $data['total_qty']); ?>
                                                     </td>
                                                     <td></td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_pin_seret = ($data['pin_seret'] / $data['total_qty']) * 100;
-                                                        $total_pin_seret_persen = round($hitung_total_pin_seret,3);
-                                                        ?>
-                                                        <?php echo $total_pin_seret_persen ?>
+                                                        <?php echo safePercentage($data['pin_seret'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_blackdot = ($data['blackdot'] / $data['total_qty']) * 100;
-                                                        $total_blackdot_persen = round($hitung_total_blackdot,3);
-                                                        ?>
-                                                        <?php echo $total_blackdot_persen ?>
+                                                        <?php echo safePercentage($data['blackdot'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_hike = ($data['hike'] / $data['total_qty']) * 100;
-                                                        $total_hike_persen = round($hitung_total_hike,3);
-                                                        ?>
-                                                        <?php echo $total_hike_persen ?>
+                                                        <?php echo safePercentage($data['hike'], $data['total_qty']); ?>
                                                      </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_sink_mark = ($data['sink_mark'] / $data['total_qty']) * 100;
-                                                        $total_sink_mark_persen = round($hitung_total_sink_mark,3);
-                                                        ?>
-                                                        <?php echo $total_sink_mark_persen ?>
+                                                        <?php echo safePercentage($data['sink_mark'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_oversize = ($data['oversize'] / $data['total_qty']) * 100;
-                                                        $total_oversize_persen = round($hitung_total_oversize,3);
-                                                        ?>
-                                                        <?php echo $total_oversize_persen ?>                     
+                                                        <?php echo safePercentage($data['oversize'], $data['total_qty']); ?>                     
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_undersize = ($data['undersize'] / $data['total_qty']) * 100;
-                                                        $total_undersize_persen = round($hitung_total_undersize,3);
-                                                        ?>
-                                                        <?php echo $total_undersize_persen ?>    
+                                                        <?php echo safePercentage($data['undersize'], $data['total_qty']); ?>    
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_settingan = ($data['settingan'] / $data['total_qty']) * 100;
-                                                        $total_settingan_persen = round($hitung_total_settingan,3);
-                                                        ?>
-                                                        <?php echo $total_settingan_persen ?>
+                                                        <?php echo safePercentage($data['settingan'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_waving = ($data['waving'] / $data['total_qty']) * 100;
-                                                        $total_waving_persen = round($hitung_total_waving,3);
-                                                        ?>
-                                                        <?php echo $total_waving_persen ?>
+                                                        <?php echo safePercentage($data['waving'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_dirty = ($data['dirty'] / $data['total_qty']) * 100;
-                                                        $total_dirty_persen = round($hitung_total_dirty,3);
-                                                        ?>
-                                                        <?php echo $total_dirty_persen ?> 
+                                                        <?php echo safePercentage($data['dirty'], $data['total_qty']); ?> 
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_broken = ($data['broken'] / $data['total_qty']) * 100;
-                                                        $total_broken_persen = round($hitung_total_broken,3);
-                                                        ?>
-                                                        <?php echo $total_broken_persen ?>
+                                                        <?php echo safePercentage($data['broken'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_oil = ($data['oil'] / $data['total_qty']) * 100;
-                                                        $total_oil_persen = round($hitung_total_oil,3);
-                                                        ?>
-                                                        <?php echo $total_oil_persen ?>
+                                                        <?php echo safePercentage($data['oil'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_undercut = ($data['undercut'] / $data['total_qty']) * 100;
-                                                        $total_undercut_persen = round($hitung_total_undercut,3);
-                                                        ?>
-                                                        <?php echo $total_undercut_persen ?>
+                                                        <?php echo safePercentage($data['undercut'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_fm = ($data['fm'] / $data['total_qty']) * 100;
-                                                        $total_fm_persen = round($hitung_total_fm,3);
-                                                        ?>
-                                                        <?php echo $total_fm_persen ?>
+                                                        <?php echo safePercentage($data['fm'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_white_mark = ($data['white_mark'] / $data['total_qty']) * 100;
-                                                        $total_white_mark_persen = round($hitung_total_white_mark,3);
-                                                        ?>
-                                                        <?php echo $total_white_mark_persen ?>
+                                                        <?php echo safePercentage($data['white_mark'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_white_dot = ($data['white_dot'] / $data['total_qty']) * 100;
-                                                        $total_white_dot_persen = round($hitung_total_white_dot,3);
-                                                        ?>
-                                                        <?php echo $total_white_dot_persen ?> 
+                                                        <?php echo safePercentage($data['white_dot'], $data['total_qty']); ?> 
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_pin_plong = ($data['pin_plong'] / $data['total_qty']) * 100;
-                                                        $total_pin_plong_persen = round($hitung_total_pin_plong,3);
-                                                        ?>
-                                                        <?php echo $total_pin_plong_persen ?>
+                                                        <?php echo safePercentage($data['pin_plong'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_bending = ($data['bending'] / $data['total_qty']) * 100;
-                                                        $total_bending_persen = round($hitung_total_bending,3);
-                                                        ?>
-                                                        <?php echo $total_bending_persen ?>
+                                                        <?php echo safePercentage($data['bending'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_short_shoot = ($data['short_shoot'] / $data['total_qty']) * 100;
-                                                        $total_short_shoot_persen = round($hitung_total_short_shoot,3);
-                                                        ?>
-                                                        <?php echo $total_short_shoot_persen ?>
+                                                        <?php echo safePercentage($data['short_shoot'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_flash = ($data['flash'] / $data['total_qty']) * 100;
-                                                        $total_flash_persen = round($hitung_total_flash,3);
-                                                        ?>
-                                                        <?php echo $total_flash_persen ?>
+                                                        <?php echo safePercentage($data['flash'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_gate_bolong = ($data['gate_bolong'] / $data['total_qty']) * 100;
-                                                        $total_gate_bolong_persen = round($hitung_total_gate_bolong,3);
-                                                        ?>
-                                                        <?php echo $total_gate_bolong_persen ?>
+                                                        <?php echo safePercentage($data['gate_bolong'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_crack = ($data['crack'] / $data['total_qty']) * 100;
-                                                        $total_crack_persen = round($hitung_total_crack,3);
-                                                        ?>
-                                                        <?php echo $total_crack_persen ?>
+                                                        <?php echo safePercentage($data['crack'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_berawan = ($data['berawan'] / $data['total_qty']) * 100;
-                                                        $total_berawan_persen = round($hitung_total_berawan,3);
-                                                        ?>
-                                                        <?php echo $total_berawan_persen ?>
+                                                        <?php echo safePercentage($data['berawan'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_gas_mark = ($data['gas_mark'] / $data['total_qty']) * 100;
-                                                        $total_gas_mark_persen = round($hitung_total_gas_mark,3);
-                                                        ?>
-                                                        <?php echo $total_gas_mark_persen ?>
+                                                        <?php echo safePercentage($data['gas_mark'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_ejector_mark = ($data['ejector_mark'] / $data['total_qty']) * 100;
-                                                        $total_ejector_mark_persen = round($hitung_total_ejector_mark,3);
-                                                        ?>
-                                                        <?php echo $total_ejector_mark_persen ?>
+                                                        <?php echo safePercentage($data['ejector_mark'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_hangus = ($data['hangus'] / $data['total_qty']) * 100;
-                                                        $total_hangus_persen = round($hitung_total_hangus,3);
-                                                        ?>
-                                                        <?php echo $total_hangus_persen ?>
+                                                        <?php echo safePercentage($data['hangus'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_gas_burn = ($data['gas_burn'] / $data['total_qty']) * 100;
-                                                        $total_gas_burn_persen = round($hitung_total_gas_burn,3);
-                                                        ?>
-                                                        <?php echo $total_gas_burn_persen ?> 
+                                                        <?php echo safePercentage($data['gas_burn'], $data['total_qty']); ?> 
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_scratch = ($data['scratch'] / $data['total_qty']) * 100;
-                                                        $total_scratch_persen = round($hitung_total_scratch,3);
-                                                        ?>
-                                                        <?php echo $total_scratch_persen ?>
+                                                        <?php echo safePercentage($data['scratch'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_discolour = ($data['discolour'] / $data['total_qty']) * 100;
-                                                        $total_discolour_persen = round($hitung_total_discolour,3);
-                                                        ?>
-                                                        <?php echo $total_discolour_persen ?>
+                                                        <?php echo safePercentage($data['discolour'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_silver = ($data['silver'] / $data['total_qty']) * 100;
-                                                        $total_silver_persen = round($hitung_total_silver,3);
-                                                        ?>
-                                                        <?php echo $total_silver_persen ?>    
+                                                        <?php echo safePercentage($data['silver'], $data['total_qty']); ?>    
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_dent = ($data['dent'] / $data['total_qty']) * 100;
-                                                        $total_dent_persen = round($hitung_total_dent,3);
-                                                        ?>
-                                                        <?php echo $total_dent_persen ?>
+                                                        <?php echo safePercentage($data['dent'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_flow_gate = ($data['flow_gate'] / $data['total_qty']) * 100;
-                                                        $total_flow_gate_persen = round($hitung_total_flow_gate,3);
-                                                        ?>
-                                                        <?php echo $total_flow_gate_persen ?>
+                                                        <?php echo safePercentage($data['flow_gate'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_gate_long = ($data['gate_long'] / $data['total_qty']) * 100;
-                                                        $total_gate_long_persen = round($hitung_total_gate_long,3);
-                                                        ?>
-                                                        <?php echo $total_gate_long_persen ?>
+                                                        <?php echo safePercentage($data['gate_long'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_weld_line = ($data['weld_line'] / $data['total_qty']) * 100;
-                                                        $total_weld_line_persen = round($hitung_total_weld_line,3);
-                                                        ?>
-                                                        <?php echo $total_weld_line_persen ?>
+                                                        <?php echo safePercentage($data['weld_line'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_void = ($data['void'] / $data['total_qty']) * 100;
-                                                        $total_void_persen = round($hitung_total_void,3);
-                                                        ?>
-                                                        <?php echo $total_void_persen ?>
+                                                        <?php echo safePercentage($data['void'], $data['total_qty']); ?>
                                                     </td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_flow_mark = ($data['flow_mark'] / $data['total_qty']) * 100;
-                                                        $total_flow_mark_persen = round($hitung_total_flow_mark,3);
-                                                        ?>
-                                                        <?php echo $total_flow_mark_persen ?>
+                                                        <?php echo safePercentage($data['flow_mark'], $data['total_qty']); ?>
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td><strong>PPM</strong></td>
                                                     <td>
-                                                        <?php  
-                                                        $hitung_total_ppm = ($data['total_ng'] / $data['total_qty']) * 1000000;
-                                                        $total_ppm = round($hitung_total_ppm);
-                                                        ?>
-                                                        <?php echo $total_ppm ?>
+                                                        <?php echo safePPM($data['total_ng'], $data['total_qty']); ?>
                                                     </td>
                                                     <td></td>
                                                     <td></td>
