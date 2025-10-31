@@ -87,52 +87,66 @@ class c_inventory extends CI_Controller {
             $this->load->view('inventory/total_prod' , $data);
   }
   public function total_prod_filter(){
-        // Check if this is a POST request AND tahun parameter exists (more robust than checking button)
+        // Check if this is a POST request AND parameters exist
         $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
-                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
-        
-        // Retrieve $id_product FIRST - available in both if/else blocks
-        $id_product = $this->input->post('id_product');
-        
-        // Add validation: redirect if no id_product
-        if(empty($id_product)) {
-            redirect('c_inventory/index');
-        }
-        
-        if($isFilterPost)
-        {
+                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '' &&
+                         $this->input->post('id_product') !== null && $this->input->post('id_product') !== '');
+
+        // Handle POST request - Process and Redirect (PRG Pattern)
+        if($isFilterPost) {
             $tahun = $this->input->post('tahun');
-            $tahuns = substr($tahun,0,4);
-            $bulan  = substr($tahun,5,2);
-            $data = [
-              'data'              => $this->data,
-              'aktif'             => 'global',
-              'data_header'       => $this->mi->getProduk($id_product),
-              'data_tabel'        => $this->mi->tampil_production_byfilter($id_product,$tahun),
-              'total_analisis'    => $this->mi->total_analisis_byfilter($id_product,$tahun),
-              'tanggal'           => $tahun,
-              'tahun'             => $tahuns,
-              'bulan'             => $bulan
-            ];
-            $this->load->view('inventory/total_prod' , $data);
+            $id_product = $this->input->post('id_product');
+            
+            // Validate format to ensure it's Y-m
+            if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+                $tahun = date('Y-m');
+            }
+            
+            // Validate id_product
+            if (empty($id_product) || !is_numeric($id_product)) {
+                redirect('c_inventory/index');
+                return;
+            }
+            
+            // Build GET URL with parameters and redirect (PRG Pattern)
+            $redirect_url = site_url('c_inventory/total_prod_filter?id_product=' . urlencode($id_product) . '&tahun=' . urlencode($tahun));
+            redirect($redirect_url);
+            return; // Stop execution after redirect
         }
-        else
-        {
+        
+        // Handle GET request - Display results
+        $id_product = $this->input->get('id_product');
+        $tahun = $this->input->get('tahun');
+        
+        // Validate id_product - redirect if missing
+        if (empty($id_product) || !is_numeric($id_product)) {
+            redirect('c_inventory/index');
+            return;
+        }
+        
+        // Default value if no GET parameter
+        if (empty($tahun)) {
             $tahun = date('Y-m');
-            $tahuns = substr($tahun,0,4);
-            $bulan = substr($tahun,5,2);
-            $data = [
-              'data'              => $this->data,
-              'aktif'             => 'global',
-              'data_header'       => $this->mi->getProduk($id_product),
-              'data_tabel'        => $this->mi->tampil_production($id_product),
-              'total_analisis'    => $this->mi->total_analisis_default($id_product),
-              'tanggal'           => $tahun,
-              'tahun'             => $tahuns,
-              'bulan'             => $bulan
-            ];
-            $this->load->view('inventory/total_prod' , $data);
-        } 
+        }
+        
+        // Validate format to ensure it's Y-m
+        if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+            $tahun = date('Y-m');
+        }
+        
+        $tahuns = substr($tahun,0,4);
+        $bulan  = substr($tahun,5,2);
+        $data = [
+          'data'              => $this->data,
+          'aktif'             => 'global',
+          'data_header'       => $this->mi->getProduk($id_product),
+          'data_tabel'        => $this->mi->tampil_production($id_product),
+          'total_analisis'    => $this->mi->total_analisis_default($id_product),
+          'tanggal'           => $tahun,
+          'tahun'             => $tahuns,
+          'bulan'             => $bulan
+        ];
+        $this->load->view('inventory/total_prod' , $data);
     }
 
     public function view_analisis($id_product){
@@ -149,43 +163,61 @@ class c_inventory extends CI_Controller {
   }
 
   public function total_prod_analisis(){
-        // Check if this is a POST request AND tahun parameter exists (more robust than checking button)
+        // Check if this is a POST request AND parameters exist
         $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
-                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
-        
-        // Retrieve $id_product FIRST - available in both if/else blocks
-        $id_product = $this->input->post('id_product');
-        
-        // Add validation: redirect if no id_product
-        if(empty($id_product)) {
-            redirect('c_inventory/index');
-        }
-        
-        if($isFilterPost)
-        {
+                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '' &&
+                         $this->input->post('id_product') !== null && $this->input->post('id_product') !== '');
+
+        // Handle POST request - Process and Redirect (PRG Pattern)
+        if($isFilterPost) {
             $tahun = $this->input->post('tahun');
-            $data = [
-              'data'          => $this->data,
-              'aktif'         => 'global',
-              'data_header'   => $this->mi->getProduk($id_product),
-              'data_tabel'    => $this->mi->tampil_analisis_byfilter($id_product,$tahun),
-              'data_detail'   => $this->mi->tampil_total_analisis_byfilter($id_product,$tahun),
-              'tanggal'       => $tahun,
-            ];
-            $this->load->view('inventory/prod_analisis' , $data);
+            $id_product = $this->input->post('id_product');
+            
+            // Validate format to ensure it's Y-m
+            if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+                $tahun = date('Y-m');
+            }
+            
+            // Validate id_product
+            if (empty($id_product) || !is_numeric($id_product)) {
+                redirect('c_inventory/index');
+                return;
+            }
+            
+            // Build GET URL with parameters and redirect (PRG Pattern)
+            $redirect_url = site_url('c_inventory/total_prod_analisis?id_product=' . urlencode($id_product) . '&tahun=' . urlencode($tahun));
+            redirect($redirect_url);
+            return; // Stop execution after redirect
         }
-        else
-        {
+        
+        // Handle GET request - Display results
+        $id_product = $this->input->get('id_product');
+        $tahun = $this->input->get('tahun');
+        
+        // Validate id_product - redirect if missing
+        if (empty($id_product) || !is_numeric($id_product)) {
+            redirect('c_inventory/index');
+            return;
+        }
+        
+        // Default value if no GET parameter
+        if (empty($tahun)) {
             $tahun = date('Y-m');
-            $data = [
-              'data'          => $this->data,
-              'aktif'         => 'global',
-              'data_header'   => $this->mi->getProduk($id_product),
-              'data_tabel'    => $this->mi->tampil_analisis($id_product),
-              'data_detail'   => $this->mi->tampil_total_analisis($id_product),
-              'tanggal'       => $tahun,
-            ];
-            $this->load->view('inventory/prod_analisis' , $data);
-        } 
+        }
+        
+        // Validate format to ensure it's Y-m
+        if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+            $tahun = date('Y-m');
+        }
+        
+        $data = [
+          'data'          => $this->data,
+          'aktif'         => 'global',
+          'data_header'   => $this->mi->getProduk($id_product),
+          'data_tabel'    => $this->mi->tampil_analisis($id_product),
+          'data_detail'   => $this->mi->tampil_total_analisis($id_product),
+          'tanggal'       => $tahun,
+        ];
+        $this->load->view('inventory/prod_analisis' , $data);
     }
 }
