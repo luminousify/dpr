@@ -112,54 +112,84 @@ class c_dpr extends CI_Controller {
     $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
                     ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
 
+    // Handle POST request - Process and Redirect (PRG Pattern)
     if($isFilterPost) {
         $tahun = $this->input->post('tahun');
+        $pilihan = $this->input->post('pilihan');
+        
         // Validate format to ensure it's Y-m
         if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
             $tahun = date('Y-m');
             log_message('debug', 'Invalid tahun format, using default: ' . $tahun);
-        } else {
-            log_message('debug', 'Using POST tahun: ' . $tahun);
         }
-    } else {
+        
+        // Validate pilihan to ensure it's a valid option
+        if (!in_array($pilihan, ['1', '2', '3', '4', '5', '6'])) {
+            $pilihan = '1';
+        }
+        
+        // Build GET URL with parameters and redirect (PRG Pattern)
+        $redirect_url = site_url('c_dpr/report/' . $jenis . '/' . $name . '?tahun=' . urlencode($tahun) . '&pilihan=' . urlencode($pilihan));
+        redirect($redirect_url);
+        return; // Stop execution after redirect
+    }
+    
+    // Handle GET request - Display results
+    $tahun = $this->input->get('tahun');
+    $pilihan = $this->input->get('pilihan');
+    
+    // Default values if no GET parameters
+    if (empty($tahun)) {
         $tahun = date('Y-m');
-        log_message('debug', 'Using default tahun: ' . $tahun);
+    }
+    if (empty($pilihan)) {
+        $pilihan = '1'; // Default to first option
+    }
+    
+    // Validate format to ensure it's Y-m
+    if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
+        $tahun = date('Y-m');
+        log_message('debug', 'Invalid tahun format, using default: ' . $tahun);
+    }
+    
+    // Validate pilihan to ensure it's a valid option
+    if (!in_array($pilihan, ['1', '2', '3', '4', '5', '6'])) {
+        $pilihan = '1';
     }
 
-      $tahuns = substr($tahun,0,4);
-      $bulan  = substr($tahun,5,2);
-      $pilihan = $this->input->post('pilihan');
+    $tahuns = substr($tahun,0,4);
+    $bulan  = substr($tahun,5,2);
 
-      if($pilihan == 5)
-      {
+    if($pilihan == 5)
+    {
         $query_model = 'onlineYear';
         $query_grafik = 'onlineGrafik';
-      }
-      else if($pilihan == 6){
+    }
+    else if($pilihan == 6){
         $query_model = 'reportByCustMonthly';
         $query_grafik = 'onlineGrafik';
-      }
-      else
-      {
+    }
+    else
+    {
         $query_model = 'onlineReport';
         $query_grafik = 'onlineGrafik';
-      }
-      $tanggal      = $tahun;
-      $data = [
-              'data'            => $this->data,
-              'aktif'           => 'report',
-              'data_production' => $this->mm->$query_model($tanggal, $jenis),
-              'data_grafik'     => $this->mm->$query_grafik($tanggal, $jenis), 
-              'judul_laporan'   => 'Reporting Production '.$name,
-              'tanggal'         => $tahun,
-              'tahun'           => $tahuns,
-              'bulan'           => $bulan,
-              'name'            => $name,
-              'jenis'           => $jenis,
-              'valueNya'        => $this->input->post('pilihan')
-            ];
-      $this->load->view('report/report' , $data);
     }
+    $tanggal      = $tahun;
+    $data = [
+            'data'            => $this->data,
+            'aktif'           => 'report',
+            'data_production' => $this->mm->$query_model($tanggal, $jenis),
+            'data_grafik'     => $this->mm->$query_grafik($tanggal, $jenis), 
+            'judul_laporan'   => 'Reporting Production '.$name,
+            'tanggal'         => $tahun,
+            'tahun'           => $tahuns,
+            'bulan'           => $bulan,
+            'name'            => $name,
+            'jenis'           => $jenis,
+            'valueNya'        => $pilihan
+          ];
+    $this->load->view('report/report' , $data);
+  }
       
 
   function productivity()
