@@ -395,11 +395,12 @@
                           <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Total LT</span>
                          </div>
-                         <input type="text" name="user[0][qty_lt]" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" >
+                         <input type="text" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" value="0.00">
                          <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
                          </div>
                         </div>
+                        <input type="hidden" name="user[0][qty_lt]" id="qty_lt_minutes" value="0">
                         <input type="hidden" name="" id="amountIdle"  class="form-control" value="0" readonly>
                         <input type="text" name="" id="cal_dt"  class="form-control" value="0" readonly>
                     </div>
@@ -1034,14 +1035,18 @@ $(document).ready(function(){
 
             function totalLT()
             {
-                var sum = 0;
+                var sumMinutes = 0;
                 $('#tableLT > tr').each(function() {
-                      var nilai  = $('.nilai').val()
                     var price = parseFloat($(this).find('.nilai').val());
-                    sum += price;
-                    $('#amountLT').val(sum);
+                    if (!isNaN(price) && price > 0) {
+                        sumMinutes += price;
+                    }
                 });
-            } 
+
+                var sumHours = sumMinutes / 60;
+                $('#amountLT').val(isFinite(sumHours) ? sumHours.toFixed(2) : '0.00');
+                $('#qty_lt_minutes').val(isFinite(sumMinutes) ? sumMinutes : 0);
+            }
 
             function totalStartStop(qty)
             {

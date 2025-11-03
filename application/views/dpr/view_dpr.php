@@ -1,5 +1,10 @@
-<title>DPR | View DPR Online</title>
+<title>DPR | Add DPR Online</title>
 <?php $this->load->view('layout/sidebar'); ?>
+
+<!-- Essential sidebar JavaScript files -->
+<script src="<?= base_url(); ?>template/js/plugins/metisMenu/jquery.metisMenu.js"></script>
+<script src="<?= base_url(); ?>template/js/inspinia.js"></script>
+<script src="<?= base_url(); ?>template/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
 
 <link href="<?= base_url(); ?>template/css/plugins/dataTables/datatables.min.css" rel="stylesheet">
 
@@ -371,15 +376,16 @@
 								</div>
 							  	<div class="form-group">
 										
-											  <div class="input-group">
-											  	<div class="input-group-prepend">
-								          <span class="input-group-text" id="inputGroupPrepend2">Total LT</span>
-								         </div>
-											   <input type="text" name="user[0][qty_lt]" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" value="<?= round($data->qty_lt / 60, 2); ?>">
-											   <div class="input-group-prepend">
-								          <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
-								         </div>
-												</div>
+							  <div class="input-group">
+							  	<div class="input-group-prepend">
+							          <span class="input-group-text" id="inputGroupPrepend2">Total LT</span>
+							         </div>
+							  	<input type="text" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" value="<?= round($data->qty_lt / 60, 2); ?>">
+							  	<div class="input-group-prepend">
+							          <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
+							         </div>
+								</div>
+								<input type="hidden" name="user[0][qty_lt]" id="qty_lt_minutes" value="<?= $data->qty_lt; ?>">
 										</div>
 							</div>
 							  </div>
