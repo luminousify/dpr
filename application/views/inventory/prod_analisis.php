@@ -81,7 +81,30 @@ $this->load->view('layout/sidebar');
                         </div>
                     </div>
                     <?= form_close(); ?>
-                    <br>
+                    
+                    <?php if (!$has_data): ?>
+                    <div class="alert alert-warning mt-3">
+                        <h4><i class="fa fa-exclamation-triangle"></i> No Production Data Available</h4>
+                        <p>There is no production data available for this product (<strong><?php echo $dh['kode_product'] ?> - <?php echo $dh['nama_product'] ?></strong>).</p>
+                        <p>Total Quantity: <strong><?php echo $total_qty; ?></strong></p>
+                        <hr>
+                        <p class="mb-0"><strong>Possible reasons:</strong></p>
+                        <ul class="mb-0">
+                            <li>Product has not been produced yet</li>
+                            <li>Production data is not available in the selected period</li>
+                            <li>Data entry is pending or incomplete</li>
+                        </ul>
+                        <hr>
+                        <p class="mb-0">
+                            <a href="<?php echo site_url('c_inventory/index'); ?>" class="btn btn-primary">
+                                <i class="fa fa-arrow-left"></i> Back to Product List
+                            </a>
+                            <a href="<?php echo site_url('c_dpr/dpr'); ?>" class="btn btn-success">
+                                <i class="fa fa-plus"></i> Add Production Data
+                            </a>
+                        </p>
+                    </div>
+                    <?php else: ?>
                     <div class="table-responsive mt-2">
                         <table class="table table-striped table-bordered table-hover dataTables-example" id="datatable1" style="width:100%" >
                                             <thead>

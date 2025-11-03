@@ -158,29 +158,36 @@ class c_inventory extends CI_Controller {
         return;
     }
     
-    // Retrieve and validate data
+    // Retrieve data
     $data_detail = $this->mi->tampil_total_analisis($id_product);
+    $data_header = $this->mi->getProduk($id_product);
+    $data_tabel = $this->mi->tampil_analisis($id_product);
     
-    // Check if data exists and has valid total_qty
-    if (empty($data_detail) || $data_detail->num_rows() == 0) {
+    // Check if product exists (for header)
+    if (empty($data_header) || $data_header->num_rows() == 0) {
         redirect('c_inventory/index');
         return;
     }
     
-    // Get first row and validate total_qty
-    $detail_row = $data_detail->row_array();
-    if (!isset($detail_row['total_qty']) || empty($detail_row['total_qty']) || $detail_row['total_qty'] == 0) {
-        redirect('c_inventory/index');
-        return;
+    // Determine if we have production data
+    $has_data = false;
+    $total_qty = 0;
+    
+    if (!empty($data_detail) && $data_detail->num_rows() > 0) {
+        $detail_row = $data_detail->row_array();
+        $total_qty = isset($detail_row['total_qty']) ? $detail_row['total_qty'] : 0;
+        $has_data = ($total_qty > 0);
     }
     
     $data = [
       'data'          => $this->data,
       'aktif'         => 'global',
-      'data_header'   => $this->mi->getProduk($id_product),
-      'data_tabel'    => $this->mi->tampil_analisis($id_product),
+      'data_header'   => $data_header,
+      'data_tabel'    => $data_tabel,
       'data_detail'   => $data_detail,
       'tanggal'       => $tahun,
+      'has_data'      => $has_data,
+      'total_qty'     => $total_qty
     ];
     $this->load->view('inventory/prod_analisis' , $data);
   }
