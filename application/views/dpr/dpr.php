@@ -302,7 +302,7 @@
                                             echo '<td style="background-color:' . $background . '">' . $data['kode_product'] . ' - ' . $data['nama_product'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['qty_ok'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['qty_ng'] . '</td>';
-                                            echo '<td style="background-color:' . $background . '">' . $data['qty_lt'] . '</td>';
+                                            echo '<td style="background-color:' . $background . '">' . round($data['qty_lt'] / 60, 2) . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['keterangan'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . (!empty($data['cutting_tools_codes']) ? '<b>' . $data['cutting_tools_codes'] . '</b>' : '') . '</td>';
                                             if ($hasil == null) {
@@ -323,7 +323,7 @@
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['nwt_mp'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['production_time'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['ot_mp'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['qty_lt'] . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . round($data['qty_lt'] / 60, 2) . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['kode_product'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['nama_product'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['lot_global'] . '</b></td>';
