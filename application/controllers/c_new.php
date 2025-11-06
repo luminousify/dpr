@@ -30,9 +30,34 @@ class c_new extends CI_Controller
 
   public function home()
   {
-    if ($this->input->post('show')) {
-      $tanggal  = $this->input->post('tanggal');
-      $shift  = $this->input->post('shift');
+    // Initialize date and shift variables
+    $tanggal = '';
+    $shift = 'All';
+    
+    // Priority 1: Check if form was submitted via POST (check for tanggal field)
+    if ($this->input->post('tanggal')) {
+      $tanggal = $this->input->post('tanggal');
+      $shift = $this->input->post('shift');
+      
+      // Validate and store in session
+      if ($this->validate_date($tanggal)) {
+        $this->session->set_userdata('selected_tanggal', $tanggal);
+        $this->session->set_userdata('selected_shift', $shift);
+      } else {
+        // Fallback to session or today if invalid date
+        $session_tanggal = $this->session->userdata('selected_tanggal');
+        $session_shift = $this->session->userdata('selected_shift');
+        
+        if ($session_tanggal && $this->validate_date($session_tanggal)) {
+          $tanggal = $session_tanggal;
+          $shift = $session_shift ?: 'All';
+        } else {
+          date_default_timezone_set("Asia/Jakarta");
+          $tanggal = date('Y-m-d');
+          $shift = 'All';
+        }
+      }
+      
       $data = [
         'data'                  => $this->data,
         'aktif'                 => 'dashboard',
@@ -45,9 +70,27 @@ class c_new extends CI_Controller
       ];
       $this->load->view('home', $data);
     } else {
-      date_default_timezone_set("Asia/Jakarta");
-      $tanggal  = date('Y-m-d');
-      $shift  = 'All';
+      // Priority 2: Check session for previously selected date
+      $session_tanggal = $this->session->userdata('selected_tanggal');
+      $session_shift = $this->session->userdata('selected_shift');
+      
+      if ($session_tanggal && $this->validate_date($session_tanggal)) {
+        // Use session data if valid
+        $tanggal = $session_tanggal;
+        $shift = $session_shift ?: 'All';
+      } else {
+        // Priority 3: Fallback to today's date ONLY if no valid session exists
+        date_default_timezone_set("Asia/Jakarta");
+        $tanggal = date('Y-m-d');
+        $shift = 'All';
+        
+        // Only store today's date in session if completely empty (first visit)
+        if (!$session_tanggal) {
+          $this->session->set_userdata('selected_tanggal', $tanggal);
+          $this->session->set_userdata('selected_shift', $shift);
+        }
+      }
+      
       $data = [
         'data'                  => $this->data,
         'aktif'                 => 'dashboard',
@@ -60,6 +103,46 @@ class c_new extends CI_Controller
       ];
       $this->load->view('home', $data);
     }
+  }
+
+  /**
+   * Validate date string format and range
+   */
+  private function validate_date($date) {
+    // Check if date is in valid format (YYYY-MM-DD)
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return false;
+    }
+    
+    // Parse date components
+    $date_parts = explode('-', $date);
+    $year = (int)$date_parts[0];
+    $month = (int)$date_parts[1];
+    $day = (int)$date_parts[2];
+    
+    // Check if date is valid using checkdate
+    if (!checkdate($month, $day, $year)) {
+        return false;
+    }
+    
+    // Check if date is not in the future
+    date_default_timezone_set("Asia/Jakarta");
+    $today = new DateTime();
+    $input_date = new DateTime($date);
+    
+    if ($input_date > $today) {
+        return false;
+    }
+    
+    // Check if date is within reasonable range (not too old)
+    $min_date = new DateTime();
+    $min_date->sub(new DateInterval('P2Y')); // 2 years ago
+    
+    if ($input_date < $min_date) {
+        return false;
+    }
+    
+    return true;
   }
 
 
