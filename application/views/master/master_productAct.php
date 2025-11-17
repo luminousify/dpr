@@ -46,6 +46,7 @@
           <td>Cyt MC</td>
           <td>Cyt Quo</td>
           <td>Customer</td>
+          <td>Cost</td>
           <td><?= $action == "Add" ? '<span class="btn btn-warning" onclick="addMoreRows(this.form);"><i class="fa fa-plus-square-o"></i></span>' : ''; ?></td>
         </tr>
       </table>
@@ -92,6 +93,7 @@
         '<td><input type="text" name="user['+save+'][cyt_mc]" class="form-control"   /></td>' +
         '<td><input type="text" name="user['+save+'][cyt_quo]" class="form-control"   /></td>' +
         '<td><input type="text" name="user['+save+'][customer]" class="form-control"   /></td>' +
+        '<td><select name="user['+save+'][cost]" style="width:80px;" class="form-control"  ><option value="0">0</option><option value="1" selected>1</option></select></td>' +
    		'<td><a href="javascript:void(0);" class="remCF"><button class="btn btn-danger btn-circle" type="button"><i class="fa fa-trash"></i></button></a></p></td><tr/>';
 	jQuery('#customFields').append(recRow);
 	}

@@ -58,15 +58,25 @@ class c_new extends CI_Controller
         }
       }
       
+      // Get current year for annual charts
+      $current_year = date('Y');
+      $this->load->model('m_report', 'mr');
+      
       $data = [
         'data'                  => $this->data,
         'aktif'                 => 'dashboard',
         'data_tabelRekap'       => $this->mm->tampil_rekap($tanggal), //0.003s
         'data_tabelRekapNew'    => $this->mm->tampil_rekap_new($tanggal), //0.003s
-        'data_tabelHeader'      => $this->mm->tampil_header_byshift($tanggal, $shift),
+        'data_tabelHeader'      => $this->mm->tampil_header_monthly(), // Monthly data for KPI cards
         'data_ng_lt_kanit'      => $this->mm->tampil_ng_lt_bykanit_filter($tanggal),
         'tanggal'               => $tanggal,
-        'shift'                 => $shift
+        'shift'                 => $shift,
+        // Annual charts data
+        'tahun'                 => $current_year,
+        'productivity_annual'    => $this->mr->productivity_q1($current_year),
+        'ppm_grafik'            => $this->mr->tampil_grafikPPM($current_year),
+        'ppm_total'             => $this->mr->total_prod_qty_and_ppm($current_year),
+        'ppm_fcost_target'      => $this->mr->ppm_fcost_target($current_year)
       ];
       $this->load->view('home', $data);
     } else {
@@ -91,15 +101,25 @@ class c_new extends CI_Controller
         }
       }
       
+      // Get current year for annual charts
+      $current_year = date('Y');
+      $this->load->model('m_report', 'mr');
+      
       $data = [
         'data'                  => $this->data,
         'aktif'                 => 'dashboard',
         'data_tabelRekap'       => $this->mm->tampil_rekap($tanggal),
         'data_tabelRekapNew'    => $this->mm->tampil_rekap_new($tanggal),
-        'data_tabelHeader'      => $this->mm->tampil_header($tanggal),
+        'data_tabelHeader'      => $this->mm->tampil_header_monthly(), // Monthly data for KPI cards
         'data_ng_lt_kanit'      => $this->mm->tampil_ng_lt_bykanit_default(),
         'tanggal'               => $tanggal,
-        'shift'                 => $shift
+        'shift'                 => $shift,
+        // Annual charts data
+        'tahun'                 => $current_year,
+        'productivity_annual'   => $this->mr->productivity_q1($current_year),
+        'ppm_grafik'            => $this->mr->tampil_grafikPPM($current_year),
+        'ppm_total'             => $this->mr->total_prod_qty_and_ppm($current_year),
+        'ppm_fcost_target'      => $this->mr->ppm_fcost_target($current_year)
       ];
       $this->load->view('home', $data);
     }
@@ -199,15 +219,28 @@ class c_new extends CI_Controller
 
   public function search_master_product()
   {
-    if ($this->input->post('tampil') == 'Show') {
+    // Check if form was submitted (check for tampil button or keyword POST)
+    if ($this->input->post('tampil') || $this->input->post('keyword')) {
       $keyword    = $this->input->post('keyword');
       $divisi     = $this->data['bagian'];
-      $data = [
-        'data'          => $this->data,
-        'aktif'         => 'master',
-        'keyword'       => $keyword,
-        'data_tabel'    => $this->mm->tampil_product_bySearch($divisi, $keyword),
-      ];
+      
+      // Only search if keyword is not empty
+      if (!empty($keyword)) {
+        $data = [
+          'data'          => $this->data,
+          'aktif'         => 'master',
+          'keyword'       => $keyword,
+          'data_tabel'    => $this->mm->tampil_product_bySearch($divisi, $keyword),
+        ];
+      } else {
+        // If keyword is empty, show default
+        $data = [
+          'data'          => $this->data,
+          'aktif'         => 'master',
+          'data_tabel'    => $this->mm->tampil_product_default(),
+          'keyword'       => '',
+        ];
+      }
       $this->load->view('master/master_product', $data);
     } else {
       $data = [
@@ -278,6 +311,7 @@ class c_new extends CI_Controller
     $data['customer'] = $this->input->post('customer');
     $data['AccID'] = $this->input->post('AccID');
     $data['AccInv'] = $this->input->post('AccInv');
+    $data['cost'] = $this->input->post('cost') ? $this->input->post('cost') : '0';
     $this->mm->edit_master_product($data, $id);
     $this->session->set_flashdata('success', 'Data Berhasil Di Update!');
     redirect('c_new/master_product');
@@ -395,7 +429,7 @@ class c_new extends CI_Controller
 
   public function master_mesinAct($identifikasi, $table = null, $where = null, $id = null)
   {
-    $this->load->model('Mm_model', 'mm'); // Make sure model is loaded
+    $this->load->model('m_new', 'mm'); // Load m_new model (which contains get_machine_names)
 
     $machine_names = $this->mm->get_machine_names(); // Call the new model function
 
@@ -409,11 +443,23 @@ class c_new extends CI_Controller
       ];
       $this->load->view('master/master_mesinAct', $data);
     } else {
+      // Extract identifikasi from table name (e.g., "t_no_mesin" -> "no")
+      // Remove "t_" prefix and "_mesin" suffix
+      $extracted_identifikasi = 'no'; // Default to 'no' for t_no_mesin
+      if ($table && strpos($table, 't_') === 0) {
+        $temp = str_replace('t_', '', $table); // Remove "t_" prefix
+        $temp = str_replace('_mesin', '', $temp); // Remove "_mesin" suffix
+        if (!empty($temp)) {
+          $extracted_identifikasi = $temp;
+        }
+      }
+      
       $data = [
         'data'          => $this->data,
         'aktif'         => 'master',
         'data_tabel'    => $this->mm->edit_tampil($table, $where, $id),
         'action'        => 'Edit',
+        'identifikasi'  => $extracted_identifikasi, // Extract from table name for Edit mode
         'machine_names' => $machine_names // Pass machine names to the view
       ];
       $this->load->view('master/master_mesinAct', $data);

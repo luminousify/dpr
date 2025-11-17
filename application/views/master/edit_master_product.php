@@ -126,6 +126,13 @@
                                   <label for="AccInv">Acc Inv</label>
                                     <input type="text" class="form-control" name="AccInv" value="<?php echo $dp->AccInv ?>">
                                 </div>
+                                <div class="form-group col">
+                                  <label for="cost">Cost</label>
+                                    <select name="cost" class="form-control">
+                                        <option <?php if(isset($dp->cost) && $dp->cost =='0'){echo "selected"; } ?> value='0'>0</option>
+                                        <option <?php if(isset($dp->cost) && $dp->cost =='1'){echo "selected"; } ?> value='1'>1</option>
+                                    </select>
+                                </div>
 
                             </div>
 

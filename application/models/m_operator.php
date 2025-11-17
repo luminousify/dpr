@@ -14,10 +14,15 @@ class m_operator extends CI_Model
 
         function tampil_select_group($table,$where,$where_id,$order)
         {
-                $q = "SELECT * FROM $table where $where = '$where_id' order by $order ASC ";
-                $query = $result = $this->db->query($q);
-                if ($result->num_rows() > 0){
-                        return $result->result_array();
+                // Use Query Builder for better security and reliability
+                $this->db->select('*');
+                $this->db->from($table);
+                $this->db->where($where, $where_id);
+                $this->db->order_by($order, 'ASC');
+                $query = $this->db->get();
+                
+                if ($query->num_rows() > 0){
+                        return $query->result_array();
                 }
                 else {
                         return array();
@@ -25,11 +30,14 @@ class m_operator extends CI_Model
         }
 
         function search_bomOp($title){ 
+                $this->db->select('adabom.*, t_product.cyt_quo');
+                $this->db->from('adabom');
+                $this->db->join('t_product', 'adabom.id_product = t_product.id_product', 'left');
                 $this->db->like('id_bom', $title , 'both');
                 $this->db->or_like('nama_bom', $title , 'both');
                 $this->db->order_by('id_bom', 'ASC');
                 $this->db->limit(5);
-                return $this->db->get('adabom')->result();
+                return $this->db->get()->result();
         }
 
         function tampildataMesin($id_bom)
@@ -102,6 +110,12 @@ class m_operator extends CI_Model
                 } else {
                      foreach($_POST['user'] as $user)
                         {
+                            if (isset($user['qty_lt_minutes'])) {
+                                unset($user['qty_lt_minutes']);
+                            }
+                            if (isset($user['qty_lt'])) {
+                                $user['qty_lt'] = is_numeric($user['qty_lt']) ? (float) $user['qty_lt'] : 0;
+                            }
                             $this->db->set('lot_global',$this->input->post("lot_global"));
                             $this->db->set('tanggal_input',$input);
                             $this->db->set('runner',$this->input->post("runner"));

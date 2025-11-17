@@ -40,6 +40,7 @@ class c_operator extends CI_Controller
 						'id_bom'    		=> $row->id_bom,
 						'cyt_mp_bom'    	=> $row->cyt_mp_bom,
 						'cyt_mc_bom'    	=> $row->cyt_mc_bom,
+						'cyt_quo'    		=> isset($row->cyt_quo) ? $row->cyt_quo : null,
 						'target_shift'  	=> $row->target_shift,
 						'id_pr'  	        => $row->id_product,
 						'cavity_product'  => $row->cavity,

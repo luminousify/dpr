@@ -188,6 +188,7 @@
                     <div class="form-group">
                         <label><b>CT MC</b></label>
                          <input type="text" name="user[0][ct_mc]" id="ct_mc" readonly="" class="form-control">
+                         <input type="hidden" id="ct_quo" value="">
                     </div>
                   </div>
                   <div class="col">
@@ -201,7 +202,7 @@
                 <div class="row">
                   <div class="col">
                     <div class="input-group">
-                         <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" onkeyup="setTarget(this.value)" >
+                         <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" >
                          <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
                         </div>
@@ -524,6 +525,11 @@
             });
         });
         $(document).ready(function(){
+            // Recalculate target_mc when NWT or OT changes
+            $('#nwt, #ot_mp').on('input change', function() {
+                setTarget();
+            });
+            
             var id_get = $('#id_bomS').val();
             $.ajax({
                       type    : "",
@@ -541,6 +547,8 @@
                     $('#ct_mc_aktual').html(ui.item.cyt_mc_bom + ' <br/> ' + ui.item.cyt_mp_bom);
                     $('#ct_mc').val(ui.item.cyt_mc_bom);
                     $('#ct_mp').val(ui.item.cyt_mp_bom);
+                    // Store cycle time quote for target calculation
+                    $('#ct_quo').val(ui.item.cyt_quo || ui.item.cyt_mc_bom); // Fallback to cyt_mc_bom if cyt_quo is not available
                     $('#id_pr').val(ui.item.id_pr); 
                     $('#customer').val(ui.item.customer);
                     $('#proses').val(ui.item.kode_proses);
@@ -561,6 +569,9 @@
                     var target = (((parseFloat(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
                     //var target = (nwt + ot)
                     $('#Target').val(parseInt(target));
+
+                    // Calculate target_mc using cycle time quote when BOM is selected
+                    setTarget();
 
                     var id_bom = ui.item.id_bom;
                     $('#tes').val(ui.item.hasil);
@@ -665,14 +676,18 @@
 
     function setTarget(id)
     {
-        var ct_aktual = $('#ct_mc_aktual').val();
+        var ct_quo = $('#ct_quo').val(); // Use cycle time quote instead of standard
         var cavity = $('#cavity').val();
         var nwt = $('#nwt').val();
         var ot = $('#ot_mp').val();
         let nwt_plus_ot = parseFloat(nwt) + parseInt(ot);
         // alert(nwt_plus_ot);
-        var hasil = ((3600/ct_aktual)*(cavity*nwt_plus_ot));
-        $('#target_mc').val(hasil.toFixed(2));
+        if (ct_quo > 0 && cavity > 0 && nwt_plus_ot > 0) {
+            var hasil = ((3600/ct_quo)*(cavity*nwt_plus_ot));
+            $('#target_mc').val(hasil.toFixed(2));
+        } else {
+            $('#target_mc').val('');
+        }
         $('#target_mp').val(0);
     }
     

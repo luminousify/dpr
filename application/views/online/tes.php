@@ -310,9 +310,10 @@
 							  	<div class="col-sm-3">
 							  		<div class="form-group">
 											  <label><b>Qty LT Total</b></label>
-											   <input type="text" name="user[0][qty_lt]" class="form-control" id="amountLT" readonly="">
+							   <input type="text" class="form-control" id="amountLT" readonly="" value="0.00">
 										</div>
 							  	</div>
+			  	<input type="hidden" name="user[0][qty_lt]" id="qty_lt_minutes" value="0">
 							</div>
 							  </div>
 						</div>
@@ -662,16 +663,18 @@ $(document).ready(function(){
 
             function totalLT()
             {
-                var sum = 0;
+                var sumMinutes = 0;
                 $('#tableLT > tr').each(function() {
-                	  var nilai  = $('.nilai').val()
                     var price = parseFloat($(this).find('.nilai').val());
-                    sum += price;
-                    //$(this).find('.amountNG').val(''+amount);
-                    $('#amountLT').val(parseFloat(sum));
+                    if (!isNaN(price) && price > 0) {
+                        sumMinutes += price;
+                    }
                 });
-                
-            } 
+
+                var sumHours = sumMinutes / 60;
+                $('#amountLT').val(isFinite(sumHours) ? sumHours.toFixed(2) : '0.00');
+                $('#qty_lt_minutes').val(isFinite(sumMinutes) ? sumMinutes : 0);
+            }
 
             $('#text_subtotal').text()
 </script>

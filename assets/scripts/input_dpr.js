@@ -22,7 +22,86 @@ var sv = 0;
 var saveLT = -1;
 var svLT = 0;
 
+if (!Number.isFinite) {
+    Number.isFinite = function(value) {
+        return typeof value === 'number' && isFinite(value);
+    };
+}
+
+if (!Number.isNaN) {
+    Number.isNaN = function(value) {
+        return typeof value === 'number' && value !== value;
+    };
+}
+
+function getNumericValue(selector) {
+    var value = $(selector).val();
+    if (value === undefined || value === null || value === '') {
+        return 0;
+    }
+
+    var normalized = value.toString().replace(/,/g, '.');
+    var cleaned = normalized.replace(/[^0-9.+-]/g, '').trim();
+
+    if (cleaned === '' || /^nan$/i.test(cleaned) || cleaned === '-' || cleaned === '.' || cleaned === '+') {
+        return 0;
+    }
+
+    var parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function safeDivision(numerator, denominator) {
+    var num = Number(numerator);
+    var den = Number(denominator);
+    if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) {
+        return 0;
+    }
+    return num / den;
+}
+
+function writeNumeric(selector, value) {
+    var numeric = Number(value);
+    var formatted = Number.isFinite(numeric) ? numeric.toFixed(2) : '0.00';
+    $(selector).val(formatted);
+}
+
+function canCalculateGrossNett() {
+    return getNumericValue('#qty') > 0 &&
+        getNumericValue('#ct_mc_aktual') > 0 &&
+        (getNumericValue('#cavity') > 0 || getNumericValue('#cavity2') > 0) &&
+        getNumericValue('#nwt') > 0;
+}
+
+function clearProductionOutputs() {
+    $('#production_time').val('0.0');
+    $('#cal_dt').val('0.0');
+    writeNumeric('#nett_produksi', 0);
+    writeNumeric('#gross_produksi', 0);
+}
+
+// Initialize all calculation fields to prevent NaN values on page load
+function initializeCalculationFields() {
+    // Ensure all numeric fields have valid initial values
+    $('#amountNG').val('0');
+    $('#amountLT').val('0.00');
+    $('#qty_lt_minutes').val('0');
+    $('#amountIdle').val('0');
+    $('#cal_dt').val('0.0');
+    writeNumeric('#nett_produksi', 0);
+    writeNumeric('#gross_produksi', 0);
+    $('#production_time').val('0.0');
+    
+    // Initialize totals for empty tables
+    total();
+    totalLT();
+    clearProductionOutputs();
+}
+
 $(document).ready(function() {
+    // Initialize all calculation fields to prevent NaN values
+    initializeCalculationFields();
+    
     // Set current date as default
     document.getElementById("tanggal").valueAsDate = new Date();
     
@@ -58,9 +137,12 @@ $(document).ready(function() {
         select: function(event, ui) {
             $('#kp').html(ui.item.kp_pr);
             $('#id_bomS').val(ui.item.id_bom);
-            $('#ct_mc_aktual').html(ui.item.cyt_mc_bom + ' <br/> ' + ui.item.cyt_mp_bom);
+            $('#ct_mc_aktual').val(ui.item.cyt_mc_bom);
+            $('#ct_mp_aktual').val(ui.item.cyt_mp_bom);
             $('#ct_mc').val(ui.item.cyt_mc_bom);
             $('#ct_mp').val(ui.item.cyt_mp_bom);
+            // Store cycle time quote for target calculation
+            $('#ct_quo').val(ui.item.cyt_quo || ui.item.cyt_mc_bom); // Fallback to cyt_mc_bom if cyt_quo is not available
             $('#customer').val(ui.item.customer);
             $('#proses').val(ui.item.kode_proses);
             $('#id_pr').val(ui.item.id_pr);
@@ -73,10 +155,8 @@ $(document).ready(function() {
                 $('#cavity2').val(ui.item.cavity_product);
             }
 
-            var nwt = $('#nwt_mp').val();
-            var ot = $('#ot_mp').val();
-            var target = (((parseFloat(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
-            $('#Target').val(parseInt(target));
+            // Calculate target_mc using cycle time quote when BOM is selected
+            setTarget();
 
             var id_bom = ui.item.id_bom;
             $('#tes').val(ui.item.hasil);
@@ -101,6 +181,9 @@ $(document).ready(function() {
                     $('#release').load(url, 'refresh');
                 }
             });
+
+            setTarget();
+            GrossNett();
         }
     });
 
@@ -235,19 +318,45 @@ $(document).ready(function() {
     $('#tableNG').on('click', 'input[type="button"]', function(e) {
         $(this).closest('tr').remove();
         total();
+        GrossNett();
     });
 
     $('#tableLT').on('click', 'input[type="button"]', function(e) {
         $(this).closest('tr').remove();
         totalLT();
+        GrossNett();
     });
 
     // Form submission handler
     $("#my-form").submit(function(e) {
+        GrossNett();
+
+        if (!Number.isFinite(Number($('#nett_produksi').val()))) {
+            writeNumeric('#nett_produksi', getNumericValue('#nett_produksi'));
+        }
+
+        if (!Number.isFinite(Number($('#gross_produksi').val()))) {
+            writeNumeric('#gross_produksi', getNumericValue('#gross_produksi'));
+        }
+
         $("#submit").attr("disabled", true);
         $('#loading').html("Loading, please wait...");
         document.getElementById("loading").style.color = "red";
         return true;
+    });
+    
+    // Recalculate target_mc when NWT or OT changes
+    $('#nwt, #ot_mp').on('input change', function() {
+        setTarget();
+    });
+    
+    // Add event listeners to recalculate on keyup/change for input fields
+    $('#qty, #amountNG, #ct_mc_aktual, #cavity, #cavity2').on('input change', function() {
+        setTimeout(function() {
+            total();
+            totalLT();
+            GrossNett();
+        }, 100); // Small delay to ensure values are updated
     });
 });
 
@@ -260,17 +369,23 @@ function cekNoNamaBOM() {
     }
 }
 
-// Set target calculation
-function setTarget(id) {
-    var ct_aktual = $('#ct_mc_aktual').val();
-    var cavity = $('#cavity').val();
-    var nwt = $('#nwt').val();
-    var ot = $('#ot_mp').val();
-    let nwt_plus_ot = parseFloat(nwt) + parseInt(ot);
+// Set target calculation using cycle time quote
+function setTarget() {
+    var ct_quo = getNumericValue('#ct_quo'); // Use cycle time quote instead of actual
+    var cavity = getNumericValue('#cavity');
+    if (cavity <= 0) {
+        cavity = 1;
+    }
+    var totalHours = getNumericValue('#nwt') + getNumericValue('#ot_mp');
 
-    var hasil = ((3600 / ct_aktual) * (cavity * nwt_plus_ot));
-    $('#target_mc').val(hasil.toFixed(2));
+    if (ct_quo > 0 && totalHours > 0) {
+        var hasil = (3600 / ct_quo) * (cavity * totalHours);
+        $('#target_mc').val(hasil.toFixed(2));
+    } else {
+        $('#target_mc').val('');
+    }
     $('#target_mp').val(0);
+    GrossNett();
 }
 
 // Lot generation function
@@ -311,102 +426,119 @@ function lot(id) {
 
 // Gross and Nett Production calculation
 function GrossNett() {
-    var qty = parseFloat($('#qty').val());
-    var ct_aktual = $('#ct_mc_aktual').val();
-    var cavity = $('#cavity').val();
-    var cavity2 = $('#cavity2').val();
-    var defect = parseFloat($('#amountNG').val());
-    var kalkulasi = qty + defect;
-    var hasil_time = (kalkulasi / cavity) * (ct_aktual / 3600);
+    if(!canCalculateGrossNett()) {
+        clearProductionOutputs();
+        return;
+    }
 
-    console.log("cavity1: " + cavity);
-    console.log("cavity2: " + cavity2);
+    var qty = getNumericValue('#qty');
+    var defect = getNumericValue('#amountNG');
+    var totalShots = qty + defect;
+    var cavity = getNumericValue('#cavity');
+    var cavity2 = getNumericValue('#cavity2');
+    var ctAktual = getNumericValue('#ct_mc_aktual');
 
-    var hasil = hasil_time.toFixed(1);
+    // Set minimum values for cavities to prevent division by zero
+    if (cavity <= 0) {
+        cavity = 1;
+    }
+    if (cavity2 <= 0) {
+        cavity2 = cavity;
+    }
+
+    // Validate required inputs for calculation
+    if (qty <= 0 || totalShots <= 0 || ctAktual <= 0 || cavity <= 0 || cavity2 <= 0) {
+        clearProductionOutputs();
+        return;
+    }
+
+    // Calculate production time (equivalent to 'hasil_time' in admin pages)
+    var productionTime = safeDivision(totalShots, cavity) * safeDivision(ctAktual, 3600);
+    if (!Number.isFinite(productionTime) || productionTime < 0) {
+        productionTime = 0;
+    }
+    // Round to 1 decimal place (equivalent to 'hasil' in admin pages)
+    var hasil = productionTime.toFixed(1);
     $('#production_time').val(hasil);
-    
-    // LT input is in HOURS (user-friendly), stored as MINUTES in database
-    var LT = parseFloat($('#amountLT').val()) || 0; // Loss Time in hours (user input)
-    var LT_new = LT; // Already in hours for calculations
-    var calcDT = $('#amountIdle').val() / 60;
 
-    var nwt = $('#nwt').val();
-    var ot = $('#ot_mp').val();
-    var nwt_new = parseFloat(nwt) + parseInt(ot);
-
-    var calDT_new = nwt_new - hasil;
-    var calDT_new_lagi = calDT_new - LT_new; // LT_new is in hours
-    
-    var raw_nilaiGross = 3600 * (nwt_new - calDT_new_lagi) / qty * cavity;
-    var raw_nilaiGross_2 = 3600 * nwt_new / qty * cavity2;
-    var nilaiGross = Math.round(raw_nilaiGross);
-    var nilaiGross_2 = Math.round(raw_nilaiGross_2);
-    
-    if(calDT_new_lagi < 0) {
-        $('#cal_dt').val(0);
-    } else {
-        $('#cal_dt').val(calDT_new_lagi.toFixed(1));
+    // Handle loss time - zero loss time is valid
+    var lossTimeField = $('#amountLT');
+    var lossTimeHours = getNumericValue(lossTimeField);
+    if (!Number.isFinite(lossTimeHours) || lossTimeHours < 0) {
+        lossTimeHours = 0;
     }
 
-    if(nwt_new == 8) {
-        if(hasil > 8) {
-            $('#gross_produksi').val(nilaiGross_2.toFixed(2));
-        } else {
-            $('#gross_produksi').val(nilaiGross.toFixed(2));
-        }
-    } else {
-        if(hasil > 5) {
-            $('#gross_produksi').val(nilaiGross_2.toFixed(2));
-        } else {
-            $('#gross_produksi').val(nilaiGross.toFixed(2));
-        }
-    }
+    lossTimeField.val(lossTimeHours.toFixed(2));
 
-    // Nett calculation
-    if(defect != 0) {
-        var nilaiNett = nilaiGross;
-    } else {
-        var nilaiNett = Math.round((hasil * 3600 / kalkulasi) * cavity2);
+    var nwtHours = getNumericValue('#nwt');
+    var otHours = getNumericValue('#ot_mp');
+    var totalShiftHours = nwtHours + otHours;
+    var calDtHours = totalShiftHours - parseFloat(hasil) - lossTimeHours;
+    if (!Number.isFinite(calDtHours) || calDtHours < 0) {
+        calDtHours = 0;
     }
-    
-    $('#nett_produksi').val(nilaiNett.toFixed(2));
-    
-    if(LT == 0) { LT = 0; }
-    // LT is already in hours (user input), use directly in calculations
-    var WorkHour = (parseFloat(hasil) + parseFloat(LT)) - parseFloat(ot);
-    var Overtime = ot;
-    var TotStopTime = LT; // Loss Time in hours (same as user input)
+    $('#cal_dt').val(calDtHours.toFixed(1));
+
+    // Calculate work hours using the exact same formula as admin pages
+    // Match admin: WorkHour = (parseFloat(hasil) + parseFloat(LT)) - parseFloat(ot)
+    if (lossTimeHours == 0) { lossTimeHours = 0; }
+    var WorkHour = (parseFloat(hasil) + parseFloat(lossTimeHours)) - parseFloat(otHours);
+    var Overtime = otHours;
+    var TotStopTime = lossTimeHours;
     var OK = qty;
     var ProductCavity = cavity2;
-    
+
+    // Calculate gross and nett production using exact admin page formula
     let grossProduction = 0;
-    if((WorkHour + Overtime - TotStopTime) !== 0) {
+    if ((WorkHour + Overtime - TotStopTime) !== 0) {
         grossProduction = 3600 / ((parseFloat(OK) / parseFloat(ProductCavity)) / (parseFloat(WorkHour) + parseFloat(Overtime)));
     }
 
-    let NProd = 0;
-    if(WorkHour + Overtime - TotStopTime !== 0) {
-        NProd = 3600 / ((parseFloat(OK) / ProductCavity) / (parseFloat(WorkHour) + parseFloat(Overtime) - parseFloat(TotStopTime)));
+    let nettProduction = 0;
+    if (WorkHour + Overtime - TotStopTime !== 0) {
+        nettProduction = 3600 / ((parseFloat(OK) / ProductCavity) / (parseFloat(WorkHour) + parseFloat(Overtime) - parseFloat(TotStopTime)));
     }
 
-    var nilaiGross = customRound(raw_nilaiGross);
-    $('#nett_produksi').val(customRound(NProd).toFixed(2));
-    $('#gross_produksi').val(customRound(grossProduction).toFixed(2));
+    if (!Number.isFinite(grossProduction) || grossProduction < 0) {
+        grossProduction = 0;
+    }
+    if (!Number.isFinite(nettProduction) || nettProduction < 0) {
+        nettProduction = 0;
+    }
 
-    console.log("debug : " + WorkHour, Overtime, TotStopTime, OK, ProductCavity);
-    console.log("debug WorkHour: " + WorkHour);
-    console.log("debug hasil: " + hasil);
-    console.log("debug hasil_time: " + hasil_time);
-    console.log("debug LT: " + LT);
-    console.log("debug Kalkulasi : " + kalkulasi);
-    console.log("debug cavity : " + cavity);
-    console.log("debug ct_aktual : " + ct_aktual);
-    console.log("debug Overtime: " + Overtime);
-    console.log("debug TotStopTime: " + TotStopTime);
-    console.log("debug OK: " + OK);
-    console.log("debug ProductCavity: " + ProductCavity);
-    console.log("result gross: " + grossProduction);
-    console.log("result nett: " + NProd);
+    var roundedGross = customRound(grossProduction);
+    var roundedNett = customRound(nettProduction);
+
+    if (!Number.isFinite(roundedGross)) {
+        console.warn('Gross Production calculation resulted in NaN/Infinity', {
+            qty: qty,
+            defect: defect,
+            cavity: cavity,
+            cavity2: cavity2,
+            ctAktual: ctAktual,
+            availableHours: availableHours,
+            denominator: denominator,
+            rawGross: grossProduction
+        });
+        roundedGross = 0;
+    }
+
+    if (!Number.isFinite(roundedNett)) {
+        console.warn('Nett Production calculation resulted in NaN/Infinity', {
+            qty: qty,
+            defect: defect,
+            cavity: cavity,
+            cavity2: cavity2,
+            ctAktual: ctAktual,
+            effectiveHours: effectiveHours,
+            denominator: denominator,
+            rawNett: nettProduction
+        });
+        roundedNett = 0;
+    }
+
+    writeNumeric('#gross_produksi', roundedGross);
+    writeNumeric('#nett_produksi', roundedNett);
 }
 
 // Custom rounding function
@@ -509,30 +641,48 @@ function total() {
     var sum = 0;
     $('#tableNG > tr').each(function() {
         var price = parseFloat($(this).find('.nilai').val());
-        sum += price;
-        $('#amountNG').val(parseFloat(sum));
+        if(!Number.isNaN(price)) {
+            sum += price;
+        }
     });
+    $('#amountNG').val(Number.isFinite(sum) ? sum : 0);
 }
 
 // Calculate total LT (sum minutes, display as hours)
 function totalLT() {
     var sum_minutes = 0;
-    $('#tableLT > tr').each(function() {
-        var minutes = parseFloat($(this).find('.nilai').val()); // Hidden field stores minutes
-        sum_minutes += minutes;
+    $('#tableLT > tr .nilai').each(function() {
+        var minutes = Number($(this).val());
+        if (Number.isFinite(minutes) && minutes > 0) {
+            sum_minutes += minutes;
+        }
     });
-    var sum_hours = (sum_minutes / 60).toFixed(2); // Convert to hours for display
-    $('#amountLT').val(sum_hours); // Display in hours
-    // Store minutes in hidden field for form submission
-    if($('input[name="user[0][qty_lt]"]').length) {
-        $('input[name="user[0][qty_lt]"]').val(sum_minutes);
+
+    var sum_hours = sum_minutes / 60;
+    $('#amountLT').val(Number.isFinite(sum_hours) ? sum_hours.toFixed(2) : '0.00');
+
+    var hiddenLtField = $('#qty_lt_minutes');
+    if (hiddenLtField.length === 0) {
+        hiddenLtField = $('<input>', {
+            type: 'hidden',
+            id: 'qty_lt_minutes',
+            name: 'user[0][qty_lt]'
+        }).appendTo('form');
     }
+    hiddenLtField.val(sum_minutes);
 }
 
 // Calculate total Start/Stop time
 function totalStartStop(qty) {
     var sum2 = parseFloat($('#amountIdle').val());
-    sum2 += parseFloat(qty);
+    if(Number.isNaN(sum2)) {
+        sum2 = 0;
+    }
+    var addition = parseFloat(qty);
+    if(Number.isNaN(addition)) {
+        addition = 0;
+    }
+    sum2 += addition;
     $('#amountIdle').val(sum2);
 }
 

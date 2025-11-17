@@ -226,10 +226,34 @@ class c_machine extends CI_Controller {
   {
     $divisi = $_SESSION['divisi'];
     $line   = $this->input->post('line');
+    
+    // If line is empty, check if it's in POST array directly
+    if (empty($line) && isset($_POST['line'])) {
+      $line = $_POST['line'];
+    }
+    
+    // If still empty, set default or redirect with error
+    if (empty($line)) {
+      $this->session->set_flashdata('error', 'Line must be selected');
+      redirect('c_machine/index');
+      return;
+    }
+    
+    // Get the data from model
+    $data_tabel = $this->mm->tampil_mesin_aktif('t_no_mesin', $divisi, $line);
+    
+    // Debug: Check if query returned results
+    // Uncomment to debug:
+    // echo "Divisi: " . $divisi . "<br>";
+    // echo "Line: " . $line . "<br>";
+    // echo "Num rows: " . $data_tabel->num_rows() . "<br>";
+    // var_dump($data_tabel->result_array());
+    // die();
+    
     $data = [
                 'data'          => $this->data,
                 'aktif'         => 'machine',
-                'data_tabel'    => $this->mm->tampil_mesin_aktif('t_no_mesin',$divisi,$line),
+                'data_tabel'    => $data_tabel,
                 'kanit'         => $this->op->tampil_select_group('t_operator','jabatan','kanit','nama_operator'),
                 'line'          => $line
               ];

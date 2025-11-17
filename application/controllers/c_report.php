@@ -905,29 +905,29 @@ class c_report extends CI_Controller
 
 	function report_qty_by_cust()
 	{
-		if ($this->input->post('show') == 'Show') {
-			$date = $this->input->post('month');
-			$tahun = $tahuns = substr($date, 0, 4);
-			$bulan = $tahuns = substr($date, 5);
-			$data = [
-				'data'          			=> $this->data,
-				'aktif'          			=> 'global',
-				'rep_qty_by_cust'				=> $this->mr->rep_qtybycust_default($bulan, $tahun),
-				'month'						=> $bulan,
-				'tahun'						=> $tahun
-			];
-		} else {
-			$month = date('m');
-			$tahun = date('Y-m');
-			$tahuns = substr($tahun, 0, 4);
-			$data = [
-				'data'          			=> $this->data,
-				'aktif'          			=> 'global',
-				'rep_qty_by_cust'				=> $this->mr->rep_qtybycust_default($month, $tahun),
-				'month'						=> $month,
-				'tahun'						=> $tahuns
-			];
+		// Get dates from POST or use defaults
+		$start_date = $this->input->post('start_date');
+		$end_date = $this->input->post('end_date');
+		
+		// Validate dates - set defaults if empty
+		if (empty($start_date)) {
+			$start_date = date('Y-m-01');
 		}
+		if (empty($end_date)) {
+			$end_date = date('Y-m-d');
+		}
+		
+		// Ensure dates are in correct format
+		$start_date = date('Y-m-d', strtotime($start_date));
+		$end_date = date('Y-m-d', strtotime($end_date));
+		
+		$data = [
+			'data'          			=> $this->data,
+			'aktif'          			=> 'global',
+			'rep_qty_by_cust'				=> $this->mr->rep_qtybycust_default($start_date, $end_date),
+			'start_date'				=> $start_date,
+			'end_date'					=> $end_date
+		];
 
 		$this->load->view('global/qty_by_cust/report_qty_by_cust', $data);
 	}

@@ -198,6 +198,7 @@
 							  		<div class="form-group">
 											  <label><b>CT MC</b></label>
 											   <input type="text" name="user[0][ct_mc]" id="ct_mc" readonly="" class="form-control">
+											   <input type="hidden" id="ct_quo" value="">
 										</div>
 							  	</div>
 							    <div class="col">
@@ -211,7 +212,7 @@
 							  <div class="row">
 							  	<div class="col">
 										<div class="input-group">
-											   <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" onkeyup="setTarget(this.value)" >
+											   <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" >
 											   <div class="input-group-prepend">
 								          <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
 								        </div>
@@ -401,17 +402,18 @@
 								</div>
 							  	<div class="form-group">
 										
-											  <div class="input-group">
-											  	<div class="input-group-prepend">
-								          <span class="input-group-text" id="inputGroupPrepend2">Total LT</span>
-								         </div>
-											   <input type="text" name="user[0][qty_lt]" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" >
-											   <div class="input-group-prepend">
-								          <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
-								         </div>
-												</div>
-												<input type="hidden" name="" id="amountIdle"  class="form-control" value="0" readonly>
-												<input type="hidden" name="" id="cal_dt"  class="form-control" value="0" readonly>
+								<div class="input-group">
+							   	<div class="input-group-prepend">
+							          <span class="input-group-text" id="inputGroupPrepend2">Total LT</span>
+							         </div>
+							   	<input type="text" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" value="0.00">
+							   	<div class="input-group-prepend">
+							          <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
+							         </div>
+								</div>
+								<input type="hidden" name="user[0][qty_lt]" id="qty_lt_minutes" value="0">
+								<input type="hidden" name="" id="amountIdle"  class="form-control" value="0" readonly>
+								<input type="hidden" name="" id="cal_dt"  class="form-control" value="0" readonly>
 										</div>
 							</div>
 							  </div>
@@ -533,7 +535,11 @@
 	</script>
 	
 	<!-- Optimized external JavaScript with debouncing -->
-	<script src="<?php echo base_url().'assets/scripts/input_dpr.js'?>" type="text/javascript"></script>
+	<?php 
+		$input_dpr_js_path = 'assets/scripts/input_dpr.js';
+		$input_dpr_js_version = @filemtime(FCPATH . $input_dpr_js_path) ?: time();
+	?>
+	<script src="<?php echo base_url($input_dpr_js_path) . '?v=' . $input_dpr_js_version; ?>" type="text/javascript"></script>
 
 
 			</form>

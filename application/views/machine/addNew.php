@@ -83,8 +83,17 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php $id = -1; $no = 0 ; foreach($data_tabel->result_array() as $data)
-                                {  $no++; $id++; ?>
+                                <?php 
+                                $id = -1; 
+                                $no = 0; 
+                                $total = 0;
+                                
+                                // Check if data_tabel exists and has results
+                                if (isset($data_tabel) && $data_tabel && $data_tabel->num_rows() > 0) {
+                                    foreach($data_tabel->result_array() as $data) {
+                                        $no++; 
+                                        $id++; 
+                                ?>
                                 <tr>
                                     <td><?= $data['no_mesin']; ?><input type="hidden" id="no_mesin<?= $id; ?>" name="user[<?= $id; ?>][no_mesin]" value="<?= $data['no_mesin']; ?>"></td>
                                     <td><?= $data['tonnase']; ?><input type="hidden" name="user[<?= $id; ?>][tonnase]" value="<?= $data['tonnase']; ?>"></td>
@@ -119,7 +128,20 @@
 
 
                                 </tr>
-                            <?php  $total = $no; } ?>
+                            <?php  
+                                        $total = $no; 
+                                    } // end foreach
+                                } else {
+                                    // Show message if no data found
+                                    echo '<tr><td colspan="10" style="text-align: center; padding: 20px;">';
+                                    echo '<strong>No machines found for Line: ' . (isset($line) && $line !== '' ? htmlspecialchars($line) : 'N/A') . '</strong><br>';
+                                    echo 'Please check:<br>';
+                                    echo '1. Master data machines are set up for this line<br>';
+                                    echo '2. Machines are marked as active (aktif = 1)<br>';
+                                    echo '3. Machines are assigned to your division (' . (isset($this->data['bagian']) ? htmlspecialchars($this->data['bagian']) : 'N/A') . ')';
+                                    echo '</td></tr>';
+                                }
+                                ?>
                             </tbody>
                         </table>
                         <input type="hidden" name="" id="totalAkhir" value="<?= $total; ?>">
@@ -139,6 +161,11 @@
 
 
 <?php $this->load->view('layout/footer'); ?>
+    <script src="<?= base_url(); ?>template/js/plugins/dataTables/datatables.min.js"></script>
+    <script src="<?= base_url(); ?>template/js/plugins/dataTables/dataTables.bootstrap4.min.js"></script>
+    <script src="<?= base_url(); ?>assets/scripts/jszip.min.js"></script>
+    <script src="<?= base_url(); ?>assets/scripts/dataTables.buttons.min.js"></script>
+    <script src="<?= base_url(); ?>assets/scripts/buttons.html5.min.js"></script>
     <script>
         function getNWT(){
             const days = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
@@ -213,8 +240,49 @@
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'ExampleFile'},
-                    {extend: 'pdf', title: 'ExampleFile'},
+                    {
+                        extend: 'excel',
+                        title: 'Machine_Operation_<?= isset($line) ? 'Line_' . $line . '_' : ''; ?><?= date('Y-m-d'); ?>',
+                        filename: 'Machine_Operation_<?= isset($line) ? 'Line_' . $line . '_' : ''; ?><?= date('Y-m-d'); ?>',
+                        exportOptions: {
+                            format: {
+                                body: function (data, row, column, node) {
+                                    // Extract value from input fields
+                                    var $cell = $(node);
+                                    var $input = $cell.find('input[type="text"]:not([type="hidden"])');
+                                    var $select = $cell.find('select');
+                                    var $hidden = $cell.find('input[type="hidden"]');
+                                    
+                                    // Get visible text content (excluding input/select elements)
+                                    var visibleText = $cell.clone().children('input, select, hidden').remove().end().text().trim();
+                                    
+                                    // If there's visible text content (like machine number, tonnage), use it
+                                    if (visibleText && visibleText.length > 0) {
+                                        return visibleText;
+                                    }
+                                    
+                                    // If there's a text input, get its value
+                                    if ($input.length > 0) {
+                                        return $input.val() || '';
+                                    }
+                                    
+                                    // If there's a select, get selected option text
+                                    if ($select.length > 0) {
+                                        return $select.find('option:selected').text() || '';
+                                    }
+                                    
+                                    // If only hidden inputs, return empty
+                                    if ($hidden.length > 0 && $input.length === 0 && $select.length === 0) {
+                                        return '';
+                                    }
+                                    
+                                    // Otherwise return the cell text content (for regular cells)
+                                    return data.replace(/<[^>]*>/g, '').trim();
+                                }
+                            }
+                        }
+                    },
+                    {extend: 'pdf', title: 'Machine_Operation_<?= isset($line) ? 'Line_' . $line . '_' : ''; ?><?= date('Y-m-d'); ?>'},
 
                     {extend: 'print',
                      customize: function (win){

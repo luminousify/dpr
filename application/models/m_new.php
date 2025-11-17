@@ -101,6 +101,19 @@ class m_new extends CI_Model
                 }
         }
 
+        function tampil_header_monthly()
+        {
+                $query = $this->db->query("SELECT IFNULL(SUM(p.`qty_ok`),0) AS ok , 
+                IFNULL(SUM(p.`qty_ng`),0) AS ng , IFNULL(SUM(p.`qty_lt`),0) AS lt , 
+                IFNULL(SUM(p.`nett_prod`),0) AS nett_prod ,
+                IFNULL(SUM(p.`gross_prod`),0) AS gross_prod  , 
+                IFNULL(SUM(p.`ct_standar`),0) AS ct_standar ,
+                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`gross_prod`),0)*100) AS persen_Gross , 
+                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`nett_prod`),0)*100) AS persen_Nett FROM `productivity_by_day` AS p 
+                WHERE YEAR(p.`tanggal`) = YEAR(CURDATE()) AND MONTH(p.`tanggal`) = MONTH(CURDATE())");
+                return $query;
+        }
+
         function tampil_rekap($tanggal)
         {
                 $query = $this->db->query("SELECT p.`tanggal` , p.`shift`,
@@ -291,8 +304,9 @@ class m_new extends CI_Model
 
         public function tampil_product_bySearch($divisi, $keyword)
         {
+                // Properly group OR conditions with parentheses to ensure divisi filter applies to both conditions
                 $query = "SELECT * FROM t_product AS q
-                        WHERE q.`divisi` = '$divisi' AND q.`kode_product` LIKE '%$keyword%' OR q.`nama_product` LIKE '%$keyword%'";
+                        WHERE q.`divisi` = '$divisi' AND (q.`kode_product` LIKE '%$keyword%' OR q.`nama_product` LIKE '%$keyword%')";
                 $result = $this->db->query($query);
                 if ($result->num_rows() > 0) {
                         return $result;

@@ -49,7 +49,7 @@
                                   <div class="input-group">
                                         <input type="text" class="form-control" name="keyword" placeholder="Cari Kode Product atau Nama Product..." value="<?php echo $keyword ?>" required>
                                         <span class="input-group-btn ml-1">
-                                            <button type="submit" class="btn btn-sm btn-success text-white" name="tampil">
+                                            <button type="submit" class="btn btn-sm btn-success text-white" name="tampil" value="Show">
                                                 <i class="fa fa-search"></i> Search
                                             </button>
                                         </span>
@@ -83,6 +83,7 @@
                         <th style="text-align: center;" class="align-middle"><b>Cyt MC</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Cyt Quo</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Customer</b></th>
+                        <th style="text-align: center;" class="align-middle"><b>Cost</b></th>
 				        <th style="text-align: center;" class="align-middle"><b>Acc ID</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Acc Inv</b></th>
 				        <th style="text-align: center;" class="align-middle"><b>Edit</b></th>
@@ -136,6 +137,9 @@
                                     <td>
                                         <?php echo $data->customer; ?>
                                     </td>
+                                    <td style="text-align: center;">
+                                        <?php echo isset($data->cost) ? $data->cost : '0'; ?>
+                                    </td>
                                      <td>
                                         <?php echo $data->AccID; ?>
                                     </td>
@@ -174,6 +178,7 @@
                         <th><b>Cyt MC</b></th>
                         <th><b>Cyt Quo</b></th>
                         <th><b>Customer</b></th>
+                        <th><b>Cost</b></th>
                         <th><b>Acc ID</b></th>
                         <th><b>Acc Inv</b></th>
                         <th><b>Edit</b></th>

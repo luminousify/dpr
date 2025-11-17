@@ -356,8 +356,8 @@ public function tampil_analisis_byfilter($id_product, $periode)
                 SUM(p.`qty_ng` + p.`qty_ok`) AS tot_produksi_ok_ng,
                 ROUND(SUM(p.`production_time`),1) AS total_prod_time,
                 ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1) AS total_cdt,
-                ROUND(3600 *  (SUM(p.`nwt_mp`) - ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1)) / SUM(p.`qty_ok`) * p.`cavity`) AS gross,
-                ROUND(ROUND(SUM(p.`production_time`),1) * 3600 / SUM(p.`qty_ng` + p.`qty_ok`) * p.`cavity`) AS nett
+                ROUND(CASE WHEN SUM(p.`qty_ok`) > 0 THEN 3600 *  (SUM(p.`nwt_mp`) - ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1)) / SUM(p.`qty_ok`) * p.`cavity` ELSE 0 END) AS gross,
+                ROUND(CASE WHEN SUM(p.`qty_ng` + p.`qty_ok`) > 0 THEN ROUND(SUM(p.`production_time`),1) * 3600 / SUM(p.`qty_ng` + p.`qty_ok`) * p.`cavity` ELSE 0 END) AS nett
                 FROM v_production_op AS p 
                 WHERE p.id_product = '$id_product' AND p.`tanggal` LIKE '%$tahun%'
                 GROUP BY p.`kode_product`, p.`mesin`
@@ -375,8 +375,8 @@ public function tampil_analisis_byfilter($id_product, $periode)
                 SUM(p.`qty_ng` + p.`qty_ok`) AS tot_produksi_ok_ng,
                 ROUND(SUM(p.`production_time`),1) AS total_prod_time,
                 ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1) AS total_cdt,
-                ROUND(3600 *  (SUM(p.`nwt_mp`) - ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1)) / SUM(p.`qty_ok`) * p.`cavity`) AS gross,
-                ROUND(ROUND(SUM(p.`production_time`),1) * 3600 / SUM(p.`qty_ng` + p.`qty_ok`) * p.`cavity`) AS nett
+                ROUND(CASE WHEN SUM(p.`qty_ok`) > 0 THEN 3600 *  (SUM(p.`nwt_mp`) - ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1)) / SUM(p.`qty_ok`) * p.`cavity` ELSE 0 END) AS gross,
+                ROUND(CASE WHEN SUM(p.`qty_ng` + p.`qty_ok`) > 0 THEN ROUND(SUM(p.`production_time`),1) * 3600 / SUM(p.`qty_ng` + p.`qty_ok`) * p.`cavity` ELSE 0 END) AS nett
                 FROM v_production_op AS p 
                 WHERE p.id_product = '$id_product' AND MONTH(p.`tanggal`) = MONTH(CURDATE()) AND YEAR(p.`tanggal`) = YEAR(CURDATE())
                 GROUP BY p.`kode_product`, p.`mesin`

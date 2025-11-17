@@ -126,10 +126,10 @@
                     <td>
                         <select name="user[0][line]" class="form-control" style="width: 110px;">
                             <option value="">-Choose-</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
                         </select>
                     </td>
                 </tr>

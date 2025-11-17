@@ -38,28 +38,21 @@
                         </div>
                         <div class="card-body">
                             <div class="row" style="margin-left:2px;">
-                                <div class="col-6"> <b>Pilih Bulan</b> 
-                                <select name="month" style="width: 300px;" value="<?php echo $tahun ?>" class="form-control">
-                                        <?php
-                                        $tahuns = date('Y')-1;
-                                        $now=date('Y');
-                                        for($i=$tahuns; $i<=$now; $i++){
-                                        $monts = array("01","02","03","04","05","06","07","08","09","10","11","12");
-                                           foreach ($monts as $value) { ?>
-                                                <option value="<?php echo $i.'-'.$value?>" <?php if($value == $month && $i == $tahun) { echo 'selected="selected"';}?>><?php echo $i.'-'.$value; ?></option>;<?php
-                                           }
-                                        }
-                                        ?>
-                                    </select>
-                                    <div class="col-2">
+                                <div class="col-3"> 
+                                    <b>Start Date</b> 
+                                    <input type="date" name="start_date" style="width: 200px;" value="<?php echo !empty($start_date) ? htmlspecialchars($start_date) : date('Y-m-01'); ?>" class="form-control">
+                                </div>
+                                <div class="col-3"> 
+                                    <b>End Date</b> 
+                                    <input type="date" name="end_date" style="width: 200px;" value="<?php echo !empty($end_date) ? htmlspecialchars($end_date) : date('Y-m-d'); ?>" class="form-control">
+                                </div>
+                                <div class="col-2">
                                     <input type="submit" name="show" class="btn btn-primary" style="margin-top:20px;" value="Show">
-                                    </div>
-                            </div>
-                                
+                                </div>
                             </div>
                         </div>
                         <div class="row ml-4">
-                            <p><strong>*Catatan :</strong> Data yang muncul hanya data pada <strong>bulan ini saja</strong>, jika ingin melihat data yang lain silahkan gunakan fitur <strong>filter</strong>.</p>
+                            <p><strong>*Catatan :</strong> Data yang muncul berdasarkan <strong>rentang tanggal</strong> yang dipilih, jika ingin melihat data yang lain silahkan gunakan fitur <strong>filter</strong>.</p>
                         </div>
                     </div>
                     <?= form_close(); ?>
@@ -291,212 +284,221 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
    
 // On document ready, call visualize on the datatable.
 $(document).ready(function() {         
-   var table = document.getElementById('datatable1'),
-   options = {
-         chart: {
-            renderTo: 'container2',
-            defaultSeriesType: 'column'
-         },
-         title: {
-            text: 'Defect By Kategori (<?= $bulan; ?> - <?= $tahun; ?>)'
-         },
-         xAxis: {
-                    //gridLineWidth: 1,
-                    labels: {
-                      style: {
-                        color: '#000',
-                        font: '14px Trebuchet MS, Verdana, sans-serif'
-                      }
-                    }},
-         yAxis: {
-            title: {
-               text: 'Defect (Pcs)'
-            }
-         },
-         tooltip: {
-            formatter: function() {
-               return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +' '+ this.x.toLowerCase();
-            }
-         },
-         colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
-         plotOptions: {
-        column: {
-            dataLabels: {
-                enabled: true
-            },
-            enableMouseTracking: false
-        },
-        line: {
-            dataLabels: {
-                enabled: true
-            },
-            enableMouseTracking: false
-        }
-    },
-    exporting: {
-        enabled: true,
-        fallbackToExportServer: false,
-        buttons: {
-            contextButton: {
-                menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
-            }
-        },
-        sourceWidth: 800,
-        sourceHeight: 400,
-        scale: 2,
-        chartOptions: {
-            chart: {
-                width: 800,
-                height: 400
-            }
-        }
-    }
-      };
+   var table = document.getElementById('datatable1');
+   var container = document.getElementById('container2');
    
-                     
-   Highcharts.visualize(table, options);
+   if (table && container) {
+       var options = {
+             chart: {
+                renderTo: 'container2',
+                defaultSeriesType: 'column'
+             },
+             title: {
+                text: 'Defect By Kategori (<?= isset($start_date) ? date('d M Y', strtotime($start_date)) : date('d M Y'); ?> - <?= isset($end_date) ? date('d M Y', strtotime($end_date)) : date('d M Y'); ?>)'
+             },
+             xAxis: {
+                        //gridLineWidth: 1,
+                        labels: {
+                          style: {
+                            color: '#000',
+                            font: '14px Trebuchet MS, Verdana, sans-serif'
+                          }
+                        }},
+             yAxis: {
+                title: {
+                   text: 'Defect (Pcs)'
+                }
+             },
+             tooltip: {
+                formatter: function() {
+                   return '<b>'+ this.series.name +'</b><br/>'+
+                      this.y +' '+ this.x.toLowerCase();
+                }
+             },
+             colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
+             plotOptions: {
+            column: {
+                dataLabels: {
+                    enabled: true
+                },
+                enableMouseTracking: false
+            },
+            line: {
+                dataLabels: {
+                    enabled: true
+                },
+                enableMouseTracking: false
+            }
+        },
+        exporting: {
+            enabled: true,
+            fallbackToExportServer: false,
+            buttons: {
+                contextButton: {
+                    menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
+                }
+            },
+            sourceWidth: 800,
+            sourceHeight: 400,
+            scale: 2,
+            chartOptions: {
+                chart: {
+                    width: 800,
+                    height: 400
+                }
+            }
+        }
+          };
+       
+       Highcharts.visualize(table, options);
+   }
 });
 
 
 // On document ready, call visualize on the datatable.
 $(document).ready(function() {         
-   var table = document.getElementById('datatable3'),
-   options = {
-         chart: {
-            renderTo: 'container3',
-            defaultSeriesType: 'column'
-         },
-         title: {
-            text: 'Defect By Month'
-         },
-         xAxis: {
-                    //gridLineWidth: 1,
-                    labels: {
-                      style: {
-                        color: '#000',
-                        font: '14px Trebuchet MS, Verdana, sans-serif'
-                      }
-                    }},
-         yAxis: {
-            title: {
-               text: 'Defect (Pcs)'
-            }
-         },
-         tooltip: {
-            formatter: function() {
-               return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +' '+ this.x.toLowerCase();
-            }
-         },
-         colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
-         plotOptions: {
-        column: {
-            dataLabels: {
-                enabled: true
-            },
-            enableMouseTracking: false
-        },
-        line: {
-            dataLabels: {
-                enabled: true
-            },
-            enableMouseTracking: false
-        }
-    },
-    exporting: {
-        enabled: true,
-        fallbackToExportServer: false,
-        buttons: {
-            contextButton: {
-                menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
-            }
-        },
-        sourceWidth: 800,
-        sourceHeight: 400,
-        scale: 2,
-        chartOptions: {
-            chart: {
-                width: 800,
-                height: 400
-            }
-        }
-    }
-      };
+   var table = document.getElementById('datatable3');
+   var container = document.getElementById('container3');
    
-                     
-   Highcharts.visualize(table, options);
+   if (table && container) {
+       var options = {
+             chart: {
+                renderTo: 'container3',
+                defaultSeriesType: 'column'
+             },
+             title: {
+                text: 'Defect By Month'
+             },
+             xAxis: {
+                        //gridLineWidth: 1,
+                        labels: {
+                          style: {
+                            color: '#000',
+                            font: '14px Trebuchet MS, Verdana, sans-serif'
+                          }
+                        }},
+             yAxis: {
+                title: {
+                   text: 'Defect (Pcs)'
+                }
+             },
+             tooltip: {
+                formatter: function() {
+                   return '<b>'+ this.series.name +'</b><br/>'+
+                      this.y +' '+ this.x.toLowerCase();
+                }
+             },
+             colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
+             plotOptions: {
+            column: {
+                dataLabels: {
+                    enabled: true
+                },
+                enableMouseTracking: false
+            },
+            line: {
+                dataLabels: {
+                    enabled: true
+                },
+                enableMouseTracking: false
+            }
+        },
+        exporting: {
+            enabled: true,
+            fallbackToExportServer: false,
+            buttons: {
+                contextButton: {
+                    menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
+                }
+            },
+            sourceWidth: 800,
+            sourceHeight: 400,
+            scale: 2,
+            chartOptions: {
+                chart: {
+                    width: 800,
+                    height: 400
+                }
+            }
+        }
+          };
+       
+       Highcharts.visualize(table, options);
+   }
 });
 
 
 
 // On document ready, call visualize on the datatable.
 $(document).ready(function() {         
-   var table = document.getElementById('datatable4'),
-   options = {
-         chart: {
-            renderTo: 'container4',
-            defaultSeriesType: 'column'
-         },
-         title: {
-            text: 'Defect By Product (<?= $bulan; ?> - <?= $tahun; ?>)'
-         },
-         xAxis: {
-                    //gridLineWidth: 1,
-                    labels: {
-                      style: {
-                        color: '#000',
-                        font: '14px Trebuchet MS, Verdana, sans-serif'
-                      }
-                    }},
-         yAxis: {
-            title: {
-               text: 'Defect (Pcs)'
-            }
-         },
-         tooltip: {
-            formatter: function() {
-               return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +' '+ this.x.toLowerCase();
-            }
-         },
-         colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
-         plotOptions: {
-        column: {
-            dataLabels: {
-                enabled: true
-            },
-            enableMouseTracking: false
-        },
-        line: {
-            dataLabels: {
-                enabled: true
-            },
-            enableMouseTracking: false
-        }
-    },
-    exporting: {
-        enabled: true,
-        fallbackToExportServer: false,
-        buttons: {
-            contextButton: {
-                menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
-            }
-        },
-        sourceWidth: 800,
-        sourceHeight: 400,
-        scale: 2,
-        chartOptions: {
-            chart: {
-                width: 800,
-                height: 400
-            }
-        }
-    }
-      };
+   var table = document.getElementById('datatable4');
+   var container = document.getElementById('container4');
    
-                     
-   Highcharts.visualize(table, options);
+   if (table && container) {
+       var options = {
+             chart: {
+                renderTo: 'container4',
+                defaultSeriesType: 'column'
+             },
+             title: {
+                text: 'Defect By Product (<?= isset($start_date) ? date('d M Y', strtotime($start_date)) : date('d M Y'); ?> - <?= isset($end_date) ? date('d M Y', strtotime($end_date)) : date('d M Y'); ?>)'
+             },
+             xAxis: {
+                        //gridLineWidth: 1,
+                        labels: {
+                          style: {
+                            color: '#000',
+                            font: '14px Trebuchet MS, Verdana, sans-serif'
+                          }
+                        }},
+             yAxis: {
+                title: {
+                   text: 'Defect (Pcs)'
+                }
+             },
+             tooltip: {
+                formatter: function() {
+                   return '<b>'+ this.series.name +'</b><br/>'+
+                      this.y +' '+ this.x.toLowerCase();
+                }
+             },
+             colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
+             plotOptions: {
+            column: {
+                dataLabels: {
+                    enabled: true
+                },
+                enableMouseTracking: false
+            },
+            line: {
+                dataLabels: {
+                    enabled: true
+                },
+                enableMouseTracking: false
+            }
+        },
+        exporting: {
+            enabled: true,
+            fallbackToExportServer: false,
+            buttons: {
+                contextButton: {
+                    menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
+                }
+            },
+            sourceWidth: 800,
+            sourceHeight: 400,
+            scale: 2,
+            chartOptions: {
+                chart: {
+                    width: 800,
+                    height: 400
+                }
+            }
+        }
+          };
+       
+       Highcharts.visualize(table, options);
+   }
 });
 
 
@@ -508,7 +510,7 @@ $(document).ready(function() {
                 $(this).html( '<input type="text" placeholder="Search" style="width:100%" />' );
             } );
             //alert(iniValue);
-            $('.dataTables-example').DataTable({
+            var table = $('.dataTables-example').DataTable({
                 pageLength: 10,
                 responsive: false,
                     // scrollY:        "300px",
@@ -523,7 +525,7 @@ $(document).ready(function() {
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Report Akunting <?php echo $month ?> - <?php echo date('Y') ?>',message: 'Monthly Injection Report <br><?php echo $month ?> - <?php echo date('Y') ?>'},
+                    {extend: 'excel', title: 'Report Akunting <?php echo isset($start_date) ? date('d M Y', strtotime($start_date)) : date('d M Y'); ?> - <?php echo isset($end_date) ? date('d M Y', strtotime($end_date)) : date('d M Y'); ?>',message: 'Report Qty by Customer <br><?php echo isset($start_date) ? date('d M Y', strtotime($start_date)) : date('d M Y'); ?> - <?php echo isset($end_date) ? date('d M Y', strtotime($end_date)) : date('d M Y'); ?>'},
                     {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',

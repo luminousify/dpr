@@ -31,7 +31,8 @@ class m_report extends CI_Model
     $query = "SELECT 
                 p.kode_product,
                 p.nama_product,
-                SUM(po.qty_ok) as total_ok
+                SUM(po.qty_ok) as total_ok,
+                SUM(po.qty_ng) as total_ng
               FROM t_production_op po
               LEFT JOIN t_bom b ON po.id_bom = b.id_bom
               LEFT JOIN t_product p ON b.id_product = p.id_product
@@ -1957,13 +1958,13 @@ WHERE YEAR(q.tanggal) = '$tahun'
     return $query;
   }
 
-  function rep_qtybycust_default($month, $year)
+  function rep_qtybycust_default($start_date, $end_date)
   {
     $query = $this->db->query("
           SELECT YEAR(q.`tanggal`) AS YY,CONCAT(RIGHT(YEAR(q.`tanggal`),2),'-',MONTH(q.`tanggal`)) AS 'YY-MM',MONTH(q.`tanggal`) 'Mo',q.`customer`,
           SUM(q.`qty_ok` + q.`qty_ng`) total,SUM(q.`qty_ok`) ok,SUM(q.`qty_ng`) ng,
 ROUND(SUM(q.`qty_ng`) / SUM(q.`qty_ok` + q.`qty_ng`) * 1000000) AS ppm          
-           FROM t_production_op q WHERE MONTH(q.`tanggal`) = '$month' AND YEAR(q.`tanggal`) = '$year' GROUP BY q.`customer`,MONTH(q.`tanggal`),YEAR(q.`tanggal`) ");
+           FROM t_production_op q WHERE DATE(q.`tanggal`) >= '$start_date' AND DATE(q.`tanggal`) <= '$end_date' GROUP BY q.`customer`,MONTH(q.`tanggal`),YEAR(q.`tanggal`) ");
     return $query;
   }
 

@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="<?php echo base_url().'assets/css/bootstrap-icons.css'?>">
 <script src="<?php echo base_url().'assets/js/jquery-3.3.1.js'?>" type="text/javascript"> 
 </script> 
+<!-- Popper.js must be loaded before Bootstrap and inspinia.js -->
+<script src="<?= base_url(); ?>template/js/popper.min.js"></script>
 <script src="<?php echo base_url().'assets/js/bootstrap.js'?>" type="text/javascript"></script>
 <script src="<?php echo base_url().'assets/js/jquery-ui.js'?>" type="text/javascript"></script>
 
