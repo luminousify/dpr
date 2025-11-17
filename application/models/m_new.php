@@ -30,9 +30,57 @@ class m_new extends CI_Model
 
         function add_action($table)
         {
-                foreach ($_POST['user'] as $user) {
-                        $this->db->insert($table, $user);
+                log_message('debug', 'add_action called for table: ' . $table);
+                log_message('debug', '_POST user data: ' . print_r($_POST['user'], true));
+                
+                if (!isset($_POST['user']) || empty($_POST['user'])) {
+                        log_message('error', 'No user data in _POST');
+                        throw new Exception('Data user tidak ditemukan');
                 }
+                
+                $inserted_count = 0;
+                $errors = array();
+                
+                foreach ($_POST['user'] as $index => $user) {
+                        log_message('debug', 'Processing user index ' . $index . ': ' . print_r($user, true));
+                        
+                        // Skip entries where nama_operator is empty (required field)
+                        if (empty($user['nama_operator']) || trim($user['nama_operator']) === '') {
+                                log_message('debug', 'Skipping index ' . $index . ' - nama_operator is empty');
+                                continue;
+                        }
+                        
+                        // Prepare data for insert - convert empty strings to NULL for optional fields
+                        $insert_data = array();
+                        foreach ($user as $key => $value) {
+                                if ($value === '' || $value === null) {
+                                        $insert_data[$key] = null;
+                                } else {
+                                        $insert_data[$key] = trim($value);
+                                }
+                        }
+                        
+                        log_message('debug', 'Insert data for index ' . $index . ': ' . print_r($insert_data, true));
+                        
+                        if (!$this->db->insert($table, $insert_data)) {
+                                $error = $this->db->error();
+                                log_message('error', 'Database insert failed for index ' . $index . ': ' . print_r($error, true));
+                                $errors[] = "Baris " . ($index + 1) . ": " . $error['message'];
+                        } else {
+                                $inserted_count++;
+                                log_message('debug', 'Successfully inserted row ' . $inserted_count);
+                        }
+                }
+                
+                if (!empty($errors)) {
+                        throw new Exception('Gagal menyimpan beberapa data: ' . implode(' | ', $errors));
+                }
+                
+                if ($inserted_count == 0) {
+                        throw new Exception('Tidak ada data valid yang dapat disimpan. Pastikan field Nama Operator diisi.');
+                }
+                
+                log_message('debug', 'Total inserted: ' . $inserted_count);
         }
 
         function edit_tampil($table, $where, $id)

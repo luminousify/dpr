@@ -168,10 +168,62 @@ class c_new extends CI_Controller
 
   function Add($table, $redirect)
   {
-    if ($this->input->post('simpan')) {
-      $this->mm->add_action($table);
-      $this->session->set_flashdata('tambah', 'Data berhasil di tambahkan!');
-      redirect('c_new/' . $redirect);
+    // Always log to see if function is called
+    error_log('=== Add function called ===');
+    error_log('Table: ' . $table);
+    error_log('Redirect: ' . $redirect);
+    error_log('POST simpan: ' . ($this->input->post('simpan') ? 'YES: ' . $this->input->post('simpan') : 'NO'));
+    error_log('Raw POST: ' . print_r($_POST, true));
+    
+    // Debug: Log what we receive
+    log_message('debug', 'Add function called. Table: ' . $table . ', Redirect: ' . $redirect);
+    log_message('debug', 'POST simpan: ' . ($this->input->post('simpan') ? 'YES' : 'NO'));
+    log_message('debug', 'POST user data: ' . print_r($this->input->post('user'), true));
+    
+    // Check if form was submitted - use POST method AND presence of user data as indicator
+    // (submit button value may not always be included in POST)
+    $is_post_method = $_SERVER['REQUEST_METHOD'] === 'POST';
+    $user_data = $this->input->post('user');
+    $has_raw_user = isset($_POST['user']) && !empty($_POST['user']);
+    
+    error_log('POST method: ' . ($is_post_method ? 'YES' : 'NO'));
+    error_log('Has user data (CI): ' . (!empty($user_data) ? 'YES' : 'NO'));
+    error_log('Has user data (raw): ' . ($has_raw_user ? 'YES' : 'NO'));
+    
+    // Form is submitted if it's a POST request AND we have user data
+    $is_submitted = $is_post_method && (!empty($user_data) || $has_raw_user);
+    error_log('Is submitted: ' . ($is_submitted ? 'YES' : 'NO'));
+    
+    if ($is_submitted) {
+      // Validate that user data exists
+      if (empty($user_data) && !$has_raw_user) {
+        log_message('error', 'No user data in POST. Raw POST: ' . print_r($_POST, true));
+        $this->session->set_flashdata('gagal', 'Tidak ada data yang akan ditambahkan! Silakan tambahkan data terlebih dahulu dengan mengklik tombol + (plus), lalu isi minimal field Nama Operator.');
+        redirect('c_new/master_opAct');
+        return;
+      }
+      
+      try {
+        $this->mm->add_action($table);
+        $this->session->set_flashdata('tambah', 'Data berhasil di tambahkan!');
+        redirect('c_new/' . $redirect);
+      } catch (Exception $e) {
+        // Log the error for debugging
+        log_message('error', 'Add action failed: ' . $e->getMessage());
+        log_message('error', 'POST data: ' . print_r($_POST, true));
+        log_message('error', 'CI Input user: ' . print_r($this->input->post('user'), true));
+        log_message('error', 'Exception trace: ' . $e->getTraceAsString());
+        $this->session->set_flashdata('gagal', 'Gagal menambahkan data: ' . $e->getMessage());
+        redirect('c_new/master_opAct');
+      }
+    } else {
+      // If accessed directly without POST, redirect back to form
+      error_log('No POST simpan found - redirecting');
+      log_message('debug', 'No POST simpan found, redirecting');
+      log_message('debug', 'Request method: ' . $_SERVER['REQUEST_METHOD']);
+      log_message('debug', 'All POST keys: ' . print_r(array_keys($_POST), true));
+      $this->session->set_flashdata('gagal', 'Form tidak terkirim dengan benar. Pastikan Anda mengklik tombol "Add" setelah mengisi data.');
+      redirect('c_new/master_opAct');
     }
   }
 

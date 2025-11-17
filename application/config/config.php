@@ -226,7 +226,7 @@ $config['allow_get_array'] = TRUE;
 | your log files will fill up very fast.
 |
 */
-$config['log_threshold'] = 2;  // Changed to 2 for debugging delete issues
+$config['log_threshold'] = 4;  // Set to 4 to log everything (0=off, 1=error, 2=debug, 3=info, 4=all)
 
 /*
 |--------------------------------------------------------------------------

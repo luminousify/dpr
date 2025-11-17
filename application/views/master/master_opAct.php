@@ -26,6 +26,16 @@
                         </div>
                     </div>
     <div class="ibox-content">
+    <?php if ($this->session->flashdata('gagal')): ?>
+        <div class="alert alert-danger mt-2" style="text-align: center;font-size: 12px" role="alert">
+            <?php echo $this->session->flashdata('gagal'); ?>
+        </div>
+    <?php endif; ?>
+    <?php if ($this->session->flashdata('tambah')): ?>
+        <div class="alert alert-success mt-2" style="text-align: center;font-size: 12px" role="alert">
+            <?php echo $this->session->flashdata('tambah'); ?>
+        </div>
+    <?php endif; ?>
     <div class="table-responsive">
      <?php echo form_open('c_new/'.$action.'/t_operator/master_op'); ?> 
      <!-- ke function add / nama_table / redirect kemana -->
