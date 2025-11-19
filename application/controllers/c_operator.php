@@ -143,12 +143,11 @@ class c_operator extends CI_Controller
 				$id_bom = $this->input->post('user[0][id_bom]');
 				
 				if (!empty($tanggal) && !empty($id_bom)) {
-					// Validate date format (assuming YYYY-MM-DD)
-					if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
-						$this->session->set_flashdata('gagal', 'Format tanggal tidak valid.');
+					// Validate date format and value
+					if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal) || !strtotime($tanggal)) {
+						$this->session->set_flashdata('gagal', 'Format atau nilai tanggal tidak valid.');
 						redirect('login_op/input_dpr');
-					}
-					
+					}					
 					$ambil_tahun = substr($tanggal, 2, 2);
 					$ambil_bulan = substr($tanggal, 5, 2);
 					$ambil_tanggal = substr($tanggal, 8, 2);
