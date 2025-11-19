@@ -237,4 +237,15 @@ class m_operator extends CI_Model
             $query = $this->db->get();
             return $query->result();
         }
+
+        /**
+         * Check if a production ID already exists in t_production_op
+         * @param string $id_production
+         * @return bool
+         */
+        public function id_production_exists($id_production) {
+            $this->db->where('id_production', $id_production);
+            $query = $this->db->get('t_production_op');
+            return $query->num_rows() > 0;
+        }
 }

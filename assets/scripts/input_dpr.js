@@ -168,6 +168,8 @@ $(document).ready(function() {
                 data: "id_bom=" + id_bom,
                 success: function(data) {
                     $("#mesin").html(data);
+                    // Generate id_production after mesin is populated to prevent race condition
+                    lot($('#qty').val());
                 }
             });
 
@@ -183,7 +185,7 @@ $(document).ready(function() {
             });
 
             setTarget();
-            lot($('#qty').val()); // FIX: Ensure id_production is generated when BOM is selected
+            // FIX: lot() is now called in the AJAX success callback to prevent race condition
             GrossNett();
         }
     });

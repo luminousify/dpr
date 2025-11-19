@@ -140,15 +140,38 @@ class c_operator extends CI_Controller
 			// START FIX: Generate id_production on the server if it's empty
 			if (empty($id_production)) {
 				$tanggal = $this->input->post('user[0][tanggal]');
-				$waktu = date('His'); // Current time in His format
 				$id_bom = $this->input->post('user[0][id_bom]');
 				
 				if (!empty($tanggal) && !empty($id_bom)) {
+					// Validate date format (assuming YYYY-MM-DD)
+					if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
+						$this->session->set_flashdata('gagal', 'Format tanggal tidak valid.');
+						redirect('login_op/input_dpr');
+					}
+					
 					$ambil_tahun = substr($tanggal, 2, 2);
 					$ambil_bulan = substr($tanggal, 5, 2);
 					$ambil_tanggal = substr($tanggal, 8, 2);
-					$id_production = $ambil_tahun . $ambil_tanggal . $ambil_bulan . $waktu . $id_bom;
-					$_POST['id_production'] = $id_production;
+					
+					// Generate ID with retry logic for uniqueness
+					$max_attempts = 10;
+					$_POST['id_production'] = null; // Initialize
+					for ($i = 0; $i < $max_attempts; $i++) {
+						// Add a 3-digit counter to ensure uniqueness within the same second
+						$waktu = date('His') . sprintf('%03d', $i);
+						$id_production_candidate = $ambil_tahun . $ambil_tanggal . $ambil_bulan . $waktu . $id_bom;
+						
+						// Check if ID already exists using the new method in the model
+						if (!$this->op->id_production_exists($id_production_candidate)) {
+							$_POST['id_production'] = $id_production_candidate;
+							break;
+						}
+					}
+					
+					if (empty($_POST['id_production'])) {
+						$this->session->set_flashdata('gagal', 'Gagal generate ID unik. Silakan coba lagi.');
+						redirect('login_op/input_dpr');
+					}
 				} else {
 					// If critical data is missing, we cannot generate an ID. Redirect back.
 					$this->session->set_flashdata('gagal', 'Gagal menyimpan: Tanggal atau ID BOM kosong. Silakan coba lagi.');
