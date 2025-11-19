@@ -183,6 +183,7 @@ $(document).ready(function() {
             });
 
             setTarget();
+            lot($('#qty').val()); // FIX: Ensure id_production is generated when BOM is selected
             GrossNett();
         }
     });
@@ -330,6 +331,15 @@ $(document).ready(function() {
     // Form submission handler
     $("#my-form").submit(function(e) {
         GrossNett();
+
+        // FIX: Validate id_production before submission
+        var idProduction = $('#id_production').val();
+        if (!idProduction || idProduction.trim() === '') {
+            alert('ID Produksi tidak tergenerate. Silakan pilih BOM kembali atau refresh halaman.');
+            $("#submit").attr("disabled", false);
+            $('#loading').html('');
+            return false;
+        }
 
         if (!Number.isFinite(Number($('#nett_produksi').val()))) {
             writeNumeric('#nett_produksi', getNumericValue('#nett_produksi'));

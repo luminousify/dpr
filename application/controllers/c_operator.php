@@ -136,6 +136,27 @@ class c_operator extends CI_Controller
 			$_POST['user'][0]['gross_prod'] = $raw_gross;
 			$lotGlobal           = $this->input->post('lotGlobalSave');
 			$id_production       = $this->input->post('id_production');
+
+			// START FIX: Generate id_production on the server if it's empty
+			if (empty($id_production)) {
+				$tanggal = $this->input->post('user[0][tanggal]');
+				$waktu = date('His'); // Current time in His format
+				$id_bom = $this->input->post('user[0][id_bom]');
+				
+				if (!empty($tanggal) && !empty($id_bom)) {
+					$ambil_tahun = substr($tanggal, 2, 2);
+					$ambil_bulan = substr($tanggal, 5, 2);
+					$ambil_tanggal = substr($tanggal, 8, 2);
+					$id_production = $ambil_tahun . $ambil_tanggal . $ambil_bulan . $waktu . $id_bom;
+					$_POST['id_production'] = $id_production;
+				} else {
+					// If critical data is missing, we cannot generate an ID. Redirect back.
+					$this->session->set_flashdata('gagal', 'Gagal menyimpan: Tanggal atau ID BOM kosong. Silakan coba lagi.');
+					redirect('login_op/input_dpr');
+				}
+			}
+			// END FIX
+
 			$this->op->add();
 
 			// --- Cutting Tool Usage: Save selected tools ---
@@ -156,8 +177,15 @@ class c_operator extends CI_Controller
 	}
 
 
-	function hasil_input($id_production)
+	function hasil_input($id_production = null)
 	{
+		// START FIX: Handle missing id_production to prevent fatal error
+		if (empty($id_production)) {
+			$this->session->set_flashdata('gagal', 'ID Produksi tidak ditemukan. Data tidak dapat ditampilkan.');
+			redirect('login_op/list_dpr');
+		}
+		// END FIX
+
 		$data = array(
 			'data_production'            => $this->op->tampil_production($id_production),
 			'data_productionRelease'     => $this->op->tampil_productionRelease($id_production),
