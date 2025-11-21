@@ -38,15 +38,47 @@ class m_new extends CI_Model
                         throw new Exception('Data user tidak ditemukan');
                 }
                 
+                // Determine required field based on table
+                $required_field = null;
+                $required_field_label = '';
+                if ($table === 't_operator') {
+                        $required_field = 'nama_operator';
+                        $required_field_label = 'Nama Operator';
+                } elseif ($table === 't_product') {
+                        // For products, check if either nama_product or kode_product is filled
+                        $required_field = 'nama_product';
+                        $required_field_label = 'Nama Product atau Kode Product';
+                }
+                
                 $inserted_count = 0;
                 $errors = array();
                 
                 foreach ($_POST['user'] as $index => $user) {
                         log_message('debug', 'Processing user index ' . $index . ': ' . print_r($user, true));
                         
-                        // Skip entries where nama_operator is empty (required field)
-                        if (empty($user['nama_operator']) || trim($user['nama_operator']) === '') {
-                                log_message('debug', 'Skipping index ' . $index . ' - nama_operator is empty');
+                        // Validate required field based on table
+                        $is_valid = false;
+                        if ($table === 't_operator') {
+                                // For operator table, nama_operator is required
+                                $is_valid = !empty($user['nama_operator']) && trim($user['nama_operator']) !== '';
+                        } elseif ($table === 't_product') {
+                                // For product table, either nama_product or kode_product must be filled
+                                $is_valid = (!empty($user['nama_product']) && trim($user['nama_product']) !== '') ||
+                                           (!empty($user['kode_product']) && trim($user['kode_product']) !== '');
+                        } else {
+                                // For other tables, check if at least one field has a value
+                                $has_data = false;
+                                foreach ($user as $key => $value) {
+                                        if (!empty($value) && trim($value) !== '') {
+                                                $has_data = true;
+                                                break;
+                                        }
+                                }
+                                $is_valid = $has_data;
+                        }
+                        
+                        if (!$is_valid) {
+                                log_message('debug', 'Skipping index ' . $index . ' - required field(s) empty');
                                 continue;
                         }
                         
@@ -77,7 +109,16 @@ class m_new extends CI_Model
                 }
                 
                 if ($inserted_count == 0) {
-                        throw new Exception('Tidak ada data valid yang dapat disimpan. Pastikan field Nama Operator diisi.');
+                        // Generate table-specific error message
+                        $error_message = 'Tidak ada data valid yang dapat disimpan.';
+                        if ($table === 't_operator') {
+                                $error_message .= ' Pastikan field Nama Operator diisi.';
+                        } elseif ($table === 't_product') {
+                                $error_message .= ' Pastikan field Nama Product atau Kode Product diisi.';
+                        } else {
+                                $error_message .= ' Pastikan minimal satu field diisi.';
+                        }
+                        throw new Exception($error_message);
                 }
                 
                 log_message('debug', 'Total inserted: ' . $inserted_count);
@@ -365,7 +406,7 @@ class m_new extends CI_Model
 
         public function tampil_product_default()
         {
-                $query = "SELECT * FROM t_product AS q WHERE q.`cost` = '1' LIMIT 5";
+                $query = "SELECT * FROM t_product AS q ORDER BY q.`id_product` DESC";
                 $result = $this->db->query($query);
                 if ($result->num_rows() > 0) {
                         return $result;
@@ -377,12 +418,61 @@ class m_new extends CI_Model
         //add master bom
         public function simpanData()
         {
-                foreach ($_POST['user'] as $user) {
-                        $this->db->insert('t_bom', $user);
+                // Validate POST data exists
+                if (!isset($_POST['user']) || empty($_POST['user'])) {
+                        throw new Exception('Data BOM tidak ditemukan');
                 }
 
-                foreach ($_POST['user_detail'] as $user) {
-                        $this->db->insert('t_bom_detail', $user);
+                if (!isset($_POST['user_detail']) || empty($_POST['user_detail'])) {
+                        throw new Exception('Data Release tidak ditemukan');
+                }
+
+                $errors = array();
+                $inserted_bom = 0;
+                $inserted_detail = 0;
+
+                // Insert BOM data
+                foreach ($_POST['user'] as $index => $user) {
+                        // Validate required fields
+                        if (empty($user['id_product']) || empty($user['nama_bom'])) {
+                                $errors[] = "BOM baris " . ($index + 1) . ": id_product dan nama_bom harus diisi";
+                                continue;
+                        }
+
+                        if (!$this->db->insert('t_bom', $user)) {
+                                $error = $this->db->error();
+                                $errors[] = "BOM baris " . ($index + 1) . ": " . $error['message'];
+                        } else {
+                                $inserted_bom++;
+                        }
+                }
+
+                // Insert BOM detail data
+                foreach ($_POST['user_detail'] as $index => $user) {
+                        // Validate required fields
+                        if (empty($user['id_bom']) || empty($user['id_product'])) {
+                                $errors[] = "Release baris " . ($index + 1) . ": id_bom dan id_product harus diisi";
+                                continue;
+                        }
+
+                        if (!$this->db->insert('t_bom_detail', $user)) {
+                                $error = $this->db->error();
+                                $errors[] = "Release baris " . ($index + 1) . ": " . $error['message'];
+                        } else {
+                                $inserted_detail++;
+                        }
+                }
+
+                if (!empty($errors)) {
+                        throw new Exception('Gagal menyimpan beberapa data: ' . implode(' | ', $errors));
+                }
+
+                if ($inserted_bom == 0) {
+                        throw new Exception('Tidak ada data BOM yang berhasil disimpan');
+                }
+
+                if ($inserted_detail == 0) {
+                        throw new Exception('Tidak ada data Release yang berhasil disimpan');
                 }
         }
         //delete master bom

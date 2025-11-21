@@ -198,8 +198,19 @@ class c_new extends CI_Controller
       // Validate that user data exists
       if (empty($user_data) && !$has_raw_user) {
         log_message('error', 'No user data in POST. Raw POST: ' . print_r($_POST, true));
-        $this->session->set_flashdata('gagal', 'Tidak ada data yang akan ditambahkan! Silakan tambahkan data terlebih dahulu dengan mengklik tombol + (plus), lalu isi minimal field Nama Operator.');
-        redirect('c_new/master_opAct');
+        
+        // Generate table-specific error message
+        $error_message = 'Tidak ada data yang akan ditambahkan! Silakan tambahkan data terlebih dahulu dengan mengklik tombol + (plus), lalu isi minimal field ';
+        if ($table === 't_operator') {
+          $error_message .= 'Nama Operator.';
+        } elseif ($table === 't_product') {
+          $error_message .= 'Nama Product atau Kode Product.';
+        } else {
+          $error_message .= 'yang diperlukan.';
+        }
+        
+        $this->session->set_flashdata('gagal', $error_message);
+        redirect('c_new/' . $redirect);
         return;
       }
       
@@ -214,7 +225,7 @@ class c_new extends CI_Controller
         log_message('error', 'CI Input user: ' . print_r($this->input->post('user'), true));
         log_message('error', 'Exception trace: ' . $e->getTraceAsString());
         $this->session->set_flashdata('gagal', 'Gagal menambahkan data: ' . $e->getMessage());
-        redirect('c_new/master_opAct');
+        redirect('c_new/' . $redirect);
       }
     } else {
       // If accessed directly without POST, redirect back to form
@@ -223,7 +234,7 @@ class c_new extends CI_Controller
       log_message('debug', 'Request method: ' . $_SERVER['REQUEST_METHOD']);
       log_message('debug', 'All POST keys: ' . print_r(array_keys($_POST), true));
       $this->session->set_flashdata('gagal', 'Form tidak terkirim dengan benar. Pastikan Anda mengklik tombol "Add" setelah mengisi data.');
-      redirect('c_new/master_opAct');
+      redirect('c_new/' . $redirect);
     }
   }
 
@@ -463,9 +474,29 @@ class c_new extends CI_Controller
 
   public function add_bom()
   {
-    $this->mm->simpanData();
-    $this->session->set_flashdata('success', 'Data Berhasil Di Simpan!');
-    redirect('c_new/master_bom');
+    // Validate POST data exists
+    if (!isset($_POST['user']) || empty($_POST['user'])) {
+      $this->session->set_flashdata('gagal', 'Tidak ada data BOM yang akan ditambahkan!');
+      redirect('c_new/master_bomAct');
+      return;
+    }
+
+    if (!isset($_POST['user_detail']) || empty($_POST['user_detail'])) {
+      $this->session->set_flashdata('gagal', 'Tidak ada data Release yang akan ditambahkan!');
+      redirect('c_new/master_bomAct');
+      return;
+    }
+
+    try {
+      $this->mm->simpanData();
+      $this->session->set_flashdata('success', 'Data Berhasil Di Simpan!');
+      redirect('c_new/master_bom');
+    } catch (Exception $e) {
+      log_message('error', 'BOM save failed: ' . $e->getMessage());
+      log_message('error', 'POST data: ' . print_r($_POST, true));
+      $this->session->set_flashdata('gagal', 'Gagal menyimpan data BOM: ' . $e->getMessage());
+      redirect('c_new/master_bomAct');
+    }
   }
 
   public function master_mesin()
