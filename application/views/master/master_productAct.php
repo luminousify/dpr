@@ -26,6 +26,16 @@
                         </div>
                     </div>
     <div class="ibox-content">
+    <?php if ($this->session->flashdata('gagal')): ?>
+        <div class="alert alert-danger mt-2" style="text-align: center;font-size: 12px" role="alert">
+            <?php echo $this->session->flashdata('gagal'); ?>
+        </div>
+    <?php endif; ?>
+    <?php if ($this->session->flashdata('tambah')): ?>
+        <div class="alert alert-success mt-2" style="text-align: center;font-size: 12px" role="alert">
+            <?php echo $this->session->flashdata('tambah'); ?>
+        </div>
+    <?php endif; ?>
     <div class="table-responsive">
      <?php echo form_open('c_new/'.$action.'/t_product/master_product'); ?> 
      <!-- ke function add / nama_table / redirect kemana -->
@@ -93,7 +103,7 @@
         '<td><input type="text" name="user['+save+'][cyt_mc]" class="form-control"   /></td>' +
         '<td><input type="text" name="user['+save+'][cyt_quo]" class="form-control"   /></td>' +
         '<td><input type="text" name="user['+save+'][customer]" class="form-control"   /></td>' +
-        '<td><select name="user['+save+'][cost]" style="width:80px;" class="form-control"  ><option value="0">0</option><option value="1" selected>1</option></select></td>' +
+        '<td><input type="number" name="user['+save+'][cost]" value="0" step="0.01" min="0" class="form-control" style="width:80px;" /></td>' +
    		'<td><a href="javascript:void(0);" class="remCF"><button class="btn btn-danger btn-circle" type="button"><i class="fa fa-trash"></i></button></a></p></td><tr/>';
 	jQuery('#customFields').append(recRow);
 	}

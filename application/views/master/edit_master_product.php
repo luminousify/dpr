@@ -128,10 +128,7 @@
                                 </div>
                                 <div class="form-group col">
                                   <label for="cost">Cost</label>
-                                    <select name="cost" class="form-control">
-                                        <option <?php if(isset($dp->cost) && $dp->cost =='0'){echo "selected"; } ?> value='0'>0</option>
-                                        <option <?php if(isset($dp->cost) && $dp->cost =='1'){echo "selected"; } ?> value='1'>1</option>
-                                    </select>
+                                    <input type="number" name="cost" class="form-control" value="<?php echo isset($dp->cost) ? $dp->cost : '0'; ?>" step="0.01" min="0">
                                 </div>
 
                             </div>
