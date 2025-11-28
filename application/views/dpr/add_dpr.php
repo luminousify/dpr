@@ -190,7 +190,7 @@
                 <div class="row">
                   <div class="col-md-3">
                     <div class="form-group">
-                        <label><b>CT MC</b></label>
+                        <label><b>CT MC STD</b></label>
                          <input type="text" name="user[0][ct_mc]" id="ct_mc" readonly="" class="form-control">
                          <input type="hidden" id="ct_quo" value="">
                     </div>
@@ -209,17 +209,9 @@
                 </div>
 
                 <div class="row">
-                  <div class="col-md-6">
+                  <div class="col-md-12">
                     <div class="input-group">
                          <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" placeholder="CT MC Aktual" >
-                         <div class="input-group-prepend">
-                          <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
-                        </div>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                   <div class="input-group">
-                         <input type="text" name="user[0][ct_mp_aktual]" id="ct_mp_aktual" class="form-control" aria-describedby="inputGroupPrepend2" value="0" placeholder="CT MP Aktual">
                          <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
                         </div>
