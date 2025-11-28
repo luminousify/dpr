@@ -21,6 +21,22 @@
         margin: 0 auto;
     }
     tr {background-color: white} 
+
+    /* Compact form styles */
+    .card { margin-bottom: 0.5rem !important; }
+    .card-body { padding: 0.75rem !important; }
+    .card-header { padding: 0.5rem 0.75rem !important; }
+    .form-group { margin-bottom: 0.5rem !important; }
+    .form-control { padding: 0.375rem 0.75rem; }
+    .row { margin-bottom: 0.25rem !important; }
+    .container-fluid { padding: 0.5rem; }
+    hr { margin: 0.5rem 0; }
+    
+    /* Compact table styles */
+    .table td, .table th { padding: 0.25rem; }
+    
+    /* Reduce spacing in input groups */
+    .input-group-text { padding: 0.25rem 0.5rem; }
 }
 </style>
 
@@ -56,17 +72,14 @@
               </div>
             <!-- START ROW -->
               <div class="row">
-                <div class="col">
+                <div class="col-md-3">
                   <div class="form-group">
                     <label><b>Tanggal <font style="color: red">*</font></b></label>
-                      <input type="date" name="user[0][tanggal]" class="form-control" required="" id="tanggal" onchange="lot(this.value)">
+                      <input type="date" name="user[0][tanggal]" class="form-control" required="" id="tanggal" onchange="lot(this.value)" value="<?= date('Y-m-d') ?>">
                   </div>
                 </div>
-                
-              </div>
-                <div class="row">
-                  <div class="col">
-                    <div class="form-group">
+                <div class="col-md-3">
+                  <div class="form-group">
                         <label><b>Shift <font style="color: red">*</font></b></label>
                         <select name="user[0][shift]" class="form-control" required="" id="shift" onchange="lot(this.value)">
                           <option value="1">1</option>
@@ -75,22 +88,22 @@
                           </select>
                     </div>
                   </div>
-                  <div class="col">
+                  <div class="col-md-3">
                    <div class="form-group">
-                        <label><b>NWT <font style="color: red">*</font></b></label>
+                        <label><b>WH <font style="color: red">*</font></b></label>
                         <input type="text" name="user[0][nwt_mp]" id="nwt" class="form-control" value="8" required="" pattern="[0-9]+(\.[0-9]+)?" title="Please enter a valid number (e.g., 8 or 8.5). Comma is not allowed." oninput="this.value = this.value.replace(/,/g, '')">
                     </div>
                   </div>
-                  <div class="col">
+                  <div class="col-md-3">
                     <div class="form-group">
                         <label><b>OT</b></label>
                         <input type="text" name="user[0][ot_mp]" id="ot_mp" class="form-control" value="0">
                     </div>
                   </div>
-                </div>
+              </div>
 
                 <div class="row">
-                  <div class="col">
+                  <div class="col-md-3">
                     <div class="form-group">
                         <label><b>Operator <font style="color: red">*</font></b></label>
                         <select name="user[0][operator]" class="form-control" id="operator" required=""  >
@@ -99,7 +112,7 @@
                         </select>
                     </div>
                   </div>
-                  <div class="col">
+                  <div class="col-md-3">
                    <div class="form-group">
                         <label><b>Kanit <font style="color: red">*</font></b></label>
                          <select name="user[0][kanit]" class="form-control" id="kanit" required=""  >
@@ -108,7 +121,7 @@
                         </select>
                     </div>
                   </div>
-                  <div class="col">
+                  <div class="col-md-3">
                     <div class="form-group">
                         <label><b>Group <font style="color: red">*</font></b></label>
                         <select name="user[0][group]" class="form-control" required="">
@@ -119,10 +132,16 @@
                         </select>
                     </div>
                   </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                        <label><b>Mesin <font style="color: red">*</font></b></label>
+                        <input type="text" name="user[0][mesin]" id="mesin" required x-moz-errormessage="Not Empty" class="form-control" onkeyup="lot(this.value)">
+                    </div>
+                  </div>
                 </div>
 
                 <div class="row">
-                  <div class="col-sm-4">
+                  <div class="col-md-4">
                     <div class="form-group">
                         <label><b>No. & Nama BOM <font style="color: red">*</font></b></label>
                         <input type="search form-control" name="" id="barcode_sparepart_code" class="autocompleteBom" style="width: 100%" required="" id="id_bom" onchange="cekNoNamaBOM()">
@@ -130,124 +149,99 @@
                         <input type="hidden" name="user[0][id_bom]" id="id_bomS" readonly="" class="form-control">
                     </div>
                   </div>
-                  <div class="col-sm-2">
-                    <div class="form-group">
-                        <label><b>Mesin <font style="color: red">*</font></b></label>
-<!--                         <select name="user[0][mesin]" id="mesin" style="width:100px;height: 100%" required x-moz-errormessage="Not Empty" class="form-control" onchange="lot(this.value)">
-                        </select> -->
-                        <input type="text" name="user[0][mesin]" id="mesin" required x-moz-errormessage="Not Empty" class="form-control" onkeyup="lot(this.value)">
-                    </div>
-                  </div>
-
-                  <div class="col-sm-2">
+                  <div class="col-md-2">
                     <div class="form-group">
                     <label><b>Proses</b></label>
                         <input type="text" name="user[0][proses]" id="proses" class="form-control" readonly="">
                     </div>
                   </div>
 
-                  <div class="col-sm-4">
+                  <div class="col-md-2">
+                    <div class="form-group">
+                        <label><b>Cavity</b></label>
+                         <input type="text" name="user[0][cavity]" id="cavity" class="form-control" value="1">
+                         <input type="hidden" name="user[0][cavity2]" id="cavity2" class="form-control" >
+                    </div>
+                  </div>
+                  <div class="col-md-4">
                     <div class="form-group">
                     <label><b>Customer</b></label>
                         <input type="text" name="user[0][customer]" id="customer" class="form-control" readonly="">
                     </div>
                   </div>
                 </div>
+
                 <div class="row">
-                  <div class="col">
+                  <div class="col-md-3">
                     <div class="form-group">
                         <label><b>Production Time </b></label>
                         <input type="text" name="user[0][production_time]" id="production_time" class="form-control" readonly>
                     </div>
                   </div>
-                  <div class="col">
+                  <div class="col-md-3">
                     <div class="form-group">
-                        <label><b>Cavity</b></label>
-                         <input type="text" name="user[0][cavity]" id="cavity" class="form-control" value="1">
-                         <input type="hidden" name="user[0][cavity2]" id="cavity2" class="form-control" >
-                        </select>
-                    </div>
-                  </div>
-                  <div class="col">
-                    <div class="form-group">
-                        <label><b>Tooling</b></label>
-                        <input type="text" name="user[0][tooling]" class="form-control">
-                    </div>
-                  </div>
-                  <div class="col">
-                   <div class="form-group">
                         <label><b>Lot Global</b></label>
-                         <p id="lotGlobal"></p>
+                         <p id="lotGlobal" style="margin: 0; font-weight: bold;"></p>
                           <input type="hidden" name="user[0][lot_global]" id="lotGlobalSave" class="form-control">
                     </div>
                   </div>
                 </div>
 
                 <div class="row">
-                  <div class="col">
+                  <div class="col-md-3">
                     <div class="form-group">
                         <label><b>CT MC</b></label>
                          <input type="text" name="user[0][ct_mc]" id="ct_mc" readonly="" class="form-control">
                          <input type="hidden" id="ct_quo" value="">
                     </div>
                   </div>
-                  <div class="col">
-                   <div class="form-group">
-                        <label><b>CT MP</b></label> 
-                         <input type="text" name="user[0][ct_mp]" id="ct_mp" readonly="" class="form-control">
+                  <div class="col-md-3">
+                    <div class="form-group">
+                        <input type="hidden" name="user[0][ct_mp]" id="ct_mp" readonly="" class="form-control">
                     </div>
                   </div>
-                </div>
-
-                <div class="row">
-                  <div class="col">
-                    <div class="input-group">
-                         <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" >
-                         <div class="input-group-prepend">
-                          <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
-                        </div>
-                    </div>
-                  </div>
-                  <div class="col">
-                   <div class="input-group">
-                         <input type="text" name="user[0][ct_mp_aktual]" id="ct_mp_aktual" class="form-control" aria-describedby="inputGroupPrepend2" value="0" >
-                         <div class="input-group-prepend">
-                          <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-
-                 <div class="row">
-                  <div class="col">
-                   <div class="form-group">
+                  <div class="col-md-3">
+                    <div class="form-group">
                         <label><b>Target MC</b></label>
                           <input type="text" name="user[0][target_mc]" id="target_mc" class="form-control" readonly="">
                     </div>
                   </div>
-                  <div class="col">
-                   <div class="form-group">
-                        <label><b>Target MP</b></label>
-                          <input type="text" name="user[0][target]" id="target_mp" class="form-control" readonly="">
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="input-group">
+                         <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" placeholder="CT MC Aktual" >
+                         <div class="input-group-prepend">
+                          <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                   <div class="input-group">
+                         <input type="text" name="user[0][ct_mp_aktual]" id="ct_mp_aktual" class="form-control" aria-describedby="inputGroupPrepend2" value="0" placeholder="CT MP Aktual">
+                         <div class="input-group-prepend">
+                          <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
+                        </div>
                     </div>
                   </div>
                 </div>
-                <div class="row">
-                  <div class="col">
+               <div class="row">
+                  <div class="col-md-6">
                     <div class="form-group">
                         <label><b>Qty OK <font style="color: red">*</font></b></label>
                          <div class="input-group">
-                         <input type="text" name="user[0][qty_ok]" required="" class="form-control" onkeyup="lot(this.value)" aria-describedby="inputGroupPrepend2" id="qty" >
+                         <input type="text" name="user[0][qty_ok]" required="" class="form-control" onkeyup="lot(this.value)" aria-describedby="inputGroupPrepend2" id="qty" placeholder="Qty OK">
                          <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Pcs</span>
                          </div>
                         </div>
                     </div>
                   </div>
-                  <div class="col">
+                  <div class="col-md-6">
                     <div class="form-group">
                         <label><b>Keterangan</b></label>
-                         <input type="text" name="user[0][keterangan]" class="form-control">
+                         <input type="text" name="user[0][keterangan]" class="form-control" placeholder="Keterangan">
                     </div>
                   </div>
                 </div>
@@ -255,9 +249,7 @@
                 <!-- end body -->
                 </div>
             </div>
-          
        <!-- START RELEASE -->
-       <hr>
        <div class="card rounded card border-success mb-3">
             <div class="card-body ">
               <div class="card-header bg-success">
@@ -272,9 +264,7 @@
             </div>
           </div>
        
-
       <!-- START DEFECT -->
-        <hr>
             <div class="card rounded card border-warning mb-3">
             <div class="card-body ">
               <div class="card-header bg-warning">
@@ -411,17 +401,16 @@
           </div>
       
           <!-- end loss time -->
-          <hr>
           <div class="card rounded card border-primary mb-3">
             <div class="card-body ">
              
               <div class="card-header bg-primary">
-                <center> <b>CUTTING TOOL</b></center>
+                <center> <b>TOOLING</b></center>
               </div>
               <div class="row">
                   <div class="col">
                     <div class="form-group">
-                      <label><b>Cutting Tool</b></label>
+                      <label><b>Tooling</b></label>
                       <div class="input-group">
                         <input type="text" id="cutting_tools_code" class="autocompletecuttingtools form-control" placeholder="Input Cutting Tool Code">
                         <input type="hidden" id="cutting_tools_id">
@@ -448,7 +437,6 @@
           </div>
 
           <!-- end save -->
-          <hr>
           <div class="card rounded card border-success mb-3">
             <div class="card-body ">
               <div class="card-header bg-success">
@@ -468,22 +456,20 @@
                     </div>
                   </div>
                 </div>
-              <div class="row">
-                 <div class="col">
+            <div class="row">
+                 <div class="col-md-4">
                     <div class="form-group">
                         <label><b>Runner</b></label>
-                       <input type="text" name="runner" class="form-control">
+                       <input type="text" name="runner" class="form-control" placeholder="Runner">
                     </div>
                   </div>
-
-                  <div class="col">
+                  <div class="col-md-4">
                     <div class="form-group">
                         <label><b>Loss Purge</b></label>
-                       <input type="text" name="user[0][loss_purge]" class="form-control">
+                       <input type="text" name="user[0][loss_purge]" class="form-control" placeholder="Loss Purge">
                     </div>
                   </div>
-                  
-                  <div class="col">
+                  <div class="col-md-4">
                     <div class="form-group">
                         <label><b>Transaksi<font style="color: red">*</font></b></label>
                        <input type="hidden" name="" id="waktu" value="<?= date('his');  ?>">
@@ -492,18 +478,30 @@
                   </div>
               </div>
               <div class="row">
-                <div class="col">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label><b>Mtrl Lot No.</b></label>
-                       <input type="text" name="user[0][lot_material_no]" class="form-control">
+                       <input type="text" name="user[0][lot_material_no]" class="form-control" placeholder="Material Lot Number">
                        <input type="hidden" name="user[0][pic]" value="<?= $data['user_name']; ?>" > 
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                        <label><b>Nett Produksi </b></label>
+                          <input type="text" name="user[0][nett_prod]" id="nett_produksi" class="form-control" readonly="">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                   <div class="form-group">
+                        <label><b>Gross Produksi</b></label>
+                          <input type="text" name="user[0][gross_prod]" id="gross_produksi" class="form-control" readonly="">
                     </div>
                   </div>
                 </div>
                <div class="row justify-content-center">
-                  <div class="col">
-                    <div class="form-group d-flex justify-content-center">
-                        <div id="save"><input type="submit" id="submit" name="" class="btn btn-primary" value="Save"><span id="loading" class="ml-2" style="vertical-align: middle;margin-top:35px"></span></div>
+                  <div class="col-md-12 text-center">
+                    <div class="form-group">
+                        <div id="save"><input type="submit" id="submit" name="" class="btn btn-primary btn-lg px-5" value="Save"><span id="loading" class="ml-2" style="vertical-align: middle;"></span></div>
                     </div>
                   </div>
               </div>
@@ -801,22 +799,17 @@
     function GrossNett()
     {
         var qty = parseFloat($('#qty').val());
-        var ct_aktual = $('#ct_mc_aktual').val();
+        var ct_std = $('#ct_mc').val(); // Changed from ct_aktual to ct_std
         var cavity = $('#cavity').val();
         var cavity2 = $('#cavity2').val();
         var defect = parseFloat($('#amountNG').val());
         var kalkulasi = qty + defect;
-        var hasil_time = (kalkulasi / cavity)*(ct_aktual/3600);
+        var hasil_time = (kalkulasi / cavity)*(ct_std/3600); // Using CT Std instead of CT MC Aktual
 
         console.log("cavity1: " + cavity);
         console.log("cavity2: " + cavity2);
-        //6000 / 11 = 545
-        //17 / 3600 = 0.0047 
-        //2.6
-
-
-
-        //var hasil_time = (kalkulasi / cavity * ct_aktual);
+        console.log("ct_std: " + ct_std); // Added to log CT Std value
+        // Production Time formula using CT Std
         var hasil = hasil_time.toFixed(1);
         $('#production_time').val(hasil);
         //$('#nett_produksi').val(hasil);
