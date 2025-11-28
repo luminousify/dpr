@@ -285,7 +285,7 @@
                     </div>
                   </div>
                   <div class="col">
-                    <button class="btn btn-success" class="form-control" onclick="addNG(); return false;">( + )</button>
+                    <button type="button" class="btn btn-success" class="form-control" onclick="addNG(); return false;">( + )</button>
                   </div>
               
                   <div class="col-sm-12">
@@ -355,7 +355,7 @@
                     </div>
                   </div>
                   <div class="col">
-                    <button class="btn btn-success" class="form-control" onclick="addLT(); return false;">( + )</button>
+                    <button type="button" class="btn btn-success" class="form-control" onclick="addLT(); return false;">( + )</button>
                   </div>
                   <div class="col-sm-12">
                   <div class="table-responsive">
