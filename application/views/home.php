@@ -704,8 +704,8 @@ if ($posisi == 'ppic' || $posisi == 'tm' || $posisi =='qa' || $posisi == 'mixerA
                                         <span>LT</span>
                                     </div>
                                     <div class="kpi-card-body">
-                                        <h1 class="kpi-value"><?= number_format($data['lt']); ?></h1>
-                                        <p class="kpi-label">Loss Time</p>
+                                        <h1 class="kpi-value"><?= number_format($data['lt'], 1); ?></h1>
+                                        <p class="kpi-label">Loss Time (Hours)</p>
                                     </div>
                                 </div>
                             </div>

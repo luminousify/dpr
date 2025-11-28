@@ -1133,4 +1133,73 @@ class c_report extends CI_Controller
     echo "<h4>Sample Joined Data:</h4>";
     echo "<pre>" . print_r($result3, true) . "</pre>";
 }
+
+/**
+ * Regenerate PPM data for a specific year
+ * This function is accessible via URL to trigger PPM data regeneration
+ */
+function regenerate_ppm_data($tahun = null)
+{
+    // Check if user is logged in and has admin privileges
+    if (!isset($_SESSION['user_name']) || $_SESSION['posisi'] != 'Admin') {
+        echo "Access denied. Admin privileges required.";
+        return;
+    }
+    
+    // If year not provided in URL, use current year
+    if ($tahun === null) {
+        $tahun = date('Y');
+    }
+    
+    // Validate year parameter
+    $tahun = (int)$tahun;
+    if ($tahun < 2020 || $tahun > 2030) {
+        echo "Invalid year parameter. Please provide a year between 2020 and 2030.";
+        return;
+    }
+    
+    echo "<h2>Regenerating PPM Data for Year: $tahun</h2>";
+    
+    // Check if PPM data already exists for this year
+    $exists = $this->mr->check_ppm_data_exists($tahun);
+    if ($exists) {
+        echo "<p>PPM data already exists for year $tahun. It will be regenerated.</p>";
+    } else {
+        echo "<p>No existing PPM data found for year $tahun. New data will be generated.</p>";
+    }
+    
+    // Regenerate the data
+    try {
+        $affected_rows = $this->mr->regenerate_ppm_data($tahun);
+        echo "<p style='color: green;'>✓ Successfully regenerated PPM data for $tahun</p>";
+        echo "<p>Number of products processed: $affected_rows</p>";
+        
+        // Check if data was actually created
+        $new_exists = $this->mr->check_ppm_data_exists($tahun);
+        if ($new_exists) {
+            echo "<p style='color: green;'>✓ PPM data verification successful</p>";
+            
+            // Check specifically for November data if 2025
+            if ($tahun == 2025) {
+                $ppm_total = $this->mr->total_prod_qty_and_ppm(2025);
+                if ($ppm_total && $ppm_total->num_rows() > 0) {
+                    $row = $ppm_total->row_array();
+                    if (isset($row['total_prod11']) && $row['total_prod11'] > 0) {
+                        echo "<p style='color: green;'>✓ November 2025 data is now available (Total Production: {$row['total_prod11']})</p>";
+                    } else {
+                        echo "<p style='color: orange;'>⚠ November 2025 data has been processed but shows zero production</p>";
+                    }
+                }
+            }
+        } else {
+            echo "<p style='color: red;'>✗ PPM data verification failed</p>";
+        }
+    } catch (Exception $e) {
+        echo "<p style='color: red;'>✗ Error regenerating PPM data: " . $e->getMessage() . "</p>";
+    }
+    
+    // Add a link back to the dashboard
+    echo "<p><a href='" . base_url() . "c_new/home'>Back to Dashboard</a></p>";
+}
+
 }

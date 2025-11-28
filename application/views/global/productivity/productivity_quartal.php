@@ -445,25 +445,34 @@ $(document).ready(function() {
          yAxis: {
             title: {
                text: 'Productivity %'
-            }
+            },
+            min: 0,
+            max: 100,
+            tickInterval: 10
          },
          tooltip: {
             formatter: function() {
                return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +' '+ this.x.toLowerCase();
+                  this.y +'% '+ this.x.toLowerCase();
             }
          },
          colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
          plotOptions: {
             column: {
                 dataLabels: {
-                    enabled: true
+                    enabled: true,
+                    formatter: function() {
+                        return this.y + '%';
+                    }
                 },
                 enableMouseTracking: false
             },
             line: {
                 dataLabels: {
-                    enabled: true
+                    enabled: true,
+                    formatter: function() {
+                        return this.y + '%';
+                    }
                 },
                 enableMouseTracking: false
             }
@@ -586,7 +595,7 @@ $(document).ready(function() {
          tooltip: {
             formatter: function() {
                return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +' '+ this.x.toLowerCase();
+                  this.y +'% '+ this.x.toLowerCase();
             }
          },
          colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
@@ -655,7 +664,7 @@ $(document).ready(function() {
          tooltip: {
             formatter: function() {
                return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +' '+ this.x.toLowerCase();
+                  this.y +'% '+ this.x.toLowerCase();
             }
          },
          colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],

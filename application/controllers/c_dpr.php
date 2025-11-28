@@ -31,6 +31,12 @@ class c_dpr extends CI_Controller {
       $dari = $this->input->post('tanggal_dari');
       $sampai = $this->input->post('tanggal_sampai');
       $shift = $this->input->post('shift');
+      
+      // Store filter values in session for future use
+      $this->session->set_userdata('dpr_tanggal_dari', $dari);
+      $this->session->set_userdata('dpr_tanggal_sampai', $sampai);
+      $this->session->set_userdata('dpr_shift', $shift);
+      
       $data_tabel = $this->mm->tampil_production_rev($dari , $sampai,$shift);
       
       $data = [
@@ -49,11 +55,31 @@ class c_dpr extends CI_Controller {
       }
       else
       {
-        $dari      = date('Y-m-d');
-        $sampai    = date('Y-m-d');
-        $shift = 'All';
+        // Check for GET parameters (from edit redirect)
+        $get_dari = $this->input->get('tanggal_dari');
+        $get_sampai = $this->input->get('tanggal_sampai');
+        $get_shift = $this->input->get('shift');
         
-        $data_tabel = $this->mm->tampil_production_rev($dari , $sampai , 'All');
+        // Priority 1: GET parameters from redirect
+        if ($get_dari || $get_sampai || $get_shift) {
+          $dari = $get_dari ?: date('Y-m-d');
+          $sampai = $get_sampai ?: date('Y-m-d');
+          $shift = $get_shift ?: 'All';
+        }
+        // Priority 2: Stored session values
+        else if ($this->session->userdata('dpr_tanggal_dari') || $this->session->userdata('dpr_tanggal_sampai')) {
+          $dari = $this->session->userdata('dpr_tanggal_dari') ?: date('Y-m-d');
+          $sampai = $this->session->userdata('dpr_tanggal_sampai') ?: date('Y-m-d');
+          $shift = $this->session->userdata('dpr_shift') ?: 'All';
+        }
+        // Priority 3: Default values
+        else {
+          $dari = date('Y-m-d');
+          $sampai = date('Y-m-d');
+          $shift = 'All';
+        }
+        
+        $data_tabel = $this->mm->tampil_production_rev($dari , $sampai , $shift);
         
         $data = [
                 'data'              => $this->data,

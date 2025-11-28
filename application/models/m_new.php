@@ -154,52 +154,108 @@ class m_new extends CI_Model
         function tampil_header($tanggal)
         {
                 $shift = $this->input->post('shift');
-                $query = $this->db->query("SELECT IFNULL(SUM(p.`qty_ok`),0) AS ok , 
-                IFNULL(SUM(p.`qty_ng`),0) AS ng , IFNULL(SUM(p.`qty_lt`),0) AS lt , 
-                IFNULL(SUM(p.`nett_prod`),0) AS nett_prod ,
-                IFNULL(SUM(p.`gross_prod`),0) AS gross_prod  , 
-                IFNULL(SUM(p.`ct_standar`),0) AS ct_standar ,
-                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`gross_prod`),0)*100) AS persen_Gross , 
-                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`nett_prod`),0)*100) AS persen_Nett FROM `productivity_by_day` AS p 
-                WHERE p.`tanggal` =  '$tanggal'");
+                // Get NG and productivity data from v_productivity_q1
+                $query = $this->db->query("SELECT IFNULL(SUM(p.`total_ok`),0) AS ok , 
+                IFNULL(SUM(p.`total_ng`),0) AS ng , 0 AS lt,
+                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`gross`)) * 100,0) AS persen_Gross , 
+                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`nett`)) * 100,0) AS persen_Nett 
+                FROM `v_productivity_q1` AS p 
+                WHERE DATE(p.`tanggal`) = '$tanggal'
+                AND p.`cyt_quo` IS NOT NULL AND p.`gross` > 0 AND p.`nett` > 0");
+                
+                $result = $query->row();
+                
+                // Get LT data from v_production_op directly (convert from minutes to hours)
+                $lt_query = $this->db->query("SELECT IFNULL(SUM(qty_lt), 0) AS total_lt FROM v_production_op WHERE DATE(tanggal) = '$tanggal'");
+                $lt_result = $lt_query->row();
+                
+                // Update the LT value in the result (convert minutes to hours for display)
+                if ($result && $lt_result) {
+                    $result->lt = round($lt_result->total_lt / 60, 2); // Convert minutes to hours
+                }
+                
                 return $query;
         }
 
         function tampil_header_byshift($tanggal, $shift)
         {
                 if ($shift == 'All') {
-                        $query = $this->db->query("SELECT IFNULL(SUM(p.`qty_ok`),0) AS ok , 
-                IFNULL(SUM(p.`qty_ng`),0) AS ng , IFNULL(SUM(p.`qty_lt`),0) AS lt , 
-                IFNULL(SUM(p.`nett_prod`),0) AS nett_prod ,
-                IFNULL(SUM(p.`gross_prod`),0) AS gross_prod  , 
-                IFNULL(SUM(p.`ct_standar`),0) AS ct_standar ,
-                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`gross_prod`),0)*100) AS persen_Gross , 
-                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`nett_prod`),0)*100) AS persen_Nett FROM `productivity_by_day` AS p 
-                WHERE p.`tanggal` =  '$tanggal'");
+                        // Get NG and productivity data from v_productivity_q1
+                        $query = $this->db->query("SELECT IFNULL(SUM(p.`total_ok`),0) AS ok , 
+                IFNULL(SUM(p.`total_ng`),0) AS ng , 0 AS lt,
+                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`gross`)) * 100,0) AS persen_Gross , 
+                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`nett`)) * 100,0) AS persen_Nett 
+                FROM `v_productivity_q1` AS p 
+                WHERE DATE(p.`tanggal`) = '$tanggal'
+                AND p.`cyt_quo` IS NOT NULL AND p.`gross` > 0 AND p.`nett` > 0");
+                        
+                        $result = $query->row();
+                        
+                        // Get LT data from v_production_op directly (convert from minutes to hours)
+                        $lt_query = $this->db->query("SELECT IFNULL(SUM(qty_lt), 0) AS total_lt FROM v_production_op WHERE DATE(tanggal) = '$tanggal'");
+                        $lt_result = $lt_query->row();
+                        
+                        // Update the LT value in the result (convert minutes to hours for display)
+                        if ($result && $lt_result) {
+                            $result->lt = round($lt_result->total_lt / 60, 2); // Convert minutes to hours
+                        }
+                        
                         return $query;
                 } else {
-                        $query = $this->db->query("SELECT IFNULL(SUM(p.`qty_ok`),0) AS ok , 
-                IFNULL(SUM(p.`qty_ng`),0) AS ng , IFNULL(SUM(p.`qty_lt`),0) AS lt , 
-                IFNULL(SUM(p.`nett_prod`),0) AS nett_prod ,
-                IFNULL(SUM(p.`gross_prod`),0) AS gross_prod  , 
-                IFNULL(SUM(p.`ct_standar`),0) AS ct_standar ,
-                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`gross_prod`),0)*100) AS persen_Gross , 
-                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`nett_prod`),0)*100) AS persen_Nett FROM `productivity_by_day` AS p 
-                WHERE p.`tanggal` =  '$tanggal' AND p.`shift` = '$shift'");
+                        // Get NG and productivity data from v_productivity_q1
+                        $query = $this->db->query("SELECT IFNULL(SUM(p.`total_ok`),0) AS ok , 
+                IFNULL(SUM(p.`total_ng`),0) AS ng , 0 AS lt,
+                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`gross`)) * 100,0) AS persen_Gross , 
+                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`nett`)) * 100,0) AS persen_Nett 
+                FROM `v_productivity_q1` AS p 
+                LEFT JOIN (
+                    SELECT DISTINCT id_bom, shift FROM t_production_op WHERE DATE(tanggal) = '$tanggal' AND shift = '$shift'
+                ) s ON p.id_bom = s.id_bom
+                WHERE DATE(p.`tanggal`) = '$tanggal'
+                AND p.`cyt_quo` IS NOT NULL AND p.`gross` > 0 AND p.`nett` > 0");
+                        
+                        $result = $query->row();
+                        
+                        // Get LT data from v_production_op directly (convert from minutes to hours)
+                        $lt_query = $this->db->query("SELECT IFNULL(SUM(qty_lt), 0) AS total_lt FROM v_production_op WHERE DATE(tanggal) = '$tanggal' AND shift = '$shift'");
+                        $lt_result = $lt_query->row();
+                        
+                        // Update the LT value in the result (convert minutes to hours for display)
+                        if ($result && $lt_result) {
+                            $result->lt = round($lt_result->total_lt / 60, 2); // Convert minutes to hours
+                        }
+                        
                         return $query;
                 }
         }
 
         function tampil_header_monthly()
         {
-                $query = $this->db->query("SELECT IFNULL(SUM(p.`qty_ok`),0) AS ok , 
-                IFNULL(SUM(p.`qty_ng`),0) AS ng , IFNULL(SUM(p.`qty_lt`),0) AS lt , 
-                IFNULL(SUM(p.`nett_prod`),0) AS nett_prod ,
-                IFNULL(SUM(p.`gross_prod`),0) AS gross_prod  , 
-                IFNULL(SUM(p.`ct_standar`),0) AS ct_standar ,
-                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`gross_prod`),0)*100) AS persen_Gross , 
-                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`nett_prod`),0)*100) AS persen_Nett FROM `productivity_by_day` AS p 
-                WHERE YEAR(p.`tanggal`) = YEAR(CURDATE()) AND MONTH(p.`tanggal`) = MONTH(CURDATE())");
+                $current_month = date('m');
+                $current_year = date('Y');
+                
+                // Get NG and productivity data from v_productivity_q1
+                $query = $this->db->query("SELECT 
+                IFNULL(SUM(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.total_ok END), 0) AS ok , 
+                IFNULL(SUM(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.total_ng END), 0) AS ng , 
+                0 AS lt, 
+                IFNULL((AVG(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.cyt_quo END) / AVG(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.gross END)) * 100, 0) AS persen_Gross , 
+                IFNULL((AVG(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.cyt_quo END) / AVG(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.nett END)) * 100, 0) AS persen_Nett 
+                FROM `v_productivity_q1` AS p 
+                WHERE YEAR(p.tanggal) = '$current_year'
+                AND p.cyt_quo IS NOT NULL AND p.gross > 0 AND p.nett > 0");
+                
+                $result = $query->row();
+                
+                // Get LT data from v_production_op directly (convert from minutes to hours)
+                $lt_query = $this->db->query("SELECT IFNULL(SUM(qty_lt), 0) AS total_lt FROM v_production_op WHERE YEAR(tanggal) = '$current_year' AND MONTH(tanggal) = '$current_month'");
+                $lt_result = $lt_query->row();
+                
+                // Update the LT value in the result (convert minutes to hours for display)
+                if ($result && $lt_result) {
+                    $result->lt = round($lt_result->total_lt / 60, 2); // Convert minutes to hours
+                }
+                
                 return $query;
         }
 

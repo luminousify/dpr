@@ -74,7 +74,7 @@ class c_new extends CI_Controller
         // Annual charts data
         'tahun'                 => $current_year,
         'productivity_annual'    => $this->mr->productivity_q1($current_year),
-        'ppm_grafik'            => $this->mr->tampil_grafikPPM($current_year),
+        'ppm_grafik'            => $this->mr->tampil_grafikPPM_fixed($current_year),
         'ppm_total'             => $this->mr->total_prod_qty_and_ppm($current_year),
         'ppm_fcost_target'      => $this->mr->ppm_fcost_target($current_year)
       ];
@@ -117,7 +117,7 @@ class c_new extends CI_Controller
         // Annual charts data
         'tahun'                 => $current_year,
         'productivity_annual'   => $this->mr->productivity_q1($current_year),
-        'ppm_grafik'            => $this->mr->tampil_grafikPPM($current_year),
+        'ppm_grafik'            => $this->mr->tampil_grafikPPM_fixed($current_year),
         'ppm_total'             => $this->mr->total_prod_qty_and_ppm($current_year),
         'ppm_fcost_target'      => $this->mr->ppm_fcost_target($current_year)
       ];
@@ -815,6 +815,22 @@ class c_new extends CI_Controller
 
   function edit_production_reporting_op($id_production)
   {
+    // Store current filter values from session or POST data
+    $tanggal_dari = $this->input->post('tanggal_dari') ?: $this->session->userdata('dpr_tanggal_dari');
+    $tanggal_sampai = $this->input->post('tanggal_sampai') ?: $this->session->userdata('dpr_tanggal_sampai');
+    $shift = $this->input->post('shift') ?: $this->session->userdata('dpr_shift');
+    
+    // Store filter values in session to preserve after edit
+    if ($tanggal_dari) {
+      $this->session->set_userdata('dpr_tanggal_dari', $tanggal_dari);
+    }
+    if ($tanggal_sampai) {
+      $this->session->set_userdata('dpr_tanggal_sampai', $tanggal_sampai);
+    }
+    if ($shift) {
+      $this->session->set_userdata('dpr_shift', $shift);
+    }
+    
     // Load models
     $this->load->model('m_dpr');
     // Get all available cutting tools
@@ -883,7 +899,30 @@ class c_new extends CI_Controller
       $this->session->set_flashdata('error', 'Gagal menghapus data: ' . $e->getMessage());
     }
     
-    redirect('c_dpr/dpr');
+    // Get stored filter values from session to preserve after delete
+    $tanggal_dari = $this->session->userdata('dpr_tanggal_dari');
+    $tanggal_sampai = $this->session->userdata('dpr_tanggal_sampai');
+    $shift = $this->session->userdata('dpr_shift');
+    
+    // Build redirect URL with preserved filter parameters
+    $redirect_url = 'c_dpr/dpr';
+    $params = [];
+    
+    if ($tanggal_dari) {
+      $params[] = 'tanggal_dari=' . urlencode($tanggal_dari);
+    }
+    if ($tanggal_sampai) {
+      $params[] = 'tanggal_sampai=' . urlencode($tanggal_sampai);
+    }
+    if ($shift) {
+      $params[] = 'shift=' . urlencode($shift);
+    }
+    
+    if (!empty($params)) {
+      $redirect_url .= '?' . implode('&', $params);
+    }
+    
+    redirect($redirect_url);
   }
 
   function delete_detail_dl($id_dl, $id_production, $type)
@@ -922,8 +961,30 @@ class c_new extends CI_Controller
     $this->db->cache_delete_all();
     log_message('debug', 'DPR updated and cache cleared for: ' . $id_production);
     
-    // Refresh the same edit page after successful edit
-    redirect(base_url('c_dpr/dpr'));
+    // Get stored filter values from session to preserve after edit
+    $tanggal_dari = $this->session->userdata('dpr_tanggal_dari');
+    $tanggal_sampai = $this->session->userdata('dpr_tanggal_sampai');
+    $shift = $this->session->userdata('dpr_shift');
+    
+    // Build redirect URL with preserved filter parameters
+    $redirect_url = base_url('c_dpr/dpr');
+    $params = [];
+    
+    if ($tanggal_dari) {
+      $params[] = 'tanggal_dari=' . urlencode($tanggal_dari);
+    }
+    if ($tanggal_sampai) {
+      $params[] = 'tanggal_sampai=' . urlencode($tanggal_sampai);
+    }
+    if ($shift) {
+      $params[] = 'shift=' . urlencode($shift);
+    }
+    
+    if (!empty($params)) {
+      $redirect_url .= '?' . implode('&', $params);
+    }
+    
+    redirect($redirect_url);
   }
 
   /*public function edit_dpr_online() {

@@ -854,7 +854,6 @@ SUM((CASE WHEN w.`bulan` = '02' THEN w.`nett` END)) AS total_nett2,
     YEAR(q.tanggal) AS tahun, 
     SUM(
       CASE 
-        WHEN MONTH(CURRENT_DATE()) = 1 THEN 0 
         WHEN MONTH(q.tanggal) = 1 THEN (q.qty_ok + q.qty_ng)
         ELSE 0 
       END
@@ -2573,6 +2572,217 @@ public function get_annual_productivity($year = null)
 
     $query = $this->db->query($sql, array($year));
     return $query->result_array();
+}
+
+/**
+ * Regenerate PPM data for a specific year
+ * This method populates the ppm_detail table with production data
+ */
+public function regenerate_ppm_data($tahun)
+{
+    // Clear existing data for the year
+    $this->db->where('tahun', $tahun);
+    $this->db->delete('ppm_detail');
+    
+    // Get production data grouped by product for each month
+    $sql = "
+        SELECT 
+            pr.kode_product,
+            pr.nama_product,
+            pr.cost,
+            YEAR(po.tanggal) AS tahun,
+            
+            -- Monthly totals for production (OK + NG)
+            SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod1,
+            SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod2,
+            SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod3,
+            SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod4,
+            SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod5,
+            SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod6,
+            SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod7,
+            SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod8,
+            SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod9,
+            SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod10,
+            SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod11,
+            SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.qty_ok + po.qty_ng ELSE 0 END) AS tot_prod12,
+            
+            -- Monthly OK quantities
+            SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.qty_ok ELSE 0 END) AS ok1,
+            SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.qty_ok ELSE 0 END) AS ok2,
+            SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.qty_ok ELSE 0 END) AS ok3,
+            SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.qty_ok ELSE 0 END) AS ok4,
+            SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.qty_ok ELSE 0 END) AS ok5,
+            SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.qty_ok ELSE 0 END) AS ok6,
+            SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.qty_ok ELSE 0 END) AS ok7,
+            SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.qty_ok ELSE 0 END) AS ok8,
+            SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.qty_ok ELSE 0 END) AS ok9,
+            SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.qty_ok ELSE 0 END) AS ok10,
+            SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.qty_ok ELSE 0 END) AS ok11,
+            SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.qty_ok ELSE 0 END) AS ok12,
+            
+            -- Monthly NG quantities
+            SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.qty_ng ELSE 0 END) AS ng1,
+            SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.qty_ng ELSE 0 END) AS ng2,
+            SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.qty_ng ELSE 0 END) AS ng3,
+            SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.qty_ng ELSE 0 END) AS ng4,
+            SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.qty_ng ELSE 0 END) AS ng5,
+            SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.qty_ng ELSE 0 END) AS ng6,
+            SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.qty_ng ELSE 0 END) AS ng7,
+            SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.qty_ng ELSE 0 END) AS ng8,
+            SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.qty_ng ELSE 0 END) AS ng9,
+            SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.qty_ng ELSE 0 END) AS ng10,
+            SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.qty_ng ELSE 0 END) AS ng11,
+            SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.qty_ng ELSE 0 END) AS ng12
+            
+        FROM t_production_op po
+        LEFT JOIN t_bom b ON po.id_bom = b.id_bom
+        LEFT JOIN t_product pr ON b.id_product = pr.id_product
+        WHERE YEAR(po.tanggal) = ? 
+        AND pr.kode_product IS NOT NULL
+        GROUP BY pr.kode_product, pr.nama_product, pr.cost
+    ";
+    
+    $query = $this->db->query($sql, array($tahun));
+    $results = $query->result_array();
+    
+    // Insert processed data into ppm_detail table
+    foreach ($results as $row) {
+        // Calculate totals and percentages
+        $total_prod = $row['tot_prod1'] + $row['tot_prod2'] + $row['tot_prod3'] + $row['tot_prod4'] + 
+                      $row['tot_prod5'] + $row['tot_prod6'] + $row['tot_prod7'] + $row['tot_prod8'] + 
+                      $row['tot_prod9'] + $row['tot_prod10'] + $row['tot_prod11'] + $row['tot_prod12'];
+                      
+        $total_ok = $row['ok1'] + $row['ok2'] + $row['ok3'] + $row['ok4'] + 
+                    $row['ok5'] + $row['ok6'] + $row['ok7'] + $row['ok8'] + 
+                    $row['ok9'] + $row['ok10'] + $row['ok11'] + $row['ok12'];
+                    
+        $total_ng = $row['ng1'] + $row['ng2'] + $row['ng3'] + $row['ng4'] + 
+                    $row['ng5'] + $row['ng6'] + $row['ng7'] + $row['ng8'] + 
+                    $row['ng9'] + $row['ng10'] + $row['ng11'] + $row['ng12'];
+        
+        // Calculate percentage and PPM
+        $total_persen_ng = $total_prod > 0 ? ($total_ng / $total_prod) * 100 : 0;
+        $total_ppm = $total_prod > 0 ? ($total_ng / $total_prod) * 1000000 : 0;
+        
+        // Calculate monthly sub-totals (failure cost)
+        $sub_total1 = ($row['tot_prod1'] > 0) ? $row['tot_prod1'] * $row['cost'] : 0;
+        $sub_total2 = ($row['tot_prod2'] > 0) ? $row['tot_prod2'] * $row['cost'] : 0;
+        $sub_total3 = ($row['tot_prod3'] > 0) ? $row['tot_prod3'] * $row['cost'] : 0;
+        $sub_total4 = ($row['tot_prod4'] > 0) ? $row['tot_prod4'] * $row['cost'] : 0;
+        $sub_total5 = ($row['tot_prod5'] > 0) ? $row['tot_prod5'] * $row['cost'] : 0;
+        $sub_total6 = ($row['tot_prod6'] > 0) ? $row['tot_prod6'] * $row['cost'] : 0;
+        $sub_total7 = ($row['tot_prod7'] > 0) ? $row['tot_prod7'] * $row['cost'] : 0;
+        $sub_total8 = ($row['tot_prod8'] > 0) ? $row['tot_prod8'] * $row['cost'] : 0;
+        $sub_total9 = ($row['tot_prod9'] > 0) ? $row['tot_prod9'] * $row['cost'] : 0;
+        $sub_total10 = ($row['tot_prod10'] > 0) ? $row['tot_prod10'] * $row['cost'] : 0;
+        $sub_total11 = ($row['tot_prod11'] > 0) ? $row['tot_prod11'] * $row['cost'] : 0;
+        $sub_total12 = ($row['tot_prod12'] > 0) ? $row['tot_prod12'] * $row['cost'] : 0;
+        
+        // Prepare data for insertion
+        $data = array(
+            'tahun' => $tahun,
+            'kode_product' => $row['kode_product'],
+            'nama_product' => $row['nama_product'],
+            'tot_prod1' => $row['tot_prod1'],
+            'ok1' => $row['ok1'],
+            'ng1' => $row['ng1'],
+            'tot_prod2' => $row['tot_prod2'],
+            'ok2' => $row['ok2'],
+            'ng2' => $row['ng2'],
+            'tot_prod3' => $row['tot_prod3'],
+            'ok3' => $row['ok3'],
+            'ng3' => $row['ng3'],
+            'tot_prod4' => $row['tot_prod4'],
+            'ok4' => $row['ok4'],
+            'ng4' => $row['ng4'],
+            'tot_prod5' => $row['tot_prod5'],
+            'ok5' => $row['ok5'],
+            'ng5' => $row['ng5'],
+            'tot_prod6' => $row['tot_prod6'],
+            'ok6' => $row['ok6'],
+            'ng6' => $row['ng6'],
+            'tot_prod7' => $row['tot_prod7'],
+            'ok7' => $row['ok7'],
+            'ng7' => $row['ng7'],
+            'tot_prod8' => $row['tot_prod8'],
+            'ok8' => $row['ok8'],
+            'ng8' => $row['ng8'],
+            'tot_prod9' => $row['tot_prod9'],
+            'ok9' => $row['ok9'],
+            'ng9' => $row['ng9'],
+            'tot_prod10' => $row['tot_prod10'],
+            'ok10' => $row['ok10'],
+            'ng10' => $row['ng10'],
+            'tot_prod11' => $row['tot_prod11'],
+            'ok11' => $row['ok11'],
+            'ng11' => $row['ng11'],
+            'tot_prod12' => $row['tot_prod12'],
+            'ok12' => $row['ok12'],
+            'ng12' => $row['ng12'],
+            'total_prod' => $total_prod,
+            'qty_ok' => $total_ok,
+            'qty_ng' => $total_ng,
+            'persen_ng' => $total_persen_ng,
+            'ppm' => $total_ppm,
+            'sub_total1' => $sub_total1,
+            'sub_total2' => $sub_total2,
+            'sub_total3' => $sub_total3,
+            'sub_total4' => $sub_total4,
+            'sub_total5' => $sub_total5,
+            'sub_total6' => $sub_total6,
+            'sub_total7' => $sub_total7,
+            'sub_total8' => $sub_total8,
+            'sub_total9' => $sub_total9,
+            'sub_total10' => $sub_total10,
+            'sub_total11' => $sub_total11,
+            'sub_total12' => $sub_total12
+        );
+        
+        // Insert into ppm_detail table
+        $this->db->insert('ppm_detail', $data);
+    }
+    
+    return count($results);
+}
+
+/**
+ * Check if PPM data exists for a given year
+ */
+public function check_ppm_data_exists($tahun)
+{
+    $this->db->where('tahun', $tahun);
+    $query = $this->db->get('ppm_detail');
+    return $query->num_rows() > 0;
+}
+
+/**
+ * Fixed version of tampil_grafikPPM to avoid current month comparison bug
+ */
+public function tampil_grafikPPM_fixed($tahun)
+{
+    // Build dynamic monthly columns
+    $select_parts = array("YEAR(q.tanggal) AS tahun");
+    
+    for ($month = 1; $month <= 12; $month++) {
+        $select_parts[] = "SUM(CASE WHEN MONTH(q.tanggal) = {$month} THEN (q.qty_ok + q.qty_ng) ELSE 0 END) AS total_prod{$month}";
+        $select_parts[] = "SUM(CASE WHEN MONTH(q.tanggal) = {$month} THEN q.qty_ok ELSE 0 END) AS ok{$month}";
+        $select_parts[] = "SUM(CASE WHEN MONTH(q.tanggal) = {$month} THEN q.qty_ng ELSE 0 END) AS ng{$month}";
+        
+        // Add PPM calculation for each month
+        $select_parts[] = "ROUND(
+            (SUM(CASE WHEN MONTH(q.tanggal) = {$month} THEN q.qty_ng ELSE 0 END) / 
+             NULLIF(SUM(CASE WHEN MONTH(q.tanggal) = {$month} THEN (q.qty_ok + q.qty_ng) ELSE 0 END), 0)
+            ) * 1000000
+        ) AS ppm{$month}";
+    }
+    
+    $sql = "SELECT " . implode(",\n    ", $select_parts) . "
+    FROM v_production_op AS q
+    WHERE YEAR(q.tanggal) = ?
+    GROUP BY YEAR(q.tanggal)";
+    
+    $query = $this->db->query($sql, array($tahun));
+    return $query;
 }
 
 }
