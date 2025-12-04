@@ -143,12 +143,7 @@ class m_new extends CI_Model
                 }
         }
 
-        function cek_login()
-        {
-                if (empty($_SESSION['user_name'])) {
-                        redirect('login_control/index');
-                }
-        }
+  
 
 
         function tampil_header($tanggal)
@@ -633,5 +628,24 @@ class m_new extends CI_Model
                 ];
                 $this->db->where('id', $id);
                 return $this->db->update('cutting_tools', $data);
+        }
+        
+        /**
+         * Check if user is logged in
+         * Redirects to login page if session is not valid
+         */
+        function cek_login()
+        {
+                // Check if user session exists
+                if (!isset($_SESSION['user_name']) || empty($_SESSION['user_name'])) {
+                        redirect('login_control/index');
+                        exit();
+                }
+                
+                // Optional: You can add additional checks here
+                // For example, check if the user exists in the database
+                // or if the session has expired
+                
+                return true;
         }
 }

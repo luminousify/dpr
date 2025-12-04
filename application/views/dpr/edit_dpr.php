@@ -853,7 +853,7 @@
         }
 
         var qty = getNumericValue('#qty');
-        var ct_aktual = getNumericValue('#ct_mc_aktual');
+        var ct_std = getNumericValue('#ct_mc');
         var cavity = getNumericValue('#cavity');
         var cavity2 = getNumericValue('#cavity2');
         var defect = getNumericValue('#amountNG');
@@ -864,7 +864,7 @@
         if (cavity2 <= 0) cavity2 = cavity;
 
         // Validate required inputs for calculation
-        if (qty <= 0 || kalkulasi <= 0 || ct_aktual <= 0 || cavity <= 0 || cavity2 <= 0) {
+        if (qty <= 0 || kalkulasi <= 0 || ct_std <= 0 || cavity <= 0 || cavity2 <= 0) {
             $('#production_time').val('0');
             $('#gross_produksi').val('0.00');
             $('#nett_produksi').val('0.00');
@@ -873,7 +873,7 @@
         }
 
         // Calculate production time safely
-        var hasil_time = safeDivision(kalkulasi, cavity) * safeDivision(ct_aktual, 3600);
+        var hasil_time = safeDivision(kalkulasi, cavity) * safeDivision(ct_std, 3600);
         var hasil = Number.isFinite(hasil_time) ? hasil_time.toFixed(1) : '0';
         $('#production_time').val(hasil);
 

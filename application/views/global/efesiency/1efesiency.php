@@ -48,6 +48,15 @@
                              <p><strong>*Catatan :</strong> Data yang muncul hanya data pada <strong>bulan ini saja</strong>, jika ingin melihat data yang lain silahkan gunakan fitur <strong>filter</strong>.</p>
 
                          </div>
+                         <div class="row mt-3">
+                             <div class="col-12">
+                                 <a href="<?= base_url(); ?>c_report/export_machine_efficiency_excel?year=<?= $tahun; ?>" 
+                                    class="btn btn-success" 
+                                    title="Export Machine Efficiency Data to Excel">
+                                    <i class="fa fa-file-excel-o"></i> Export to Excel
+                                 </a>
+                             </div>
+                         </div>
                      </div>
                      <?= form_close(); ?>
                      <div class="tabs-container">

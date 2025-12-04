@@ -14,10 +14,37 @@
     <link href="<?= base_url(); ?>template/css/animate.css" rel="stylesheet">
     <link href="<?= base_url(); ?>template/css/style.css" rel="stylesheet">
 
+<style>
+.password-toggle-container {
+    position: relative;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 5px;
+    z-index: 10;
+}
+
+.password-toggle-btn:hover {
+    color: #333;
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+}
+</style>
+
 </head>
 
 <body class="gray-bg">
-<?php echo form_open('login_control'); ?>
+<?php echo form_open('login_control/authenticate'); ?>
     <div class="loginColumns animated fadeInDown">
         <div class="row">
 
@@ -46,14 +73,17 @@
                 <div class="ibox-content">
                     <form class="m-t" role="form">
                         <div class="form-group">
-                            <input type="text" class="form-control" placeholder="Username" required="" name="user" onkeyup="getDiv(this.value)">
+                            <input type="text" class="form-control" placeholder="Username" required="" name="username">
                         </div>
                         <div class="form-group">
-                            <input type="password" class="form-control" placeholder="Password" required="" name="pass">
+                            <div class="password-toggle-container">
+                                <input type="password" class="form-control" placeholder="Password" required="" name="password" id="password">
+                                <button type="button" class="password-toggle-btn" onclick="togglePassword()">
+                                    <i class="fa fa-eye" id="toggleIcon"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <input type="text" class="form-control" placeholder="Divisi" required="" readonly="" name="divisi" id="divisi">
-                        </div>
+                        
                         <button type="submit" class="btn btn-primary block full-width m-b">Login</button>
                     </form>
                 </div>
@@ -79,6 +109,22 @@
 
 </html>
 <script type="text/javascript">
+	function togglePassword()
+	{
+		var passwordInput = document.getElementById("password");
+		var toggleIcon = document.getElementById("toggleIcon");
+		
+		if (passwordInput.type === "password") {
+			passwordInput.type = "text";
+			toggleIcon.classList.remove("fa-eye");
+			toggleIcon.classList.add("fa-eye-slash");
+		} else {
+			passwordInput.type = "password";
+			toggleIcon.classList.remove("fa-eye-slash");
+			toggleIcon.classList.add("fa-eye");
+		}
+	}
+	
 	function getDiv(id)
 	{
 		$.ajax({

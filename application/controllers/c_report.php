@@ -124,7 +124,9 @@ class c_report extends CI_Controller
 		$this->load->view('global/productivity/detail_productivity', $data);
 	}
 
-	function sevendata()
+	
+
+	function seven_data_and_table()
 	{
 		if ($this->input->post('show') == 'Show') {
 			$tahun = $this->input->post('tahun');
@@ -137,10 +139,11 @@ class c_report extends CI_Controller
 			'data'          	=> $this->data,
 			'aktif'         	=> 'global',
 			'seventable'  	=> $this->mr->get_7table_data_from_year($tahuns),
+			'seventable_summary' => $this->mr->get_7_table_summary_data($tahuns),
 			'tahun'				=> $tahuns,
 		];
 		
-		$this->load->view('global\7data\7data_list', $data);
+		$this->load->view('global/7data/seven_data_and_table', $data);
 	}
 
 	
@@ -1201,5 +1204,667 @@ function regenerate_ppm_data($tahun = null)
     // Add a link back to the dashboard
     echo "<p><a href='" . base_url() . "c_new/home'>Back to Dashboard</a></p>";
 }
+
+  
+
+    /**
+     * Export enhanced Excel format using PHPExcel library with 2 sheets
+     * Sheet 1: Cycle Time data (existing functionality)
+     * Sheet 2: Average Nett productivity values
+     */
+    public function export_custom_excel()
+    {
+        // Validate year parameter
+        $year = $this->input->post('year') ?: $this->input->get('year');
+        
+        if (!$year || !is_numeric($year) || $year < 2000 || $year > 2100) {
+            $year = date('Y');
+        }
+        
+        // Get data from model for all three sheets
+        $ct_data_result = $this->mr->get_custom_excel_export_data($year);
+        $nett_data_result = $this->mr->get_average_nett_excel_data($year);
+        $gross_data_result = $this->mr->get_average_gross_excel_data($year);
+        
+        // Debug: Log the first row of data to see what we're getting
+        if ($ct_data_result->num_rows() > 0) {
+            $first_row = $ct_data_result->row_array();
+            log_message('debug', 'First CT data row: ' . print_r($first_row, true));
+        }
+        
+        if ($ct_data_result->num_rows() == 0 && $nett_data_result->num_rows() == 0 && $gross_data_result->num_rows() == 0) {
+            $this->session->set_flashdata('error', 'No data found for year ' . $year);
+            redirect('c_report/productivity_detail_by_part_by_month');
+            return;
+        }
+        
+        // Save current error reporting level and suppress deprecation warnings
+        $old_error_reporting = error_reporting();
+        error_reporting($old_error_reporting & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+        
+        try {
+            // Load the PHPExcel library
+            $this->load->library('Excel');
+            
+            // Create new PHPExcel object
+            $objPHPExcel = new PHPExcel();
+            
+            // Set document properties
+            $objPHPExcel->getProperties()->setCreator("DPR System")
+                                     ->setTitle("Productivity Report " . $year)
+                                     ->setSubject("Annual Productivity Analysis")
+                                     ->setDescription("Annual productivity report with cycle time analysis, average nett, and average gross values for year " . $year);
+            
+            // ========== SHEET 1: CYCLE TIME DATA ==========
+            // Set active sheet to first sheet
+            $objPHPExcel->setActiveSheetIndex(0);
+            $sheet1 = $objPHPExcel->getActiveSheet();
+            $sheet1->setTitle('Cycle Time ' . $year);
+            
+            // Define headers for sheet 1
+            $headers = [
+                'YY', 'Product ID', 'Product Name', 'Cycle Time Standard', 'Cycle Time Quote', 
+                'Tool', 
+                '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'
+            ];
+            
+            // Set column headers (starting from A1)
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet1->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Style the header row
+            $headerStyle = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => 'FFFFFF'),
+                ),
+                'fill' => array(
+                    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                    'color' => array('rgb' => '4472C4'),
+                ),
+                'alignment' => array(
+                    'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+                )
+            );
+            
+            // Apply header style to all header columns
+            $sheet1->getStyle('A1:S1')->applyFromArray($headerStyle);
+            
+            // Write CT data rows
+            $rowNum = 2;
+            foreach ($ct_data_result->result_array() as $data) {
+                $col = 'A';
+                
+                // Add basic data
+                $sheet1->setCellValue($col++ . $rowNum, $data['YY']);
+                $sheet1->setCellValue($col++ . $rowNum, $data['Product_ID']);
+                $sheet1->setCellValue($col++ . $rowNum, $data['Product_Name']);
+                
+                // Add numeric fields with proper formatting
+                $cycleTimeStandard = is_numeric($data['Cycle_Time_Standard']) ? floatval($data['Cycle_Time_Standard']) : 0;
+                $cycleTimeQuote = is_numeric($data['Cycle_Time_Quote']) ? floatval($data['Cycle_Time_Quote']) : 0;
+                $toolValue = $data['Tool'] == '-' ? '-' : strval($data['Tool']);
+                
+                $sheet1->setCellValue($col++ . $rowNum, $cycleTimeStandard > 0 ? $cycleTimeStandard : 0);
+                $sheet1->setCellValue($col++ . $rowNum, $cycleTimeQuote > 0 ? $cycleTimeQuote : 0);
+                $sheet1->setCellValue($col++ . $rowNum, $toolValue);
+                
+                // Add monthly CT actual data (01-12)
+                for ($month = 1; $month <= 12; $month++) {
+                    $monthKey = sprintf('%02d', $month);
+                    $value = isset($data[$monthKey]) ? $data[$monthKey] : 0;
+                    
+                    if (is_numeric($value) && $value > 0) {
+                        // Convert to integer to ensure whole numbers
+                        $sheet1->setCellValue($col++ . $rowNum, intval(round($value)));
+                    } else {
+                        $sheet1->setCellValue($col++ . $rowNum, 0);
+                    }
+                }
+                
+                $rowNum++;
+            }
+            
+            // Auto-size columns for better readability
+            foreach (range('A', 'S') as $columnID) {
+                $sheet1->getColumnDimension($columnID)->setAutoSize(true);
+            }
+            
+            // ========== SHEET 2: AVERAGE NETT DATA ==========
+            // Create second sheet
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(1);
+            $sheet2 = $objPHPExcel->getActiveSheet();
+            $sheet2->setTitle('Average Nett ' . $year);
+            
+            // Set column headers (same as sheet 1)
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet2->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Apply header style to sheet 2
+            $sheet2->getStyle('A1:S1')->applyFromArray($headerStyle);
+            
+            // Write average nett data rows
+            $rowNum = 2;
+            foreach ($nett_data_result->result_array() as $data) {
+                $col = 'A';
+                
+                // Add basic data
+                $sheet2->setCellValue($col++ . $rowNum, $data['YY']);
+                $sheet2->setCellValue($col++ . $rowNum, $data['Product_ID']);
+                $sheet2->setCellValue($col++ . $rowNum, $data['Product_Name']);
+                
+                // Add numeric fields with proper formatting
+                $cycleTimeStandard = is_numeric($data['Cycle_Time_Standard']) ? floatval($data['Cycle_Time_Standard']) : 0;
+                $cycleTimeQuote = is_numeric($data['Cycle_Time_Quote']) ? floatval($data['Cycle_Time_Quote']) : 0;
+                $toolValue = $data['Tool'] == '-' ? '-' : strval($data['Tool']);
+                
+                $sheet2->setCellValue($col++ . $rowNum, $cycleTimeStandard > 0 ? $cycleTimeStandard : 0);
+                $sheet2->setCellValue($col++ . $rowNum, $cycleTimeQuote > 0 ? $cycleTimeQuote : 0);
+                $sheet2->setCellValue($col++ . $rowNum, $toolValue);
+                
+                // Add monthly average nett data (01-12)
+                for ($month = 1; $month <= 12; $month++) {
+                    $monthKey = sprintf('%02d', $month);
+                    $value = isset($data[$monthKey]) ? $data[$monthKey] : 0;
+                    
+                    if (is_numeric($value) && $value > 0) {
+                        // Convert to integer to ensure whole numbers
+                        $sheet2->setCellValue($col++ . $rowNum, intval(round($value)));
+                    } else {
+                        $sheet2->setCellValue($col++ . $rowNum, 0);
+                    }
+                }
+                
+                $rowNum++;
+            }
+            
+            // Auto-size columns for sheet 2
+            foreach (range('A', 'S') as $columnID) {
+                $sheet2->getColumnDimension($columnID)->setAutoSize(true);
+            }
+            
+            // ========== SHEET 3: AVERAGE GROSS DATA ==========
+            // Create third sheet
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(2);
+            $sheet3 = $objPHPExcel->getActiveSheet();
+            $sheet3->setTitle('Average Gross ' . $year);
+            
+            // Set column headers (same as sheets 1 & 2)
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet3->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Apply header style to sheet 3
+            $sheet3->getStyle('A1:S1')->applyFromArray($headerStyle);
+            
+            // Write average gross data rows
+            $rowNum = 2;
+            foreach ($gross_data_result->result_array() as $data) {
+                $col = 'A';
+                
+                // Add basic data
+                $sheet3->setCellValue($col++ . $rowNum, $data['YY']);
+                $sheet3->setCellValue($col++ . $rowNum, $data['Product_ID']);
+                $sheet3->setCellValue($col++ . $rowNum, $data['Product_Name']);
+                
+                // Add numeric fields with proper formatting
+                $cycleTimeStandard = is_numeric($data['Cycle_Time_Standard']) ? floatval($data['Cycle_Time_Standard']) : 0;
+                $cycleTimeQuote = is_numeric($data['Cycle_Time_Quote']) ? floatval($data['Cycle_Time_Quote']) : 0;
+                $toolValue = $data['Tool'] == '-' ? '-' : strval($data['Tool']);
+                
+                $sheet3->setCellValue($col++ . $rowNum, $cycleTimeStandard > 0 ? $cycleTimeStandard : 0);
+                $sheet3->setCellValue($col++ . $rowNum, $cycleTimeQuote > 0 ? $cycleTimeQuote : 0);
+                $sheet3->setCellValue($col++ . $rowNum, $toolValue);
+                
+                // Add monthly average gross data (01-12)
+                for ($month = 1; $month <= 12; $month++) {
+                    $monthKey = sprintf('%02d', $month);
+                    $value = isset($data[$monthKey]) ? $data[$monthKey] : 0;
+                    
+                    if (is_numeric($value) && $value > 0) {
+                        // Convert to integer to ensure whole numbers
+                        $sheet3->setCellValue($col++ . $rowNum, intval(round($value)));
+                    } else {
+                        $sheet3->setCellValue($col++ . $rowNum, 0);
+                    }
+                }
+                
+                $rowNum++;
+            }
+            
+            // Auto-size columns for sheet 3
+            foreach (range('A', 'S') as $columnID) {
+                $sheet3->getColumnDimension($columnID)->setAutoSize(true);
+            }
+            
+            // Set active sheet back to first sheet
+            $objPHPExcel->setActiveSheetIndex(0);
+            
+            // Set headers for download
+            $filename = 'Productivity_Report_' . $year . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            header('Cache-Control: max-age=1');
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header('Pragma: public');
+            
+            // Create writer and output to browser
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+            $objWriter->save('php://output');
+            exit;
+            
+        } catch (Exception $e) {
+            // Restore error reporting in case of exception
+            error_reporting($old_error_reporting);
+            log_message('error', 'Excel export failed: ' . $e->getMessage());
+            
+            // Show error message
+            $this->session->set_flashdata('error', 'Excel export failed: ' . $e->getMessage() . '. Please try again or contact support.');
+            redirect('c_report/productivity_quartal');
+            return;
+        } finally {
+            // Always restore error reporting
+            error_reporting($old_error_reporting);
+        }
+    }
+
+    /**
+     * Export production quantity data to Excel with 3 sheets
+     * Sheet 1: Total Production quantity
+     * Sheet 2: Total OK quantity
+     * Sheet 3: Total NG quantity
+     */
+    public function export_production_qty_excel()
+    {
+        // Validate year parameter
+        $year = $this->input->post('year') ?: $this->input->get('year');
+        
+        if (!$year || !is_numeric($year) || $year < 2000 || $year > 2100) {
+            $year = date('Y');
+        }
+        
+        // Get data from model for all three sheets
+        $total_prod_data_result = $this->mr->get_production_qty_excel_data($year);
+        $ok_data_result = $this->mr->get_ok_qty_excel_data($year);
+        $ng_data_result = $this->mr->get_ng_qty_excel_data($year);
+        
+        if ($total_prod_data_result->num_rows() == 0 && $ok_data_result->num_rows() == 0 && $ng_data_result->num_rows() == 0) {
+            $this->session->set_flashdata('error', 'No data found for year ' . $year);
+            redirect('c_report/production_qty_quartal');
+            return;
+        }
+        
+        // Save current error reporting level and suppress deprecation warnings
+        $old_error_reporting = error_reporting();
+        error_reporting($old_error_reporting & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+        
+        try {
+            // Load the PHPExcel library
+            $this->load->library('Excel');
+            
+            // Create new PHPExcel object
+            $objPHPExcel = new PHPExcel();
+            
+            // Set document properties
+            $objPHPExcel->getProperties()->setCreator("DPR System")
+                                     ->setTitle("Production Quantity Report " . $year)
+                                     ->setSubject("Annual Production Quantity Analysis")
+                                     ->setDescription("Annual production quantity report with total, OK, and NG values for year " . $year);
+            
+            // Define headers
+            $headers = [
+                'Product ID', 'Product Name', 
+                '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'
+            ];
+            
+            // Style the header row
+            $headerStyle = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => 'FFFFFF'),
+                ),
+                'fill' => array(
+                    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                    'color' => array('rgb' => '4472C4'),
+                ),
+                'alignment' => array(
+                    'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+                )
+            );
+            
+            // ========== SHEET 1: TOTAL PRODUCTION DATA ==========
+            $objPHPExcel->setActiveSheetIndex(0);
+            $sheet1 = $objPHPExcel->getActiveSheet();
+            $sheet1->setTitle('Total Production ' . $year);
+            
+            // Set column headers
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet1->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Apply header style
+            $sheet1->getStyle('A1:N1')->applyFromArray($headerStyle);
+            
+            // Write data rows
+            $rowNum = 2;
+            foreach ($total_prod_data_result->result_array() as $data) {
+                $col = 'A';
+                $sheet1->setCellValue($col++ . $rowNum, $data['Product_ID']);
+                $sheet1->setCellValue($col++ . $rowNum, $data['Product_Name']);
+                
+                // Add monthly data (01-12)
+                for ($month = 1; $month <= 12; $month++) {
+                    $monthKey = sprintf('%02d', $month);
+                    $value = isset($data[$monthKey]) ? $data[$monthKey] : 0;
+                    $sheet1->setCellValue($col++ . $rowNum, is_numeric($value) ? intval($value) : 0);
+                }
+                $rowNum++;
+            }
+            
+            // Auto-size columns
+            foreach (range('A', 'N') as $columnID) {
+                $sheet1->getColumnDimension($columnID)->setAutoSize(true);
+            }
+            
+            // ========== SHEET 2: TOTAL OK DATA ==========
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(1);
+            $sheet2 = $objPHPExcel->getActiveSheet();
+            $sheet2->setTitle('Total OK ' . $year);
+            
+            // Set column headers (same as sheet 1)
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet2->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Apply header style
+            $sheet2->getStyle('A1:N1')->applyFromArray($headerStyle);
+            
+            // Write OK data rows
+            $rowNum = 2;
+            foreach ($ok_data_result->result_array() as $data) {
+                $col = 'A';
+                $sheet2->setCellValue($col++ . $rowNum, $data['Product_ID']);
+                $sheet2->setCellValue($col++ . $rowNum, $data['Product_Name']);
+                
+                // Add monthly OK data (01-12)
+                for ($month = 1; $month <= 12; $month++) {
+                    $monthKey = sprintf('%02d', $month);
+                    $value = isset($data[$monthKey]) ? $data[$monthKey] : 0;
+                    $sheet2->setCellValue($col++ . $rowNum, is_numeric($value) ? intval($value) : 0);
+                }
+                $rowNum++;
+            }
+            
+            // Auto-size columns for sheet 2
+            foreach (range('A', 'N') as $columnID) {
+                $sheet2->getColumnDimension($columnID)->setAutoSize(true);
+            }
+            
+            // ========== SHEET 3: TOTAL NG DATA ==========
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(2);
+            $sheet3 = $objPHPExcel->getActiveSheet();
+            $sheet3->setTitle('Total NG ' . $year);
+            
+            // Set column headers (same as sheets 1 & 2)
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet3->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Apply header style to sheet 3
+            $sheet3->getStyle('A1:N1')->applyFromArray($headerStyle);
+            
+            // Write NG data rows
+            $rowNum = 2;
+            foreach ($ng_data_result->result_array() as $data) {
+                $col = 'A';
+                $sheet3->setCellValue($col++ . $rowNum, $data['Product_ID']);
+                $sheet3->setCellValue($col++ . $rowNum, $data['Product_Name']);
+                
+                // Add monthly NG data (01-12)
+                for ($month = 1; $month <= 12; $month++) {
+                    $monthKey = sprintf('%02d', $month);
+                    $value = isset($data[$monthKey]) ? $data[$monthKey] : 0;
+                    $sheet3->setCellValue($col++ . $rowNum, is_numeric($value) ? intval($value) : 0);
+                }
+                $rowNum++;
+            }
+            
+            // Auto-size columns for sheet 3
+            foreach (range('A', 'N') as $columnID) {
+                $sheet3->getColumnDimension($columnID)->setAutoSize(true);
+            }
+            
+            // Set active sheet back to first sheet
+            $objPHPExcel->setActiveSheetIndex(0);
+            
+            // Set headers for download
+            $filename = 'Production_Qty_Report_' . $year . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            header('Cache-Control: max-age=1');
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header('Pragma: public');
+            
+            // Create writer and output to browser
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+            $objWriter->save('php://output');
+            exit;
+            
+        } catch (Exception $e) {
+            // Restore error reporting in case of exception
+            error_reporting($old_error_reporting);
+            log_message('error', 'Production Qty Excel export failed: ' . $e->getMessage());
+            
+            // Show error message
+            $this->session->set_flashdata('error', 'Excel export failed: ' . $e->getMessage() . '. Please try again or contact support.');
+            redirect('c_report/production_qty_quartal');
+            return;
+        } finally {
+            // Always restore error reporting
+            error_reporting($old_error_reporting);
+        }
+    }
+
+    /**
+     * Export machine efficiency data to Excel with 2 sheets
+     * Sheet 1: Machine efficiency hours by tonnage
+     * Sheet 2: Machine efficiency percentage by tonnage
+     */
+    public function export_machine_efficiency_excel()
+    {
+        // Validate year parameter
+        $year = $this->input->post('year') ?: $this->input->get('year');
+        
+        if (!$year || !is_numeric($year) || $year < 2000 || $year > 2100) {
+            $year = date('Y');
+        }
+        
+        // Get data from model for both sheets
+        $hours_data_result = $this->mr->get_machine_efficiency_excel_data_hours($year);
+        $percentage_data_result = $this->mr->get_machine_efficiency_excel_data_percentage($year);
+        
+        if ($hours_data_result->num_rows() == 0 && $percentage_data_result->num_rows() == 0) {
+            $this->session->set_flashdata('error', 'No data found for year ' . $year);
+            redirect('c_report/efesiencyMesin');
+            return;
+        }
+        
+        // Save current error reporting level and suppress deprecation warnings
+        $old_error_reporting = error_reporting();
+        error_reporting($old_error_reporting & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+        
+        try {
+            // Load the PHPExcel library
+            $this->load->library('Excel');
+            
+            // Create new PHPExcel object
+            $objPHPExcel = new PHPExcel();
+            
+            // Set document properties
+            $objPHPExcel->getProperties()->setCreator("DPR System")
+                                     ->setTitle("Machine Efficiency Report " . $year)
+                                     ->setSubject("Machine Efficiency Analysis")
+                                     ->setDescription("Machine efficiency report with hours and percentages by tonnage for year " . $year);
+            
+            // Define headers for Sheet 1 (Hours)
+            $headers_hours = [
+                'YY-MM', 'Customer', 'Mo', 'name', 'Total Of SumOfMach Eff Hr', 
+                '40', '55', '60', '80', '90', '120', '160', '200'
+            ];
+            
+            // Define headers for Sheet 2 (Percentages)
+            $headers_percentage = [
+                'YY-MM', 'Customer', 'Total Of Mach Eff Hr%%', 
+                '40', '55', '60', '80', '90', '120', '160', '200'
+            ];
+            
+            // Style the header row
+            $headerStyle = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => 'FFFFFF'),
+                ),
+                'fill' => array(
+                    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                    'color' => array('rgb' => '4472C4'),
+                ),
+                'alignment' => array(
+                    'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+                )
+            );
+            
+            // ========== SHEET 1: HOURS DATA ==========
+            // Set active sheet to first sheet
+            $objPHPExcel->setActiveSheetIndex(0);
+            $sheet1 = $objPHPExcel->getActiveSheet();
+            $sheet1->setTitle('Efficiency Hours ' . $year);
+            
+            // Set column headers
+            $col = 'A';
+            foreach ($headers_hours as $header) {
+                $sheet1->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Apply header style
+            $sheet1->getStyle('A1:M1')->applyFromArray($headerStyle);
+            
+            // Write data rows
+            $rowNum = 2;
+            foreach ($hours_data_result->result_array() as $data) {
+                $col = 'A';
+                $sheet1->setCellValue($col++ . $rowNum, $data['YY_MM']);
+                $sheet1->setCellValue($col++ . $rowNum, $data['Customer']);
+                $sheet1->setCellValue($col++ . $rowNum, $data['Mo']);
+                $sheet1->setCellValue($col++ . $rowNum, $data['name']);
+                $sheet1->setCellValue($col++ . $rowNum, is_numeric($data['total_of_sumofmach_eff_hr']) ? floatval($data['total_of_sumofmach_eff_hr']) : 0);
+                
+                // Add tonnage data
+                foreach (['40', '55', '60', '80', '90', '120', '160', '200'] as $tonnage) {
+                    $value = isset($data[$tonnage]) ? $data[$tonnage] : 0;
+                    $sheet1->setCellValue($col++ . $rowNum, is_numeric($value) ? floatval($value) : 0);
+                }
+                
+                $rowNum++;
+            }
+            
+            // Auto-size columns for sheet 1
+            foreach (range('A', 'M') as $columnID) {
+                $sheet1->getColumnDimension($columnID)->setAutoSize(true);
+            }
+            
+            // ========== SHEET 2: PERCENTAGE DATA ==========
+            // Create second sheet
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(1);
+            $sheet2 = $objPHPExcel->getActiveSheet();
+            $sheet2->setTitle('Efficiency % ' . $year);
+            
+            // Set column headers
+            $col = 'A';
+            foreach ($headers_percentage as $header) {
+                $sheet2->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Apply header style to sheet 2
+            $sheet2->getStyle('A1:K1')->applyFromArray($headerStyle);
+            
+            // Write data rows
+            $rowNum = 2;
+            foreach ($percentage_data_result->result_array() as $data) {
+                $col = 'A';
+                $sheet2->setCellValue($col++ . $rowNum, $data['YY_MM']);
+                $sheet2->setCellValue($col++ . $rowNum, $data['Customer']);
+                $sheet2->setCellValue($col++ . $rowNum, is_numeric($data['total_of_sumofmach_eff_hr_percent']) ? floatval($data['total_of_sumofmach_eff_hr_percent']) : 0);
+                
+                // Add tonnage percentage data
+                foreach (['40', '55', '60', '80', '90', '120', '160', '200'] as $tonnage) {
+                    $value = isset($data[$tonnage]) ? $data[$tonnage] : 0;
+                    $sheet2->setCellValue($col++ . $rowNum, is_numeric($value) ? floatval($value) : 0);
+                }
+                
+                $rowNum++;
+            }
+            
+            // Auto-size columns for sheet 2
+            foreach (range('A', 'K') as $columnID) {
+                $sheet2->getColumnDimension($columnID)->setAutoSize(true);
+            }
+            
+            // Set active sheet back to first sheet
+            $objPHPExcel->setActiveSheetIndex(0);
+            
+            // Set headers for download
+            $filename = 'Machine_Efficiency_Report_' . $year . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            header('Cache-Control: max-age=1');
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header('Pragma: public');
+            
+            // Create writer and output to browser
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+            $objWriter->save('php://output');
+            exit;
+            
+        } catch (Exception $e) {
+            // Restore error reporting in case of exception
+            error_reporting($old_error_reporting);
+            log_message('error', 'Machine Efficiency Excel export failed: ' . $e->getMessage());
+            
+            // Show error message
+            $this->session->set_flashdata('error', 'Excel export failed: ' . $e->getMessage() . '. Please try again or contact support.');
+            redirect('c_report/efesiencyMesin');
+            return;
+        } finally {
+            // Always restore error reporting
+            error_reporting($old_error_reporting);
+        }
+    }
 
 }

@@ -359,7 +359,7 @@
                                 <li><a href="<?= base_url(); ?>c_report/defect">Defect</a></li>
                                 <li><a href="<?= base_url(); ?>c_report/cutting_tool">Cutting Tool</a></li>
                                 <li><a href="<?= base_url(); ?>c_report/losstime">Loss Time</a></li>
-                                <li><a href="<?= base_url(); ?>c_report/sevendata">7 Data</a></li>
+                                <li><a href="<?= base_url(); ?>c_report/seven_data_and_table">7 Data & 7 Table</a></li>
                                 <li><a href="<?= base_url(); ?>c_report/reportCT">Cycle Time</a></li>
                                 <li><a href="<?= base_url(); ?>c_machine/machine_use">Machine Use</a></li>
                                 <li><a href="<?= base_url(); ?>c_report/kanit_perform">Kanit Performance</a></li>

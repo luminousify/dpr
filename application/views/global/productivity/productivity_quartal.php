@@ -221,6 +221,49 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                         </div>
                     </div>
                     <?= form_close(); ?>
+                    
+                    <!-- Custom Excel Export -->
+                    <div class="card rounded mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5><i class="fa fa-download"></i> Export Productivity Data</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-sm-3">
+                                    <label for="export_year_quartal" class="font-weight-bold">Pilih Tahun:</label>
+                                    <select id="export_year_quartal" name="year" class="form-control">
+                                        <?php 
+                                        $currentYear = date('Y');
+                                        for($y = $currentYear - 3; $y <= $currentYear + 1; $y++): ?>
+                                        <option value="<?= $y ?>" <?= $y == $year ? 'selected' : '' ?>><?= $y ?></option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
+                                <div class="col-sm-4">
+                                    <label>&nbsp;</label>
+                                    <button type="button" id="export_custom_excel_quartal" class="btn btn-success btn-block" onclick="exportCustomExcel()">
+                                        <i class="fa fa-file-excel-o"></i> Export Excel
+                                    </button>
+                                </div>
+                                <div class="col-sm-3">
+                                    <label>&nbsp;</label>
+                                </div>
+                                <div class="col-sm-2">
+                                    <label>&nbsp;</label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <small class="text-muted">
+                                        <i class="fa fa-info-circle"></i> 
+                                        Data format: YY | Product ID | Product Name | Cycle Time Standard | Cycle Time Quote | Tool | 01 | 02 | ... | 12 
+                                        (kolom 01-12 menampilkan rata-rata CT aktual per bulan)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="tabs-container">
                         <ul class="nav nav-tabs">
                                 <li><a class="nav-link active" data-toggle="tab" href="#tab-1">Productivity Chart</a></li>
@@ -384,6 +427,43 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
             });
         });
+
+// Custom Excel Export Function
+function exportCustomExcel() {
+    var selectedYear = $('#export_year_quartal').val();
+    
+    // Show loading state
+    var $button = $('#export_custom_excel_quartal');
+    var originalText = $button.html();
+    $button.html('<i class="fa fa-spinner fa-spin"></i> Exporting...').prop('disabled', true);
+    
+    // Create form and submit
+    var form = $('<form>', {
+        'method': 'POST',
+        'action': '<?= base_url('c_report/export_custom_excel') ?>'
+    });
+    
+    var yearInput = $('<input>', {
+        'type': 'hidden',
+        'name': 'year',
+        'value': selectedYear
+    });
+    
+    form.append(yearInput);
+    $('body').append(form);
+    
+    // Submit form
+    form.submit();
+    
+    // Remove form after submission
+    setTimeout(function() {
+        form.remove();
+        // Restore button state (in case download doesn't start)
+        $button.html(originalText).prop('disabled', false);
+    }, 5000); // Increased timeout for Excel generation
+}
+
+
 
     </script>
 

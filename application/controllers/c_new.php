@@ -11,12 +11,21 @@ class c_new extends CI_Controller
     $this->load->model('m_operator', 'op');
     $this->load->model('m_dpr');
     $this->load->helper(array('url', 'html', 'form'));
+    
+    // Initialize session if not started
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Initialize session data with defaults if not set
     $this->data = [
-      'user_name'     => $_SESSION['user_name'],
-      'bagian'        => $_SESSION['divisi'],
-      'posisi'        => $_SESSION['posisi'],
-      'nama_actor'    => $_SESSION['nama_actor'],
+      'user_name'     => $_SESSION['user_name'] ?? 'Guest User',
+      'bagian'        => $_SESSION['bagian'] ?? $_SESSION['divisi'] ?? 'General Division',
+      'posisi'        => $_SESSION['posisi'] ?? 'Guest',
+      'nama_actor'    => $_SESSION['nama_actor'] ?? 'Guest User',
     ];
+    
+    // Check login - redirect to login if not authenticated
     $this->mm->cek_login();
   }
 
@@ -30,6 +39,16 @@ class c_new extends CI_Controller
 
   public function home()
   {
+    // Enable error logging and display for debugging
+    error_reporting(E_ALL);
+    ini_set('log_errors', 1);
+    
+    // Temporarily enable error display for debugging
+    ini_set('display_errors', 1);
+    
+    // Start output buffering to catch any unexpected HTML output
+    ob_start();
+    
     // Initialize date and shift variables
     $tanggal = '';
     $shift = 'All';
@@ -62,23 +81,47 @@ class c_new extends CI_Controller
       $current_year = date('Y');
       $this->load->model('m_report', 'mr');
       
-      $data = [
-        'data'                  => $this->data,
-        'aktif'                 => 'dashboard',
-        'data_tabelRekap'       => $this->mm->tampil_rekap($tanggal), //0.003s
-        'data_tabelRekapNew'    => $this->mm->tampil_rekap_new($tanggal), //0.003s
-        'data_tabelHeader'      => $this->mm->tampil_header_monthly(), // Monthly data for KPI cards
-        'data_ng_lt_kanit'      => $this->mm->tampil_ng_lt_bykanit_filter($tanggal),
-        'tanggal'               => $tanggal,
-        'shift'                 => $shift,
-        // Annual charts data
-        'tahun'                 => $current_year,
-        'productivity_annual'    => $this->mr->productivity_q1($current_year),
-        'ppm_grafik'            => $this->mr->tampil_grafikPPM_fixed($current_year),
-        'ppm_total'             => $this->mr->total_prod_qty_and_ppm($current_year),
-        'ppm_fcost_target'      => $this->mr->ppm_fcost_target($current_year)
-      ];
+      // Initialize data with error handling
+      try {
+          $data = [
+            'data'                  => $this->data,
+            'aktif'                 => 'dashboard',
+            'data_tabelRekap'       => $this->mm->tampil_rekap($tanggal) ?: [],
+            'data_tabelRekapNew'    => $this->mm->tampil_rekap_new($tanggal) ?: [],
+            'data_tabelHeader'      => $this->mm->tampil_header_monthly() ?: [],
+            'data_ng_lt_kanit'      => $this->mm->tampil_ng_lt_bykanit_filter($tanggal) ?: [],
+            'tanggal'               => $tanggal,
+            'shift'                 => $shift,
+            // Annual charts data with error handling
+            'tahun'                 => $current_year,
+            'productivity_annual'   => $this->getChartDataSafely($this->mr, 'productivity_q1', $current_year),
+            'ppm_grafik'            => $this->getChartDataSafely($this->mr, 'tampil_grafikPPM_fixed', $current_year),
+            'ppm_total'             => $this->getChartDataSafely($this->mr, 'total_prod_qty_and_ppm', $current_year),
+            'ppm_fcost_target'      => $this->getChartDataSafely($this->mr, 'ppm_fcost_target', $current_year)
+          ];
+      } catch (Exception $e) {
+          // Log the error and provide fallback data
+          log_message('error', 'Error loading dashboard data: ' . $e->getMessage());
+          $data = [
+            'data'                  => $this->data,
+            'aktif'                 => 'dashboard',
+            'data_tabelRekap'       => [],
+            'data_tabelRekapNew'    => [],
+            'data_tabelHeader'      => [],
+            'data_ng_lt_kanit'      => [],
+            'tanggal'               => $tanggal,
+            'shift'                 => $shift,
+            'tahun'                 => $current_year,
+            'productivity_annual'   => null,
+            'ppm_grafik'            => null,
+            'ppm_total'             => null,
+            'ppm_fcost_target'      => null
+          ];
+      }
       $this->load->view('home', $data);
+      
+      // Flush output buffer after rendering view to prevent any HTML from affecting JavaScript
+      ob_end_flush();
     } else {
       // Priority 2: Check session for previously selected date
       $session_tanggal = $this->session->userdata('selected_tanggal');
@@ -105,23 +148,64 @@ class c_new extends CI_Controller
       $current_year = date('Y');
       $this->load->model('m_report', 'mr');
       
-      $data = [
-        'data'                  => $this->data,
-        'aktif'                 => 'dashboard',
-        'data_tabelRekap'       => $this->mm->tampil_rekap($tanggal),
-        'data_tabelRekapNew'    => $this->mm->tampil_rekap_new($tanggal),
-        'data_tabelHeader'      => $this->mm->tampil_header_monthly(), // Monthly data for KPI cards
-        'data_ng_lt_kanit'      => $this->mm->tampil_ng_lt_bykanit_default(),
-        'tanggal'               => $tanggal,
-        'shift'                 => $shift,
-        // Annual charts data
-        'tahun'                 => $current_year,
-        'productivity_annual'   => $this->mr->productivity_q1($current_year),
-        'ppm_grafik'            => $this->mr->tampil_grafikPPM_fixed($current_year),
-        'ppm_total'             => $this->mr->total_prod_qty_and_ppm($current_year),
-        'ppm_fcost_target'      => $this->mr->ppm_fcost_target($current_year)
-      ];
+      // Initialize data with error handling
+      try {
+          $data = [
+            'data'                  => $this->data,
+            'aktif'                 => 'dashboard',
+            'data_tabelRekap'       => $this->mm->tampil_rekap($tanggal) ?: [],
+            'data_tabelRekapNew'    => $this->mm->tampil_rekap_new($tanggal) ?: [],
+            'data_tabelHeader'      => $this->mm->tampil_header_monthly() ?: [],
+            'data_ng_lt_kanit'      => $this->mm->tampil_ng_lt_bykanit_default() ?: [],
+            'tanggal'               => $tanggal,
+            'shift'                 => $shift,
+            // Annual charts data with error handling
+            'tahun'                 => $current_year,
+            'productivity_annual'   => $this->getChartDataSafely($this->mr, 'productivity_q1', $current_year),
+            'ppm_grafik'            => $this->getChartDataSafely($this->mr, 'tampil_grafikPPM_fixed', $current_year),
+            'ppm_total'             => $this->getChartDataSafely($this->mr, 'total_prod_qty_and_ppm', $current_year),
+            'ppm_fcost_target'      => $this->getChartDataSafely($this->mr, 'ppm_fcost_target', $current_year)
+          ];
+      } catch (Exception $e) {
+          // Log the error and provide fallback data
+          log_message('error', 'Error loading dashboard data: ' . $e->getMessage());
+          $data = [
+            'data'                  => $this->data,
+            'aktif'                 => 'dashboard',
+            'data_tabelRekap'       => [],
+            'data_tabelRekapNew'    => [],
+            'data_tabelHeader'      => [],
+            'data_ng_lt_kanit'      => [],
+            'tanggal'               => $tanggal,
+            'shift'                 => $shift,
+            'tahun'                 => $current_year,
+            'productivity_annual'   => null,
+            'ppm_grafik'            => null,
+            'ppm_total'             => null,
+            'ppm_fcost_target'      => null
+          ];
+      }
       $this->load->view('home', $data);
+      
+      // Flush output buffer after rendering view to prevent any HTML from affecting JavaScript
+      ob_end_flush();
+    }
+  }
+
+  /**
+   * Safely retrieve chart data with error handling
+   */
+  private function getChartDataSafely($model, $method, $param) {
+    try {
+        $result = $model->$method($param);
+        if (!$result || $result->num_rows() == 0) {
+            log_message('info', "No data found for chart method: $method with param: $param");
+            return null;
+        }
+        return $result;
+    } catch (Exception $e) {
+        log_message('error', "Error loading chart data for method $method: " . $e->getMessage());
+        return null;
     }
   }
 

@@ -59,6 +59,52 @@
                         </div>
                     </div>
                     <?= form_close(); ?>
+                    
+                    <!-- Custom Excel Export -->
+                    <div class="card rounded mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5><i class="fa fa-download"></i> Export Productivity Data</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-sm-3">
+                                    <label for="export_year" class="font-weight-bold">Pilih Tahun:</label>
+                                    <select id="export_year" name="year" class="form-control">
+                                        <?php 
+                                        $currentYear = date('Y');
+                                        for($y = $currentYear - 3; $y <= $currentYear + 1; $y++): ?>
+                                        <option value="<?= $y ?>" <?= $y == $currentYear ? 'selected' : '' ?>><?= $y ?></option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
+                                <div class="col-sm-4">
+                                    <label>&nbsp;</label>
+                                    <div class="btn-group d-flex" role="group">
+                                        <button type="button" class="btn btn-success flex-fill" id="export_custom_excel">
+                                            <i class="fa fa-file-excel-o"></i> Export Excel
+                                        </button>
+                                        <button type="button" class="btn btn-primary flex-fill" onclick="exportCustomCSV()">
+                                            <i class="fa fa-file-csv-o"></i> Export CSV
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-sm-5">
+                                    <div class="alert alert-success py-2 mb-0">
+                                        <i class="fa fa-info-circle"></i>
+                                        <strong>Excel Format:</strong> Native Excel file with proper formatting. Fully compatible with Microsoft Excel.
+                                    </div>
+                                </div>
+                            </div>
+                                <div class="col-sm-6">
+                                    <small class="text-muted">
+                                        <i class="fa fa-info-circle"></i> 
+                                        Data format: YY | Product ID | Product Name | Cycle Time Standard | Cycle Time Quote | Tool | 01 | 02 | ... | 12 
+                                        (kolom 01-12 menampilkan rata-rata CT aktual per bulan)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive">
              <table class="table table-striped table-bordered table-hover dataTables-example" style="width:100%">
                    <thead>
@@ -343,4 +389,67 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
             });
         });
+        
+        // Custom Excel Export
+        $('#export_custom_excel').click(function() {
+            var selectedYear = $('#export_year').val();
+            
+            // Show loading state
+            var $button = $(this);
+            var originalText = $button.html();
+            $button.html('<i class="fa fa-spinner fa-spin"></i> Exporting...').prop('disabled', true);
+            
+            // Create form and submit
+            var form = $('<form>', {
+                'method': 'POST',
+                'action': '<?= base_url('c_report/export_custom_excel') ?>'
+            });
+            
+            var yearInput = $('<input>', {
+                'type': 'hidden',
+                'name': 'year',
+                'value': selectedYear
+            });
+            
+            form.append(yearInput);
+            $('body').append(form);
+            
+            // Submit form
+            form.submit();
+            
+            // Remove form after submission
+            setTimeout(function() {
+                form.remove();
+                // Restore button state (in case download doesn't start)
+                $button.html(originalText).prop('disabled', false);
+            }, 2000);
+        });
+}
+
+function exportCustomCSV() {
+    var selectedYear = $('#export_year').val();
+    
+    // Create form and submit for CSV
+    var form = $('<form>', {
+        'method': 'POST',
+        'action': '<?= base_url('c_report/export_custom_csv_direct') ?>'
+    });
+    
+    var yearInput = $('<input>', {
+        'type': 'hidden',
+        'name': 'year',
+        'value': selectedYear
+    });
+    
+    form.append(yearInput);
+    $('body').append(form);
+    
+    // Submit form
+    form.submit();
+    
+    // Remove form after submission
+    setTimeout(function() {
+        form.remove();
+    }, 2000);
+}
     </script>

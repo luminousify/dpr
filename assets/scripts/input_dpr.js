@@ -448,7 +448,7 @@ function GrossNett() {
     var totalShots = qty + defect;
     var cavity = getNumericValue('#cavity');
     var cavity2 = getNumericValue('#cavity2');
-    var ctAktual = getNumericValue('#ct_mc_aktual');
+    var ctStd = getNumericValue('#ct_mc');
 
     // Set minimum values for cavities to prevent division by zero
     if (cavity <= 0) {
@@ -459,13 +459,13 @@ function GrossNett() {
     }
 
     // Validate required inputs for calculation
-    if (qty <= 0 || totalShots <= 0 || ctAktual <= 0 || cavity <= 0 || cavity2 <= 0) {
+    if (qty <= 0 || totalShots <= 0 || ctStd <= 0 || cavity <= 0 || cavity2 <= 0) {
         clearProductionOutputs();
         return;
     }
 
     // Calculate production time (equivalent to 'hasil_time' in admin pages)
-    var productionTime = safeDivision(totalShots, cavity) * safeDivision(ctAktual, 3600);
+    var productionTime = safeDivision(totalShots, cavity) * safeDivision(ctStd, 3600);
     if (!Number.isFinite(productionTime) || productionTime < 0) {
         productionTime = 0;
     }

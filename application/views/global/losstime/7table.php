@@ -8,7 +8,7 @@ foreach($data_7table_table->result_array() as $data) {
     $subcategory = $data['nama'];
     $period = $data['period'];
     $month = substr($period, 5, 2);
-    $hours = round($data['total_hours'], 1);
+    $hours = round($data['total_minutes'], 1);
     
     if (!isset($structuredData[$category])) {
         $structuredData[$category] = [];

@@ -58,6 +58,16 @@
                         </div>
                     </div>
                     <?= form_close(); ?>
+                    
+                    <!-- Export Excel Button -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="button" id="export_production_qty_excel" class="btn btn-success">
+                                <i class="fa fa-file-excel-o"></i> Export Excel
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div class="tabs-container">
                         <ul class="nav nav-tabs">
                                 <li><a class="nav-link active" data-toggle="tab" href="#tab-1">Production Qty & PPM Q1</a></li>
@@ -95,6 +105,41 @@
 
 <?php $this->load->view('layout/footer'); ?>
     <script src="<?= base_url(); ?>template/js/plugins/dataTables/datatables.min.js"></script>
+    <script>
+    // Production Qty Excel Export Function
+    $(document).ready(function() {
+        $('#export_production_qty_excel').on('click', function() {
+            var year = $('select[name="tahun"]').val() || new Date().getFullYear();
+            
+            // Show loading indicator
+            var $button = $(this);
+            var originalText = $button.html();
+            $button.html('<i class="fa fa-spinner fa-spin"></i> Exporting...').prop('disabled', true);
+            
+            // Create form and submit
+            var form = $('<form>', {
+                'method': 'POST',
+                'action': '<?= base_url('c_report/export_production_qty_excel') ?>'
+            });
+            
+            // Add year input
+            form.append($('<input>', {
+                'type': 'hidden',
+                'name': 'year',
+                'value': year
+            }));
+            
+            // Submit form
+            $('body').append(form);
+            form.submit();
+            
+            // Reset button after delay
+            setTimeout(function() {
+                $button.html(originalText).prop('disabled', false);
+            }, 3000);
+        });
+    });
+    </script>
     <script src="<?= base_url(); ?>template/js/plugins/dataTables/dataTables.bootstrap4.min.js"></script>
     <script src="<?= base_url(); ?>template/js/plugins/dataTables/dataTables.fixedColumns.min.js"></script>
     <!-- Page-Level Scripts -->
