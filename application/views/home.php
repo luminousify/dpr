@@ -47,6 +47,31 @@
         flex-direction: column;
         padding: var(--spacing-sm);
     }
+    .dashboard-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        padding: var(--spacing-md);
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+    }
+    .dashboard-header h2 {
+        margin: 0;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .dashboard-header small {
+        display: block;
+        color: var(--text-secondary);
+    }
+    .download-all-btn {
+        min-width: 190px;
+        font-weight: 600;
+    }
     
     /* Enhanced Filter Card */
     .filter-card {
@@ -496,6 +521,15 @@ if ($posisi == 'ppic' || $posisi == 'tm' || $posisi =='qa' || $posisi == 'mixerA
     <input type="hidden" name="shift" value="<?= $shift; ?>">
 <?= form_close(); ?>
  <div class="wrapper wrapper-content">
+        <div class="dashboard-header">
+            <div>
+                <h2>Production Monitoring Dashboard</h2>
+                <small>Data tahun <?= isset($tahun) ? $tahun : date('Y'); ?></small>
+            </div>
+            <button type="button" id="downloadAllReports" class="btn btn-success download-all-btn" onclick="downloadAllReportsZip()">
+                <i class="fa fa-download"></i> Download All Reports
+            </button>
+        </div>
         <!-- Charts Grid - 3x3 Layout -->
         <div class="charts-grid">
             <!-- Chart 1: Daftar Operasional Mesin -->
@@ -704,7 +738,7 @@ if ($posisi == 'ppic' || $posisi == 'tm' || $posisi =='qa' || $posisi == 'mixerA
                                         <span>LT</span>
                                     </div>
                                     <div class="kpi-card-body">
-                                        <h1 class="kpi-value"><?= number_format($data['lt']); ?></h1>
+                                        <h1 class="kpi-value"><?= number_format($data['lt']); ?> Jam</h1>
                                         <p class="kpi-label">Loss Time</p>
                                     </div>
                                 </div>
@@ -854,6 +888,46 @@ if ($posisi == 'ppic' || $posisi == 'tm' || $posisi =='qa' || $posisi == 'mixerA
             });
         });
     </script>
+
+<script>
+    // Helper to submit hidden POST for Excel downloads
+    function triggerExcelDownload(url, year) {
+        const form = $('<form>', {
+            method: 'POST',
+            action: url,
+            target: '_blank'
+        });
+        if (year) {
+            form.append($('<input>', { type: 'hidden', name: 'year', value: year }));
+        }
+        $('body').append(form);
+        form.submit();
+        setTimeout(() => form.remove(), 1500);
+    }
+
+    // Download all required Excel reports sequentially
+    // Single ZIP download to avoid popups
+    function downloadAllReportsZip() {
+        const $btn = $('#downloadAllReports');
+        const originalText = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Preparing...');
+
+        const year = (new Date()).getFullYear();
+        const form = $('<form>', {
+            method: 'POST',
+            action: '<?= base_url('c_report/export_all_reports_zip'); ?>',
+            target: '_blank'
+        });
+        form.append($('<input>', { type: 'hidden', name: 'year', value: year }));
+        $('body').append(form);
+        form.submit();
+
+        setTimeout(() => {
+            form.remove();
+            $btn.prop('disabled', false).html(originalText);
+        }, 4000);
+    }
+</script>
 
     <script>
 // Ensure jsPDF is globally available

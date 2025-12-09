@@ -1867,4 +1867,568 @@ function regenerate_ppm_data($tahun = null)
         }
     }
 
+    /**
+     * Export Loss Time By Kategori per Year to Excel
+     */
+    public function export_losstime_by_kategori_year_excel()
+    {
+        $year = $this->input->post('year') ?: $this->input->get('year');
+        if (!$year || !is_numeric($year) || $year < 2000 || $year > 2100) {
+            $year = date('Y');
+        }
+
+        $result = $this->mr->tampil_DefectGrafikYear($year);
+        if (!$result || $result->num_rows() === 0) {
+            $this->session->set_flashdata('error', 'No Loss Time data found for year ' . $year);
+            redirect('c_report/losstime');
+            return;
+        }
+
+        $old_error_reporting = error_reporting();
+        error_reporting($old_error_reporting & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
+        try {
+            $this->load->library('Excel');
+            $objPHPExcel = new PHPExcel();
+            $objPHPExcel->getProperties()
+                ->setCreator("DPR System")
+                ->setTitle("Loss Time By Kategori " . $year)
+                ->setSubject("Loss Time By Kategori per Year")
+                ->setDescription("Loss Time By Kategori per Year for " . $year);
+
+            $objPHPExcel->setActiveSheetIndex(0);
+            $sheet = $objPHPExcel->getActiveSheet();
+            $sheet->setTitle('Loss Time ' . $year);
+
+            $headers = ['Bulan', 'Total Loss Time (Hours)', 'Total Mc. Use (Hours)', 'Persentase Loss Time (%)'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $col++;
+            }
+
+            $headerStyle = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => 'FFFFFF'),
+                ),
+                'fill' => array(
+                    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                    'color' => array('rgb' => '4472C4'),
+                ),
+                'alignment' => array(
+                    'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+                )
+            );
+            $sheet->getStyle('A1:D1')->applyFromArray($headerStyle);
+
+            $rowNum = 2;
+            foreach ($result->result_array() as $row) {
+                $sheet->setCellValue('A' . $rowNum, $row['bulan']);
+                $sheet->setCellValue('B' . $rowNum, round($row['totalLT'], 1));
+                $sheet->setCellValue('C' . $rowNum, round($row['total_machine_use'], 1));
+                $sheet->setCellValue('D' . $rowNum, round($row['persen_lt'], 2));
+                $rowNum++;
+            }
+
+            foreach (range('A', 'D') as $columnID) {
+                $sheet->getColumnDimension($columnID)->setAutoSize(true);
+            }
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="LossTime_By_Kategori_' . $year . '.xlsx"');
+            header('Cache-Control: max-age=0');
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+            $objWriter->save('php://output');
+            exit;
+        } catch (Exception $e) {
+            error_reporting($old_error_reporting);
+            log_message('error', 'Loss Time Excel export failed: ' . $e->getMessage());
+            $this->session->set_flashdata('error', 'Excel export failed: ' . $e->getMessage());
+            redirect('c_report/losstime');
+            return;
+        } finally {
+            error_reporting($old_error_reporting);
+        }
+    }
+
+    /**
+     * Export 7 Data & 7 Table to Excel (two sheets)
+     */
+    public function export_seven_data_and_table_excel()
+    {
+        $year = $this->input->post('year') ?: $this->input->get('year');
+        if (!$year || !is_numeric($year) || $year < 2000 || $year > 2100) {
+            $year = date('Y');
+        }
+
+        $dataRows = $this->mr->get_7table_data_from_year($year);
+        $summaryRows = $this->mr->get_7_table_summary_data($year);
+
+        if ((!$dataRows || $dataRows->num_rows() === 0) && (!$summaryRows || $summaryRows->num_rows() === 0)) {
+            $this->session->set_flashdata('error', 'No 7 Data / 7 Table records found for year ' . $year);
+            redirect('c_report/seven_data_and_table');
+            return;
+        }
+
+        $old_error_reporting = error_reporting();
+        error_reporting($old_error_reporting & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
+        try {
+            $this->load->library('Excel');
+            $objPHPExcel = new PHPExcel();
+            $headerStyle = array(
+                'font'  => array(
+                    'bold'  => true,
+                    'color' => array('rgb' => 'FFFFFF'),
+                ),
+                'fill' => array(
+                    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                    'color' => array('rgb' => '4472C4'),
+                ),
+                'alignment' => array(
+                    'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+                )
+            );
+
+            // Sheet 1: 7 Data
+            $objPHPExcel->setActiveSheetIndex(0);
+            $sheet1 = $objPHPExcel->getActiveSheet();
+            $sheet1->setTitle('7 Data ' . $year);
+            $headersData = [
+                'No', 'Mesin', 'Month', 'SumOfWH', 'SumOfOT', 'Total Hour Std', 'MachEffHour', 'TotalST',
+                'No Material', 'No Packing', 'Material Problem', 'Adjust Parameter', 'Daily Checklist',
+                'Pre-heating Material', 'Cleaning Hopper Barrel', 'Setup Mold', 'Setup Parameter Machine',
+                'IPQC Inspection', 'Machine', 'Hopper Dryer', 'Robot', 'MTC', 'Chiller', 'Compressor',
+                'Listrik', 'Overhole', 'QC Lolos', 'Mold Problem', 'Trial', 'Setup Awal Produksi', 'MCH Eff Percentage'
+            ];
+            $col = 'A';
+            foreach ($headersData as $header) {
+                $sheet1->setCellValue($col . '1', $header);
+                $col++;
+            }
+            $sheet1->getStyle('A1:AE1')->applyFromArray($headerStyle);
+
+            $rowNum = 2;
+            $counter = 1;
+            if ($dataRows) {
+                foreach ($dataRows->result_array() as $row) {
+                    $col = 'A';
+                    $sheet1->setCellValue($col++ . $rowNum, $counter++);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['no_mesin']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['month']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['SumOfWH']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['SumOfOT']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['total_hour_std']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['MachEffHour']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['TotalST']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['no_material']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['no_packing']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['material_problem']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['adjust_parameter']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['daily_checklist']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['pre_heating_material']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['cleaning_hopper_barrel']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['setup_mold']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['setup_parameter_machine']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['ipqc_inspection']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['machine']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['hopper_dryer']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['robot']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['mtc']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['chiller']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['compressor']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['listrik']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['overhole']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['qc_lolos']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['mold_problem']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['trial']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['setup_awal_produksi']);
+                    $sheet1->setCellValue($col++ . $rowNum, $row['mch_eff_percentage']);
+                    $rowNum++;
+                }
+            }
+
+            foreach (range('A', 'AE') as $columnID) {
+                $sheet1->getColumnDimension($columnID)->setAutoSize(true);
+            }
+
+            // Sheet 2: 7 Table summary
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(1);
+            $sheet2 = $objPHPExcel->getActiveSheet();
+            $sheet2->setTitle('7 Table ' . $year);
+
+            $headersSummary = ['Mach', 'Total Of Mach Eff Hr', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+            $col = 'A';
+            foreach ($headersSummary as $header) {
+                $sheet2->setCellValue($col . '1', $header);
+                $col++;
+            }
+            $sheet2->getStyle('A1:N1')->applyFromArray($headerStyle);
+
+            $rowNum = 2;
+            if ($summaryRows) {
+                foreach ($summaryRows->result_array() as $row) {
+                    $sheet2->setCellValue('A' . $rowNum, $row['Mach']);
+                    $sheet2->setCellValue('B' . $rowNum, $row['total_mach_eff_hr']);
+                    $sheet2->setCellValue('C' . $rowNum, $row['01']);
+                    $sheet2->setCellValue('D' . $rowNum, $row['02']);
+                    $sheet2->setCellValue('E' . $rowNum, $row['03']);
+                    $sheet2->setCellValue('F' . $rowNum, $row['04']);
+                    $sheet2->setCellValue('G' . $rowNum, $row['05']);
+                    $sheet2->setCellValue('H' . $rowNum, $row['06']);
+                    $sheet2->setCellValue('I' . $rowNum, $row['07']);
+                    $sheet2->setCellValue('J' . $rowNum, $row['08']);
+                    $sheet2->setCellValue('K' . $rowNum, $row['09']);
+                    $sheet2->setCellValue('L' . $rowNum, $row['10']);
+                    $sheet2->setCellValue('M' . $rowNum, $row['11']);
+                    $sheet2->setCellValue('N' . $rowNum, $row['12']);
+                    $rowNum++;
+                }
+            }
+
+            foreach (range('A', 'N') as $columnID) {
+                $sheet2->getColumnDimension($columnID)->setAutoSize(true);
+            }
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="7Data_7Table_' . $year . '.xlsx"');
+            header('Cache-Control: max-age=0');
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+            $objWriter->save('php://output');
+            exit;
+        } catch (Exception $e) {
+            error_reporting($old_error_reporting);
+            log_message('error', '7 Data & 7 Table Excel export failed: ' . $e->getMessage());
+            $this->session->set_flashdata('error', 'Excel export failed: ' . $e->getMessage());
+            redirect('c_report/seven_data_and_table');
+            return;
+        } finally {
+            error_reporting($old_error_reporting);
+        }
+    }
+
+    /**
+     * Build and stream all five Excel reports as a single ZIP to minimize popups.
+     * Reports included:
+     *  - Productivity Quartal (3 sheets)
+     *  - Production Qty & PPM Quartal (3 sheets)
+     *  - Efesiency Mesin (2 sheets)
+     *  - Losstime By Kategori per Year (table)
+     *  - 7 Data & 7 Table (2 sheets)
+     */
+    public function export_all_reports_zip()
+    {
+        $year = $this->input->post('year') ?: $this->input->get('year');
+        if (!$year || !is_numeric($year) || $year < 2000 || $year > 2100) {
+            $year = date('Y');
+        }
+
+        // Suppress deprecation notices from legacy PHPExcel library during export
+        $old_error_reporting = error_reporting();
+        error_reporting($old_error_reporting & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'dpr_reports_' . uniqid();
+        if (!@mkdir($tempDir, 0700, true)) {
+            error_reporting($old_error_reporting);
+            show_error('Unable to create temporary export directory.');
+            return;
+        }
+
+        $files = [];
+        try {
+            // Build each report to temp files
+            $files[] = $this->build_productivity_excel_zip($year, $tempDir);
+            $files[] = $this->build_production_qty_excel_zip($year, $tempDir);
+            $files[] = $this->build_machine_eff_excel_zip($year, $tempDir);
+            $files[] = $this->build_losstime_excel_zip($year, $tempDir);
+            $files[] = $this->build_seven_data_excel_zip($year, $tempDir);
+
+            // Create ZIP
+            $zipPath = $tempDir . DIRECTORY_SEPARATOR . 'all_reports_' . $year . '.zip';
+            $zip = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new Exception('Unable to create ZIP archive.');
+            }
+            foreach ($files as $file) {
+                if (file_exists($file['path'])) {
+                    $zip->addFile($file['path'], $file['name']);
+                }
+            }
+            $zip->close();
+
+            // Stream ZIP
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="All_Reports_' . $year . '.zip"');
+            header('Content-Length: ' . filesize($zipPath));
+            readfile($zipPath);
+            exit;
+        } catch (Exception $e) {
+            log_message('error', 'ZIP export failed: ' . $e->getMessage());
+            $this->session->set_flashdata('error', 'Export failed: ' . $e->getMessage());
+            redirect('c_new/home');
+        } finally {
+            // Restore error reporting
+            error_reporting($old_error_reporting);
+
+            // Clean temp files
+            foreach ($files as $file) {
+                if (isset($file['path']) && file_exists($file['path'])) {
+                    @unlink($file['path']);
+                }
+            }
+            if (isset($zipPath) && file_exists($zipPath)) {
+                @unlink($zipPath);
+            }
+            if (file_exists($tempDir)) {
+                @rmdir($tempDir);
+            }
+        }
+    }
+
+    /** Helpers for ZIP builds (lightweight versions of existing exports) */
+    private function build_productivity_excel_zip($year, $dir)
+    {
+        $this->load->library('Excel');
+        $ct = $this->mr->get_custom_excel_export_data($year);
+        $nett = $this->mr->get_average_nett_excel_data($year);
+        $gross = $this->mr->get_average_gross_excel_data($year);
+        if ($ct->num_rows() == 0 && $nett->num_rows() == 0 && $gross->num_rows() == 0) {
+            throw new Exception('No productivity data for ' . $year);
+        }
+        $excel = new PHPExcel();
+        $excel->getProperties()->setCreator("DPR System")->setTitle("Productivity " . $year);
+        $headers = ['YY','Product ID','Product Name','Cycle Time Standard','Cycle Time Quote','Tool'];
+        for ($m=1;$m<=12;$m++) { $headers[] = sprintf('%02d',$m); }
+
+        // Sheet 1
+        $excel->setActiveSheetIndex(0);
+        $s1 = $excel->getActiveSheet(); $s1->setTitle('Cycle Time');
+        $col='A'; foreach($headers as $h){ $s1->setCellValue($col.'1',$h); $col++; }
+        $r=2; foreach($ct->result_array() as $row){ $col='A';
+            $s1->setCellValue($col++.$r,$row['YY']);
+            $s1->setCellValue($col++.$r,$row['Product_ID']);
+            $s1->setCellValue($col++.$r,$row['Product_Name']);
+            $s1->setCellValue($col++.$r,$row['Cycle_Time_Standard']);
+            $s1->setCellValue($col++.$r,$row['Cycle_Time_Quote']);
+            $s1->setCellValue($col++.$r,$row['Tool']);
+            for($m=1;$m<=12;$m++){ $k=sprintf('%02d',$m); $s1->setCellValue($col++.$r, isset($row[$k])? $row[$k]:0); }
+            $r++;
+        }
+
+        // Sheet 2
+        $excel->createSheet(); $excel->setActiveSheetIndex(1);
+        $s2=$excel->getActiveSheet(); $s2->setTitle('Avg Nett');
+        $col='A'; $h2=['YY','Product ID','Product Name']; for($m=1;$m<=12;$m++){$h2[]=sprintf('%02d',$m);}
+        foreach($h2 as $h){ $s2->setCellValue($col.'1',$h); $col++; }
+        $r=2; foreach($nett->result_array() as $row){ $col='A';
+            $s2->setCellValue($col++.$r,$row['YY']);
+            $s2->setCellValue($col++.$r,$row['Product_ID']);
+            $s2->setCellValue($col++.$r,$row['Product_Name']);
+            for($m=1;$m<=12;$m++){ $k=sprintf('%02d',$m); $s2->setCellValue($col++.$r, isset($row[$k])? $row[$k]:0); }
+            $r++;
+        }
+
+        // Sheet 3
+        $excel->createSheet(); $excel->setActiveSheetIndex(2);
+        $s3=$excel->getActiveSheet(); $s3->setTitle('Avg Gross');
+        $col='A'; foreach($h2 as $h){ $s3->setCellValue($col.'1',$h); $col++; }
+        $r=2; foreach($gross->result_array() as $row){ $col='A';
+            $s3->setCellValue($col++.$r,$row['YY']);
+            $s3->setCellValue($col++.$r,$row['Product_ID']);
+            $s3->setCellValue($col++.$r,$row['Product_Name']);
+            for($m=1;$m<=12;$m++){ $k=sprintf('%02d',$m); $s3->setCellValue($col++.$r, isset($row[$k])? $row[$k]:0); }
+            $r++;
+        }
+        $excel->setActiveSheetIndex(0);
+        $path = $dir . DIRECTORY_SEPARATOR . 'Productivity_' . $year . '.xlsx';
+        PHPExcel_IOFactory::createWriter($excel,'Excel2007')->save($path);
+        return ['path'=>$path,'name'=>basename($path)];
+    }
+
+    private function build_production_qty_excel_zip($year, $dir)
+    {
+        $this->load->library('Excel');
+        $total = $this->mr->get_production_qty_excel_data($year);
+        $ok = $this->mr->get_ok_qty_excel_data($year);
+        $ng = $this->mr->get_ng_qty_excel_data($year);
+        if ($total->num_rows()==0 && $ok->num_rows()==0 && $ng->num_rows()==0) {
+            throw new Exception('No production qty data for ' . $year);
+        }
+        $headers = ['Product ID','Product Name']; for($m=1;$m<=12;$m++){ $headers[] = sprintf('%02d',$m); }
+        $excel = new PHPExcel(); $excel->getProperties()->setCreator("DPR System")->setTitle("Production Qty " . $year);
+
+        // Sheet helper
+        $makeSheet = function($sheet, $data) use ($headers) {
+            $col='A'; foreach($headers as $h){ $sheet->setCellValue($col.'1',$h); $col++; }
+            $r=2; foreach($data->result_array() as $row){ $col='A';
+                $sheet->setCellValue($col++.$r,$row['Product_ID']);
+                $sheet->setCellValue($col++.$r,$row['Product_Name']);
+                for($m=1;$m<=12;$m++){ $k=sprintf('%02d',$m); $sheet->setCellValue($col++.$r, isset($row[$k])? $row[$k]:0); }
+                $r++;
+            }
+        };
+
+        $excel->setActiveSheetIndex(0); $s1=$excel->getActiveSheet(); $s1->setTitle('Total Production'); $makeSheet($s1,$total);
+        $excel->createSheet(); $excel->setActiveSheetIndex(1); $s2=$excel->getActiveSheet(); $s2->setTitle('Total OK'); $makeSheet($s2,$ok);
+        $excel->createSheet(); $excel->setActiveSheetIndex(2); $s3=$excel->getActiveSheet(); $s3->setTitle('Total NG'); $makeSheet($s3,$ng);
+        $excel->setActiveSheetIndex(0);
+        $path = $dir . DIRECTORY_SEPARATOR . 'Production_Qty_' . $year . '.xlsx';
+        PHPExcel_IOFactory::createWriter($excel,'Excel2007')->save($path);
+        return ['path'=>$path,'name'=>basename($path)];
+    }
+
+    private function build_machine_eff_excel_zip($year, $dir)
+    {
+        $this->load->library('Excel');
+        $hours = $this->mr->get_machine_efficiency_excel_data_hours($year);
+        $percent = $this->mr->get_machine_efficiency_excel_data_percentage($year);
+        if ($hours->num_rows()==0 && $percent->num_rows()==0) {
+            throw new Exception('No machine efficiency data for ' . $year);
+        }
+        $excel = new PHPExcel(); $excel->getProperties()->setCreator("DPR System")->setTitle("Machine Efficiency " . $year);
+        $headersHours = ['YY-MM','Customer','Mo','name','Total Of SumOfMach Eff Hr','40','55','60','80','90','120','160','200'];
+        $headersPct = ['YY-MM','Customer','Total Of Mach Eff Hr%%','40','55','60','80','90','120','160','200'];
+
+        $excel->setActiveSheetIndex(0); $s1=$excel->getActiveSheet(); $s1->setTitle('Hours');
+        $col='A'; foreach($headersHours as $h){ $s1->setCellValue($col.'1',$h); $col++; }
+        $r=2; foreach($hours->result_array() as $row){ $col='A';
+            foreach($headersHours as $h){ $key = $this->map_eff_key($h); $s1->setCellValue($col++.$r, isset($row[$key]) ? $row[$key] : ''); }
+            $r++;
+        }
+
+        $excel->createSheet(); $excel->setActiveSheetIndex(1); $s2=$excel->getActiveSheet(); $s2->setTitle('Percent');
+        $col='A'; foreach($headersPct as $h){ $s2->setCellValue($col.'1',$h); $col++; }
+        $r=2; foreach($percent->result_array() as $row){ $col='A';
+            foreach($headersPct as $h){ $key = $this->map_eff_key($h); $s2->setCellValue($col++.$r, isset($row[$key]) ? $row[$key] : ''); }
+            $r++;
+        }
+
+        $excel->setActiveSheetIndex(0);
+        $path = $dir . DIRECTORY_SEPARATOR . 'Machine_Efficiency_' . $year . '.xlsx';
+        PHPExcel_IOFactory::createWriter($excel,'Excel2007')->save($path);
+        return ['path'=>$path,'name'=>basename($path)];
+    }
+
+    private function map_eff_key($header)
+    {
+        $map = [
+            'YY-MM' => 'YY_MM',
+            'Customer' => 'Customer',
+            'Mo' => 'Mo',
+            'name' => 'name',
+            'Total Of SumOfMach Eff Hr' => 'total_of_sumofmach_eff_hr',
+            'Total Of Mach Eff Hr%%' => 'total_of_mach_eff_hr_percent'
+        ];
+        $numeric = ['40','55','60','80','90','120','160','200'];
+        if (isset($map[$header])) return $map[$header];
+        if (in_array($header, $numeric)) return $header;
+        return $header;
+    }
+
+    private function build_losstime_excel_zip($year, $dir)
+    {
+        $this->load->library('Excel');
+        $result = $this->mr->tampil_DefectGrafikYear($year);
+        if (!$result || $result->num_rows() === 0) {
+            throw new Exception('No Loss Time data for ' . $year);
+        }
+        $excel = new PHPExcel(); $excel->getProperties()->setCreator("DPR System")->setTitle("Loss Time " . $year);
+        $sheet = $excel->getActiveSheet(); $sheet->setTitle('Loss Time');
+        $headers = ['Bulan','Total Loss Time (Hours)','Total Mc. Use (Hours)','Persentase Loss Time (%)'];
+        $col='A'; foreach($headers as $h){ $sheet->setCellValue($col.'1',$h); $col++; }
+        $r=2; foreach ($result->result_array() as $row) {
+            $sheet->setCellValue('A'.$r, $row['bulan']);
+            $sheet->setCellValue('B'.$r, round($row['totalLT'],1));
+            $sheet->setCellValue('C'.$r, round($row['total_machine_use'],1));
+            $sheet->setCellValue('D'.$r, round($row['persen_lt'],2));
+            $r++;
+        }
+        $path = $dir . DIRECTORY_SEPARATOR . 'LossTime_By_Kategori_' . $year . '.xlsx';
+        PHPExcel_IOFactory::createWriter($excel,'Excel2007')->save($path);
+        return ['path'=>$path,'name'=>basename($path)];
+    }
+
+    private function build_seven_data_excel_zip($year, $dir)
+    {
+        $this->load->library('Excel');
+        $dataRows = $this->mr->get_7table_data_from_year($year);
+        $summaryRows = $this->mr->get_7_table_summary_data($year);
+        if ((!$dataRows || $dataRows->num_rows() === 0) && (!$summaryRows || $summaryRows->num_rows() === 0)) {
+            throw new Exception('No 7 Data / 7 Table for ' . $year);
+        }
+        $excel = new PHPExcel(); $excel->getProperties()->setCreator("DPR System")->setTitle("7 Data & 7 Table " . $year);
+
+        // 7 Data sheet
+        $excel->setActiveSheetIndex(0); $s1=$excel->getActiveSheet(); $s1->setTitle('7 Data');
+        $headersData = [
+            'No','Mesin','Month','SumOfWH','SumOfOT','Total Hour Std','MachEffHour','TotalST',
+            'No Material','No Packing','Material Problem','Adjust Parameter','Daily Checklist',
+            'Pre-heating Material','Cleaning Hopper Barrel','Setup Mold','Setup Parameter Machine',
+            'IPQC Inspection','Machine','Hopper Dryer','Robot','MTC','Chiller','Compressor',
+            'Listrik','Overhole','QC Lolos','Mold Problem','Trial','Setup Awal Produksi','MCH Eff Percentage'
+        ];
+        $col='A'; foreach($headersData as $h){ $s1->setCellValue($col.'1',$h); $col++; }
+        $r=2; $i=1;
+        if ($dataRows) {
+            foreach($dataRows->result_array() as $row){ $col='A';
+                $s1->setCellValue($col++.$r,$i++);
+                $s1->setCellValue($col++.$r,$row['no_mesin']);
+                $s1->setCellValue($col++.$r,$row['month']);
+                $s1->setCellValue($col++.$r,$row['SumOfWH']);
+                $s1->setCellValue($col++.$r,$row['SumOfOT']);
+                $s1->setCellValue($col++.$r,$row['total_hour_std']);
+                $s1->setCellValue($col++.$r,$row['MachEffHour']);
+                $s1->setCellValue($col++.$r,$row['TotalST']);
+                $s1->setCellValue($col++.$r,$row['no_material']);
+                $s1->setCellValue($col++.$r,$row['no_packing']);
+                $s1->setCellValue($col++.$r,$row['material_problem']);
+                $s1->setCellValue($col++.$r,$row['adjust_parameter']);
+                $s1->setCellValue($col++.$r,$row['daily_checklist']);
+                $s1->setCellValue($col++.$r,$row['pre_heating_material']);
+                $s1->setCellValue($col++.$r,$row['cleaning_hopper_barrel']);
+                $s1->setCellValue($col++.$r,$row['setup_mold']);
+                $s1->setCellValue($col++.$r,$row['setup_parameter_machine']);
+                $s1->setCellValue($col++.$r,$row['ipqc_inspection']);
+                $s1->setCellValue($col++.$r,$row['machine']);
+                $s1->setCellValue($col++.$r,$row['hopper_dryer']);
+                $s1->setCellValue($col++.$r,$row['robot']);
+                $s1->setCellValue($col++.$r,$row['mtc']);
+                $s1->setCellValue($col++.$r,$row['chiller']);
+                $s1->setCellValue($col++.$r,$row['compressor']);
+                $s1->setCellValue($col++.$r,$row['listrik']);
+                $s1->setCellValue($col++.$r,$row['overhole']);
+                $s1->setCellValue($col++.$r,$row['qc_lolos']);
+                $s1->setCellValue($col++.$r,$row['mold_problem']);
+                $s1->setCellValue($col++.$r,$row['trial']);
+                $s1->setCellValue($col++.$r,$row['setup_awal_produksi']);
+                $s1->setCellValue($col++.$r,$row['mch_eff_percentage']);
+                $r++;
+            }
+        }
+
+        // 7 Table summary sheet
+        $excel->createSheet(); $excel->setActiveSheetIndex(1); $s2=$excel->getActiveSheet(); $s2->setTitle('7 Table');
+        $headersSummary = ['Mach','Total Of Mach Eff Hr','01','02','03','04','05','06','07','08','09','10','11','12'];
+        $col='A'; foreach($headersSummary as $h){ $s2->setCellValue($col.'1',$h); $col++; }
+        $r=2;
+        if ($summaryRows) {
+            foreach($summaryRows->result_array() as $row){
+                $s2->setCellValue('A'.$r,$row['Mach']);
+                $s2->setCellValue('B'.$r,$row['total_mach_eff_hr']);
+                $s2->setCellValue('C'.$r,$row['01']); $s2->setCellValue('D'.$r,$row['02']); $s2->setCellValue('E'.$r,$row['03']);
+                $s2->setCellValue('F'.$r,$row['04']); $s2->setCellValue('G'.$r,$row['05']); $s2->setCellValue('H'.$r,$row['06']);
+                $s2->setCellValue('I'.$r,$row['07']); $s2->setCellValue('J'.$r,$row['08']); $s2->setCellValue('K'.$r,$row['09']);
+                $s2->setCellValue('L'.$r,$row['10']); $s2->setCellValue('M'.$r,$row['11']); $s2->setCellValue('N'.$r,$row['12']);
+                $r++;
+            }
+        }
+
+        $excel->setActiveSheetIndex(0);
+        $path = $dir . DIRECTORY_SEPARATOR . '7Data_7Table_' . $year . '.xlsx';
+        PHPExcel_IOFactory::createWriter($excel,'Excel2007')->save($path);
+        return ['path'=>$path,'name'=>basename($path)];
+    }
+
 }
