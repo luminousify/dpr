@@ -105,7 +105,7 @@
                                         <input type="hidden" name="user[<?= $id; ?>][target]" id="target_mc<?= $id; ?>" class="form-control">
                                         <input type="hidden" name="user[<?= $id; ?>][target_ppic]" id="target_ppic<?= $id; ?>" class="form-control">
                                     </td>
-                                    <td><input type="text" class="form-control" name="user[<?= $id; ?>][operator]"></td>
+                                    <td><input type="text" class="form-control" name="user[<?= $id; ?>][operator]" id="operator<?= $id; ?>"></td>
                                     <td><input type="text" name="user[<?= $id; ?>][man_power]" class="form-control" value="0.5"></td>
                                     <td><select name="user[<?= $id; ?>][jenis_mesin]" class="form-control">
                                             <option value="">-</option>
@@ -184,6 +184,25 @@
                 }
             }
         }
+        function bindOperatorAutocomplete(x) {
+            var $op = $('#operator' + x);
+            if (!$op.length) return;
+            // prevent double-binding when called multiple times
+            if ($op.data('uiAutocompleteBound')) return;
+            $op.data('uiAutocompleteBound', true);
+
+            $op.autocomplete({
+                source: "<?php echo site_url('c_operator/get_autocompleteOperator');?>",
+                minLength: 1,
+                select: function (event, ui) {
+                    if (ui && ui.item && ui.item.value) {
+                        $op.val(ui.item.value);
+                    }
+                    return false;
+                }
+            });
+        }
+
         function getDataItem(x){
             $(document).ready(function(){
             $('#id_bom'+ x).autocomplete({
@@ -194,12 +213,6 @@
                     $('#ct_mc'+ x).val(ui.item.cyt_mc_bom);
                     $('#cavity'+ x).val(ui.item.cavity_product); 
 
-                    // var nwt = $('#nwt_mp').val();
-                    // var ot = $('#ot_mp').val();
-                    // var target = (((parseInt(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
-                    // //var target = (nwt + ot)
-                    // $('#Target').val(parseInt(target));  
-
                     //hitung target
                     var nwt = $('#nwt'+ x).val();
                     var target = ((3600/ui.item.cyt_mc_bom)*(ui.item.cavity_product*nwt));  
@@ -207,8 +220,17 @@
                 }
                 });
             });
-            console.log("running")
+            // Ensure operator autocomplete is also available for this row
+            bindOperatorAutocomplete(x);
         }
+
+        // Init Operator autocomplete for all rows (so it works even if user types Operator first)
+        $(document).ready(function(){
+            var total = parseInt($('#totalAkhir').val() || '0', 10);
+            for (var i = 0; i <= total; i++) {
+                bindOperatorAutocomplete(i);
+            }
+        });
     	
 
         function ubahBom(id)

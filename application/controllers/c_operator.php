@@ -52,6 +52,28 @@ class c_operator extends CI_Controller
 		}
 	}
 
+	// Autocomplete: Operator names (t_operator.nama_operator)
+	public function get_autocompleteOperator()
+	{
+		$term = $this->input->get('term');
+		if ($term === null) {
+			echo json_encode([]);
+			return;
+		}
+
+		$result = $this->op->search_operator_name($term, 20);
+		$arr_result = [];
+		foreach ($result as $row) {
+			$label = is_array($row) ? ($row['nama_operator'] ?? '') : '';
+			if ($label === '') continue;
+			$arr_result[] = [
+				'label' => $label,
+				'value' => $label,
+			];
+		}
+		echo json_encode($arr_result);
+	}
+
 
 	public function getdatabomMesinDPR()
 	{

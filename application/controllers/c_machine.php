@@ -160,15 +160,61 @@ class c_machine extends CI_Controller {
     $this->load->view('machine/layar' , $data);
    }
 
-  public function view_detail_layar($tanggal,$no_mesin)
+  public function view_detail_layar($tanggal = null, $no_mesin = null)
     {
+        // Handle missing URL segments safely (e.g. /view_detail_layar//1 passes only one arg)
+        if (empty($tanggal) || empty($no_mesin)) {
+            $uri = $this->uri->uri_string();
+            $seg3 = $this->uri->segment(3);
+            $seg4 = $this->uri->segment(4);
+            log_message('error', 'view_detail_layar missing args. uri=' . $uri . ' seg3=' . $seg3 . ' seg4=' . $seg4);
+            $this->session->set_flashdata('error', 'Tanggal / No. Mesin tidak lengkap. Silakan buka Info Detail dari halaman Screen Monitoring.');
+            redirect('c_machine/layar');
+            return;
+        }
+
+        // If date format is invalid, redirect to layar (prevents broken chart/data)
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $tanggal) || !strtotime($tanggal)) {
+            log_message('error', 'view_detail_layar invalid tanggal: ' . $tanggal . ' no_mesin=' . $no_mesin);
+            $this->session->set_flashdata('error', 'Tanggal tidak valid. Silakan buka Info Detail dari halaman Screen Monitoring.');
+            redirect('c_machine/layar');
+            return;
+        }
+
+        $detail = $this->mm->view_detail_layar($tanggal, $no_mesin);
+        // Redirect if no rows exist for this date/machine
+        if (!$detail || (method_exists($detail, 'num_rows') && $detail->num_rows() === 0)) {
+            log_message('debug', 'view_detail_layar no rows. tanggal=' . $tanggal . ' no_mesin=' . $no_mesin);
+            $this->session->set_flashdata('error', 'Data tidak ditemukan untuk Tanggal ' . $tanggal . ' - Mesin ' . $no_mesin . '.');
+            redirect('c_machine/layar');
+            return;
+        }
+
+        // Redirect if rows exist but production detail is empty (LEFT JOIN produced NULL qty_ok/target_mc)
+        // This avoids rendering a broken/empty chart page.
+        $rows = $detail->result_array();
+        $hasProductionValue = false;
+        foreach ($rows as $r) {
+            $qty_ok = isset($r['qty_ok']) ? $r['qty_ok'] : null;
+            $target_mc = isset($r['target_mc']) ? $r['target_mc'] : null;
+            if ($qty_ok !== null || $target_mc !== null) {
+                $hasProductionValue = true;
+                break;
+            }
+        }
+        if (!$hasProductionValue) {
+            log_message('debug', 'view_detail_layar empty production detail (qty_ok/target_mc NULL). tanggal=' . $tanggal . ' no_mesin=' . $no_mesin);
+            $this->session->set_flashdata('error', 'Detail produksi tidak ditemukan untuk Tanggal ' . $tanggal . ' - Mesin ' . $no_mesin . '.');
+            redirect('c_machine/layar');
+            return;
+        }
+
         $data = [
                 'data'                  => $this->data,
                 'aktif'                 => 'layar',
-                'view_detail_layar'     => $this->mm->view_detail_layar($tanggal,$no_mesin),
+                'view_detail_layar'     => $detail,
               ];
         $this->load->view('machine/view_detail_layar' , $data);
-      
     }
 
   public function getTonaseMachine(){

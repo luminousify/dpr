@@ -33,6 +33,16 @@
                             </div>
                         </div>
                     <div class="ibox-content">
+                        <?php if ($this->session->flashdata('error')): ?>
+                            <div class="alert alert-danger" role="alert" style="margin-bottom: 12px;">
+                                <?php echo $this->session->flashdata('error'); ?>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($this->session->flashdata('success')): ?>
+                            <div class="alert alert-success" role="alert" style="margin-bottom: 12px;">
+                                <?php echo $this->session->flashdata('success'); ?>
+                            </div>
+                        <?php endif; ?>
                         <?php foreach($total_running->result_array() as $running): ?>
                         <?php endforeach; ?>
                         <?php foreach($total_idle->result_array() as $idle): ?>
@@ -152,7 +162,11 @@
 
                                     <div class="col-sm-12 text-center">
                                         <!-- <font color="white"><h3>Alarm Message</h3></font> -->
-                                        <a href="<?php echo base_url('c_machine/view_detail_layar/'.$m->tanggal.'/'.$m->no_mesin) ?>" class="btn-edit" >
+                                        <?php
+                                            // Use the controller-provided page date to avoid empty $m->tanggal causing .../view_detail_layar//{no_mesin}
+                                            $tgl_detail = isset($tanggal) ? $tanggal : $m->tanggal;
+                                        ?>
+                                        <a href="<?php echo base_url('c_machine/view_detail_layar/'.$tgl_detail.'/'.$m->no_mesin) ?>" class="btn-edit" >
                                         <button class="btn btn-sm btn-block btn-info border mb-2" style="font-weight: 700">Info Detail</button></a>
                                     </div>
                              </div>

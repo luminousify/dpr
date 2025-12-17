@@ -47,19 +47,33 @@
         
         <?= form_open('c_machine/copy'); ?>  
         <div class="col-sm-40">
-            <h2>Copy Transaksi</h2>
-            <div class="row">
-                        <div class="col-sm-5 mb-2">
-                            <input type="date" name="tanggal" class="form-control" value="<?= $dari; ?>"> 
+            <div class="ibox" style="margin-bottom: 0;">
+                <div class="ibox-title" style="padding-bottom: 10px;">
+                    <h5 style="margin-bottom: 0;">Copy Transaksi</h5>
+                </div>
+                <div class="ibox-content" style="padding-top: 12px;">
+                    <div class="row" style="margin-bottom: 6px;">
+                        <div class="col-12">
+                            <small class="text-muted">
+                                Pilih <b>data sumber</b> yang akan dicopy (tanggal, kanit, line). Setelah klik <b>Copy Transaksi</b>, Anda akan masuk ke halaman copy untuk review & simpan.
+                            </small>
                         </div>
-                        <div class="col-sm-3">
-                            <select name="group" class="form-control" id="kanit" required=""  >
-                                <option>Kanit</option>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3 mb-2">
+                            <label><b>Tanggal sumber</b></label>
+                            <input type="date" name="tanggal" class="form-control" value="<?= $dari; ?>" required>
+                        </div>
+                        <div class="col-sm-3 mb-2">
+                            <label><b>Kanit sumber</b></label>
+                            <select name="group" class="form-control" id="kanit" required>
+                                <option value="" selected disabled>-Choose Kanit-</option>
                                 <?php foreach ($kanit as $b) { echo "<option value='$b[nama_operator]'>$b[nama_operator]</option>";}?>
                             </select>
                         </div>
-                        <div class="col-sm-3">
-                            <select name="line"  class="form-control" required=""  >
+                        <div class="col-sm-3 mb-2">
+                            <label><b>Line sumber</b></label>
+                            <select name="line" class="form-control" required>
                                 <?php if (empty($lines)) { ?>
                                     <option value="" selected disabled>-Choose-</option>
                                 <?php } else { ?>
@@ -69,8 +83,15 @@
                                 <?php } ?>
                             </select>
                         </div>
-                        <div class="col-sm-1"><input type="submit" name="copy" class="btn btn-primary" value="Copy"></div>
+                        <div class="col-sm-3 mb-2">
+                            <label>&nbsp;</label>
+                            <button type="submit" name="copy" class="btn btn-primary btn-block" style="white-space: nowrap;">
+                                <i class="fa fa-copy"></i> Copy Transaksi
+                            </button>
+                        </div>
                     </div>
+                </div>
+            </div>
         </div>
         <?= form_close(); ?>
     </div>
@@ -80,15 +101,15 @@
         <div class="col-sm-60" style="margin-left:100px;">
             <h2>Filter</h2>
             <div class="row">
-                        <div class="col-sm-4 mb-2">
+                        <div class="col-sm-3 mb-2">
                             <label><b>Tanggal Dari</b></label>
                             <input type="date" name="tanggal_dari" class="form-control" value="<?= $dari; ?>"> 
                         </div>
-                        <div class="col-sm-4 mb-2">
+                        <div class="col-sm-3 mb-2">
                             <label><b>Tanggal Sampai</b></label>
                             <input type="date" name="tanggal_sampai" class="form-control" value="<?= $sampai; ?>"> 
                         </div>
-                        <div class="col-sm-2 mb-2">
+                        <div class="col-sm-3 mb-2">
                             <label><b>Line</b></label>
                             <select name="line_new"  class="form-control" required=""  >
                                 <option value="All" <?= (!isset($line) || $line == 'All' || $line === '') ? 'selected' : ''; ?>>All</option>
@@ -99,9 +120,9 @@
                                 <?php } ?>
                             </select>
                         </div>
-                        <div class="col-sm-2 mb-2">
+                        <div class="col-sm-3 mb-2">
                             <label>&nbsp;</label>
-                            <button type="submit" name="show" class="btn btn-warning btn-sm form-control">
+                            <button type="submit" name="show" class="btn btn-warning btn-block" style="white-space: nowrap;">
                                 <i class="fa fa-search"></i> Show
                             </button>
                         </div>

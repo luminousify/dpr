@@ -40,6 +40,27 @@ class m_operator extends CI_Model
                 return $this->db->get()->result();
         }
 
+        /**
+         * Autocomplete helper: search operator names from t_operator (all jabatan)
+         * @param string $term
+         * @param int $limit
+         * @return array
+         */
+        public function search_operator_name($term, $limit = 20)
+        {
+                $term = (string) $term;
+                $limit = (int) $limit;
+                if ($limit <= 0) $limit = 20;
+
+                $this->db->select('nama_operator');
+                $this->db->from('t_operator');
+                $this->db->like('nama_operator', $term, 'both');
+                $this->db->order_by('nama_operator', 'ASC');
+                $this->db->limit($limit);
+                $query = $this->db->get();
+                return $query->result_array();
+        }
+
         function tampildataMesin($id_bom)
         {
                 $q = "SELECT *
