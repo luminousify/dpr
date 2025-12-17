@@ -926,7 +926,8 @@ class c_new extends CI_Controller
       'data_productionRelease'  => $this->op->tampil_productionRelease($id_production),
       'data_productionNG'       => $this->op->tampil_productionDL($id_production, 'NG'),
       'data_productionLT'       => $this->op->tampil_productionDL($id_production, 'LT'),
-      'kanit'                   => $this->op->tampil_select_group('user', 'posisi', 'Kanit', 'nama_actor'),
+      // Keep Kanit dropdown consistent with Add DPR (admin): source t_operator/jabatan='kanit'
+      'kanit'                   => $this->op->tampil_select_group('t_operator', 'jabatan', 'kanit', 'nama_operator'),
       'id_operator'             => $this->session->userdata('id_operator'),
       'nik'                     => $this->session->userdata('nik'),
       'password_op'             => $this->session->userdata('password_op'),
@@ -938,6 +939,12 @@ class c_new extends CI_Controller
       'cutting_tools'           => $cutting_tools,
       'used_cutting_tools'      => $used_cutting_tools,
     );
+
+    // Debug-only: confirm Kanit list count/source during edit page rendering
+    if (defined('ENVIRONMENT') && ENVIRONMENT !== 'production') {
+      $kanitCount = is_array($data['kanit']) ? count($data['kanit']) : 0;
+      log_message('debug', 'Edit DPR Kanit list (t_operator/jabatan=kanit) count: ' . $kanitCount);
+    }
     $this->load->view('dpr/edit_dpr', $data);
   }
 

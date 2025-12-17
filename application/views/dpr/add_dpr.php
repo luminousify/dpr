@@ -7,10 +7,13 @@
 <link href="<?php echo base_url(); ?>css/bootstrap-responsive.css" rel="stylesheet">
 <link rel="stylesheet" href="<?php echo base_url().'assets/css/jquery-ui.css'?>">
 <link rel="stylesheet" href="<?php echo base_url().'assets/css/bootstrap-icons.css'?>">
-<script src="<?php echo base_url().'assets/js/jquery-3.3.1.js'?>" type="text/javascript"> 
-</script> 
-<script src="<?php echo base_url().'assets/js/bootstrap.js'?>" type="text/javascript"></script>
-<script src="<?php echo base_url().'assets/js/jquery-ui.js'?>" type="text/javascript"></script>
+<!-- jQuery needed early for inline scripts throughout the document -->
+<script src="<?php echo base_url().'assets/js/jquery-3.3.1.js'?>" type="text/javascript"></script>
+<script>
+// Set flag to prevent jQuery from being loaded again in footer
+window.DPR_JQUERY_LOADED = true;
+</script>
+<!-- Note: Additional scripts will be loaded in footer -->
 
 <style>
     th, td { white-space: nowrap; } 
@@ -124,7 +127,7 @@
                   <div class="col-md-3">
                     <div class="form-group">
                         <label><b>Group <font style="color: red">*</font></b></label>
-                        <select name="user[0][group]" class="form-control" required="">
+                        <select name="user[0][group]" class="form-control" id="group" required="">
                               <option value="">-Choose-</option>
                           <option value="A">A</option>
                           <option value="B">B</option>
@@ -509,6 +512,10 @@
 </div>
 
 <script type="text/javascript">
+    // #region agent log (pre-fix) H-A/H-C: confirm script executes at all on c_dpr/add_dpr
+    fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:script-top',message:'add_dpr.php inline script loaded',data:{href:(typeof location!=="undefined"?location.href:null)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-A'})}).catch(()=>{});
+    // #endregion
+
         $(document).ready(function() {
             $('.delete').click(function() {
             return confirm("Are you sure you want to delete?");
@@ -915,6 +922,95 @@ $('#gross_produksi').val(customRound(grossProduction).toFixed(2));
             return true;
         });
     });
+
+    // Auto-select Group based on Kanit selection (and lock it)
+    function getGroupFromKanit(kanit) {
+        // Match by real dropdown values: sometimes full names are used (e.g. "Rinaldi Hanif F")
+        var raw = (kanit || '').toString().trim();
+        if (!raw) return '';
+
+        // normalize: lowercase + remove non-letters to make matching resilient (spaces, dots, etc.)
+        var norm = raw.toLowerCase().replace(/[^a-z]/g, '');
+
+        // Seniors
+        if (norm.indexOf('matsohe') !== -1) return 'A';
+        if (norm.indexOf('marjoko') !== -1) return 'B';
+        if (norm.indexOf('suroto') !== -1) return 'C';
+
+        // Juniors
+        if (norm.indexOf('rinaldi') !== -1) return 'A';
+        if (norm.indexOf('alan') !== -1) return 'B';
+        if (norm.indexOf('ramadhan') !== -1) return 'C';
+
+        return '';
+    }
+
+    function bindAutoGroupByKanit() {
+        var $kanit = $('#kanit');
+        var $group = $('#group');
+
+        // #region agent log (pre-fix) H-B/H-C: confirm elements are found
+        fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:bindAutoGroupByKanit',message:'bindAutoGroupByKanit() called',data:{kanitCount:$kanit.length,groupCount:$group.length,kanitId:($kanit.attr?$kanit.attr("id"):null),groupId:($group.attr?$group.attr("id"):null)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-B'})}).catch(()=>{});
+        // #endregion
+
+        if (!$kanit.length || !$group.length) return;
+
+        function apply() {
+            var kanitRaw = ($kanit.val() || '').toString();
+            var kanitNorm = kanitRaw.trim().toLowerCase().replace(/[^a-z]/g, '');
+            var mappingVersion = 'norm-contains-v1';
+            var g = getGroupFromKanit($kanit.val());
+            var hiddenSelector = 'input[type="hidden"][name="user[0][group]"][data-auto-group="1"]';
+            var $hidden = $(hiddenSelector);
+
+            // #region agent log (pre-fix) H-D: apply() run and mapping result
+            fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:apply',message:'apply() executed',data:{mappingVersion:mappingVersion,kanitVal:$kanit.val(),kanitNorm:kanitNorm,mappedGroup:g,groupValBefore:$group.val(),hiddenCount:$hidden.length},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H-D'})}).catch(()=>{});
+            // #endregion
+
+            if (g) {
+                $group.val(g).trigger('change');
+                $group.prop('disabled', true);
+
+                if (!$hidden.length) {
+                    $('<input>', { type: 'hidden', name: 'user[0][group]', value: g })
+                        .attr('data-auto-group', '1')
+                        .insertAfter($group);
+                } else {
+                    $hidden.val(g);
+                }
+
+                // #region agent log (pre-fix) H-D: after set/lock
+                fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:apply-set',message:'group set and locked',data:{kanitVal:$kanit.val(),mappedGroup:g,groupValAfter:$group.val(),groupDisabled:$group.prop('disabled'),hiddenCountAfter:$('input[type=\"hidden\"][name=\"user[0][group]\"][data-auto-group=\"1\"]').length},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-D'})}).catch(()=>{});
+                // #endregion
+
+                if (window.DPR_DEBUG) {
+                    console.log('[DPR] auto group by kanit', { kanit: $kanit.val(), group: g });
+                }
+            } else {
+                $group.prop('disabled', false);
+                $hidden.remove();
+
+                // #region agent log (pre-fix) H-E: unmapped/empty path
+                fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:apply-unset',message:'group unlocked (no mapping)',data:{kanitVal:$kanit.val(),mappedGroup:g,groupDisabled:$group.prop('disabled')},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-E'})}).catch(()=>{});
+                // #endregion
+            }
+        }
+
+        $kanit.on('change', function() {
+            // #region agent log (pre-fix) H-D: kanit change event fired
+            fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:kanit-change',message:'#kanit change fired',data:{kanitVal:$kanit.val()},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-D'})}).catch(()=>{});
+            // #endregion
+            apply();
+        });
+        apply();
+    }
+
+    $(document).ready(function() {
+        // #region agent log (pre-fix) H-C: document ready reached
+        fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:docready',message:'document ready - about to bind auto group',data:{hasJquery:(typeof window.jQuery!=="undefined")},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-C'})}).catch(()=>{});
+        // #endregion
+        bindAutoGroupByKanit();
+    });
 </script>
 
 
@@ -1059,5 +1155,6 @@ $(document).ready(function(){
     </script>
     </form>
 
+    <?php $this->load->view('layout/footer'); ?>
   </body>
 </html>

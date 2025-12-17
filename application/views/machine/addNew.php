@@ -62,10 +62,7 @@
         </select>
        </div>
     </div>
-    <div class="col">
-    <label><b></b></label><br/><br/>
-       <a class="btn btn-danger" style="color:white" onclick="checkDataProdPlan()">Check</a>
-    </div>
+
 </div>
                         <table class="table table-striped table-bordered table-hover dataTables-example" style="width:100%" id="customFields" >
                             <thead>
@@ -227,16 +224,19 @@
             } );
             //alert(iniValue);
             $('.dataTables-example').DataTable({
-                pageLength: 10,
+                // Show all rows and remove DataTables controls (Search + Show N entries)
                 responsive: false,
                     // scrollY:        "300px",
                     scrollX:        true,
                     scrollCollapse: true,
-                    paging:         true,
+                    paging:         false,
+                    searching:      false,
+                    lengthChange:   false,
                     fixedColumns:   {
                         left: 3,
                     },
-                dom: '<"html5buttons"B>lTfgitp',
+                // Remove 'l' (length menu), 'f' (filter/search), and 'p' (pagination) from the layout
+                dom: '<"html5buttons"B>t',
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
@@ -295,20 +295,8 @@
                     }
                     }
                 ],
-        initComplete: function () {
-            // Apply the search
-            this.api().columns().every( function () {
-                var that = this;
- 
-                $( 'input', this.footer() ).on( 'keyup change clear', function () {
-                    if ( that.search() !== this.value ) {
-                        that
-                            .search( this.value )
-                            .draw();
-                    }
-                } );
-            } );
-        }
+                // No initComplete column-search setup needed on this page
+                // (searching is disabled and we don't render a footer search row)
                
 
             });
@@ -336,100 +324,6 @@
     $("#customFields").on('click','.remCF',function(){
             $(this).parent().parent().remove();
         });
-
-    //Function to check whether date and current bom already have data on production_plan or not.
-    function checkDataProdPlan()
-    {
-        //current
-        var tgl_input = $('#tgl_input').val();
-        var shift_input = $('#shift').val();
-        var group_input = $('#group').val();
-        // console.log(tgl_input);
-        // console.log(shift_input);
-        // console.log(group_input);
-        // var res = bom.substring(0, 3);
-        
-
-        if(group_input != ''){
-            $.ajax({
-                      type    : "POST",
-                      url     : "<?php echo site_url('c_operator/check_prod_plan');?>",
-                      data    : "date=" + tgl_input,
-                      
-                      success : function(data){
-                        
-            var jsonData = JSON.parse(data);
-            for (var i = 0; i < jsonData.length; i++) {
-            var kp_pr = jsonData[i].kp_pr;
-            var no_mesin = jsonData[i].no_mesin;
-            var kode_produk = jsonData[i].kode_produk;
-            var material_name = jsonData[i].material_name;
-            var prod_qty = jsonData[i].prod_qty;
-            var cavity = jsonData[i].cavity;
-            var id_bom = jsonData[i].id_bom;
-            var cyt_mc = jsonData[i].cyt_mc;
-            for (var j = 0; j < 23; j++) {
-                if(no_mesin === $('#no_mesin'+[j]).val()){
-                    console.log(no_mesin+" on " + i + " match with "+$('#no_mesin'+[j]).val() + "("+j+")" )
-                    $('#id_bom'+[j]).val(kp_pr)
-                    // $('#kp').html(ui.item.kp_pr); 
-                    $('#id_bomS'+ [j]).val(id_bom);
-                    $('#ct_mc'+ [j]).val(cyt_mc);
-                    $('#cavity'+ [j]).val(cavity); 
-
-                    // var nwt = $('#nwt_mp').val();
-                    // var ot = $('#ot_mp').val();
-                    // var target = (((parseInt(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
-                    // //var target = (nwt + ot)
-                    // $('#Target').val(parseInt(target));  
-
-                    //hitung target
-                    var nwt = $('#nwt'+ [j]).val();
-                    var target = prod_qty;
-                    $('#target_ppic' + [j]).val(target);
-                    console.log( $('#id_bomS'+ [j]).val())
-                    console.log( $('#ct_mc'+ [j]).val())
-                    console.log( $('#cavity'+ [j]).val())
-                    console.log( $('#target_mc'+ [j]).val())
-                    
-                }   
-            }
-           
-        }
-        alert("Production Plan Data Found!");
-                         
-                    }});
-        }
-        else{
-        }
-        // $.ajax({
-        //               type    : "POST",
-        //               url     : "<?php echo site_url('c_operator/getdatabomMesinDPR');?>",
-        //               data    : "id_bom=" + id_bom,
-        //               success : function(data){
-        //                   console.log(data);
-        //             }});
-
-        //  var nama     = $("#namaNG").val();
-        //  var kategori = $('#kategoriNG').val();
-        //  var type     = $('#typeNG').val();
-        //  var satuan   = $('#satuanNG').val();
-        //  var qty      = $('#qtyNG').val();
-        //  var markup = "<tr><td><input type='button' value='X'></td><td>"+sv+"</td>"+
-        //  "<td><input type='hidden' name='detail["+save+"][nama]' value='"+nama+"'/>"+nama+"</td>"+
-        //  "<td><input type='hidden' name='detail["+save+"][kategori]' value='"+kategori+"''>"+kategori+"</td>"+
-        //  "<td><input type='hidden' name='detail["+save+"][qty]' value="+qty+" class='nilai'>"+qty+"</td>"+
-        //  "<td><input type='hidden' name='detail["+save+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detail["+save+"][type]' value="+type+"></td>"+
-        //  "</tr>";
-        //  $('.formNG').val('');
-    }
-
-
-
-
-        
-
-
 
     </script>
 

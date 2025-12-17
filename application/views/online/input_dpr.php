@@ -12,8 +12,56 @@
 	  <!-- Non-critical CSS - can be loaded with lower priority -->
 	  <link href="<?php echo base_url(); ?>css/bootstrap-responsive.css" rel="stylesheet" media="all">
 	  <link rel="stylesheet" href="<?php echo base_url().'assets/css/jquery-ui.css'?>" media="all">
+    <link rel="stylesheet" href="<?php echo base_url().'assets/css/select2.min.css'?>" media="all">
 
-	  <title>DPR Online</title>
+  <title>DPR Online</title>
+
+  <style type="text/css">
+    html { zoom: 100%; }
+
+    input[type=text], input[type=date], input[type=search], input[type=password] {
+      height: 42px;
+      padding: 10px 12px;
+    }
+
+    .form-section { position: relative; }
+    .section-badge {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f5f5f5;
+      color: #555;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    .flash-updated { animation: flash-bg 0.6s ease; }
+    @keyframes flash-bg {
+      0% { background: #fff8e1; }
+      100% { background: transparent; }
+    }
+
+    .field-error {
+      color: #c0392b;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .is-invalid {
+      border-color: #c0392b !important;
+      box-shadow: 0 0 0 0.1rem rgba(192,57,43,0.15);
+    }
+
+    @media (max-width: 768px) {
+      .card-body .row > [class^="col"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+      .card { margin-bottom: 0.75rem !important; }
+      .table-responsive { overflow-x: auto; }
+      label { display: block; }
+    }
+  </style>
 
 <form action="<?php echo site_url('c_operator/add')?>" method="post" id="my-form">
 <body>
@@ -47,15 +95,15 @@
 			  <!-- <div class="col-sm-6"> -->
 			    <div class="card rounded card border mb-3">
 			      <div class="card-body ">
-			     <div class="card rounded card border-primary mb-3">
+			     <div class="card rounded card border-primary mb-3 form-section">
 			      <div class="card-body ">
 			      	<?php if ($this->session->flashdata('gagal')): ?>
                	<div class="alert alert-danger" style="text-align: center;" role="alert">
                   <?php echo $this->session->flashdata('gagal'); ?>
                 </div>
               <?php endif; ?>
-			      	<div class="card-header bg-primary">
-						    <center> <b>PRODUCTION ( <?= $divisi; ?> ) </b></center>
+			      	<div class="card-header bg-primary d-flex justify-content-center align-items-center">
+						    <center class="w-100 mb-0"> <b>PRODUCTION ( <?= $divisi; ?> ) </b></center>
 						  </div>
 			      <!-- START ROW -->
 			      	<div class="row">
@@ -120,7 +168,7 @@
 							    <div class="col">
 							  		<div class="form-group">
 											  <label><b>Group <font style="color: red">*</font></b></label>
-											  <select name="user[0][group]" class="form-control" required="">
+											  <select name="user[0][group]" class="form-control" id="group" required="">
 											  	    <option value="">-Choose-</option>
 													<option value="A">A</option>
 													<option value="B">B</option>
@@ -178,12 +226,6 @@
 							          </select>
 										</div>
 							  	</div>
-							  	<div class="col">
-							  		<div class="form-group">
-											  <label><b>Tooling</b></label>
-							          <input type="text" name="user[0][tooling]" style="width:100px;height: 100%" x-moz-errormessage="Not Empty" class="form-control">
-										</div>
-							  	</div>
 							    <div class="col">
 							     <div class="form-group">
 												<label><b>Lot Global</b></label>
@@ -196,17 +238,11 @@
 							  <div class="row">
 							  	<div class="col">
 							  		<div class="form-group">
-											  <label><b>CT MC</b></label>
-											   <input type="text" name="user[0][ct_mc]" id="ct_mc" readonly="" class="form-control">
-											   <input type="hidden" id="ct_quo" value="">
+											  <label><b>CT MC STD</b></label>
+							          <input type="text" name="user[0][ct_mc]" id="ct_mc" readonly="" class="form-control">
+							          <input type="hidden" id="ct_quo" value="">
 										</div>
 							  	</div>
-							    <div class="col">
-							     <div class="form-group">
-												<label><b>CT MP</b></label> 
-											   <input type="text" name="user[0][ct_mp]" id="ct_mp" readonly="" class="form-control">
-										</div>
-							    </div>
 							  </div>
 
 							  <div class="row">
@@ -218,14 +254,6 @@
 								        </div>
 										</div>
 							  	</div>
-							    <div class="col">
-							     <div class="input-group">
-											   <input type="text" name="user[0][ct_mp_aktual]" id="ct_mp_aktual" class="form-control" aria-describedby="inputGroupPrepend2" value="0" >
-											   <div class="input-group-prepend">
-								          <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
-								         </div>
-										</div>
-							    </div>
 							  </div>
 
 							   <div class="row">
@@ -233,12 +261,6 @@
 							     <div class="form-group">
 												<label><b>Target MC</b></label>
 													<input type="text" name="user[0][target_mc]" id="target_mc" class="form-control" readonly="">
-										</div>
-							    </div>
-							    <div class="col">
-							     <div class="form-group">
-												<label><b>Target MP</b></label>
-													<input type="text" name="user[0][target]" id="target_mp" class="form-control" readonly="">
 										</div>
 							    </div>
 							  </div>
@@ -285,10 +307,11 @@
 
 			<!-- START DEFECT -->
 				<hr>
-			      <div class="card rounded card border-warning mb-3">
+			     <div class="card rounded card border-warning mb-3 form-section">
 			      <div class="card-body ">
-			      	<div class="card-header bg-warning">
-						    <center> <b>DEFECT </b></center>
+			      	<div class="card-header bg-warning d-flex justify-content-between align-items-center">
+						    <center class="w-100 mb-0"> <b>DEFECT </b></center>
+                <span id="ng-total-badge" class="section-badge">Total NG: 0</span>
 						  </div>
 						  <div class="row">
 							    <div class="col">
@@ -350,10 +373,11 @@
 					</div>
 					<!-- END DEFECT -->
 					<hr>
-					<div class="card rounded card border-success mb-3">
+					<div class="card rounded card border-success mb-3 form-section">
 			      <div class="card-body ">
-			      	<div class="card-header bg-success">
-						    <center> <b>LOSS TIME</b></center>
+			      	<div class="card-header bg-success d-flex justify-content-between align-items-center">
+						    <center class="w-100 mb-0"> <b>LOSS TIME</b></center>
+                <span id="lt-total-badge" class="section-badge">Total LT: 0 Jam</span>
 						  </div>
 						  
 							<div class="row">
@@ -425,14 +449,14 @@
 					<div class="card rounded card border-primary mb-3">
 			      <div class="card-body ">
 			      	<div class="card-header bg-primary">
-						    <center> <b>CUTTING TOOL</b></center>
+						    <center> <b>TOOLING</b></center>
 						  </div>
 						  <div class="row">
 						      <div class="col">
 						        <div class="form-group">
-						          <label><b>Cutting Tool</b></label>
+						          <label><b>Tooling</b></label>
 						          <div class="input-group">
-						            <input type="text" id="cutting_tools_code" class="autocompletecuttingtools form-control" placeholder="Input Cutting Tool Code">
+						            <input type="text" id="cutting_tools_code" class="autocompletecuttingtools form-control" placeholder="Input Tooling Code">
 						            <input type="hidden" id="cutting_tools_id">
 						            <div class="input-group-append">
 						              <button type="button" class="btn btn-primary" id="addCuttingToolBtn">Add</button>
@@ -455,7 +479,7 @@
 						    </div>
 					  </div>
 					</div>
-					<!-- END CUTTING TOOL SECTION -->
+					<!-- END TOOLING SECTION -->
 					<hr>
 					<div class="card rounded card border-success mb-3">
 			      <div class="card-body ">
@@ -526,6 +550,7 @@
 	<script src="<?php echo base_url().'assets/js/jquery-3.3.1.js'?>" type="text/javascript"></script> 
 	<script src="<?php echo base_url().'assets/js/bootstrap.js'?>" type="text/javascript"></script>
 	<script src="<?php echo base_url().'assets/js/jquery-ui.js'?>" type="text/javascript"></script>
+  <script src="<?php echo base_url().'assets/scripts/select2.min.js'?>" type="text/javascript"></script>
 	
 	<!-- Global configuration for external JS -->
 	<script type="text/javascript">

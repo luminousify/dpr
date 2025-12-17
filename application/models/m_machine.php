@@ -8,6 +8,37 @@ class m_machine extends CI_Model
                 $this->load->helper(array('url','html','form'));
         }
 
+        /**
+         * Get distinct line values from t_no_mesin.
+         * Used to populate Line dropdowns dynamically on machine pages.
+         *
+         * @return array<int, string>
+         */
+        public function get_distinct_lines()
+        {
+            $rows = $this->db
+                ->select('line')
+                ->from('t_no_mesin')
+                ->group_by('line')
+                ->order_by('line', 'ASC')
+                ->get()
+                ->result_array();
+
+            $lines = [];
+            foreach ($rows as $row) {
+                if (!isset($row['line'])) {
+                    continue;
+                }
+                $val = trim((string) $row['line']);
+                if ($val === '') {
+                    continue;
+                }
+                $lines[] = $val;
+            }
+
+            return $lines;
+        }
+
         public function tampil_machine_use($table , $tanggal_dari , $tanggal_sampai,$shift,$line)
         {
             if($line == 'All') { $lineNya = ''; } else { $lineNya = $this->db->where('line', $line);}

@@ -108,10 +108,26 @@
                                 <div class="col">
                                  <div class="form-group">
                                                 <label><b>Kanit <font style="color: red">*</font></b></label>
+                                                <?php
+                                                  // Force re-select if the saved kanit is no longer in the canonical list (t_operator/jabatan='kanit')
+                                                  $kanit_found = false;
+                                                  if (!empty($data->kanit) && !empty($kanit) && is_array($kanit)) {
+                                                    foreach ($kanit as $k_check) {
+                                                      $name = isset($k_check['nama_operator']) ? $k_check['nama_operator'] : null;
+                                                      if ($name !== null && $data->kanit === $name) { $kanit_found = true; break; }
+                                                    }
+                                                  }
+                                                  $kanit_current = ($kanit_found ? $data->kanit : '');
+                                                ?>
+                                                <?php if (!empty($data->kanit) && !$kanit_found): ?>
+                                                  <div class="alert alert-warning" style="margin-bottom: 0.5rem;">
+                                                    Kanit tersimpan <b><?= htmlspecialchars($data->kanit, ENT_QUOTES, 'UTF-8') ?></b> tidak ada di daftar Kanit aktif. Silakan pilih ulang.
+                                                  </div>
+                                                <?php endif; ?>
                                                <select name="user[0][kanit]" class="form-control" id="kanit" required=""  >
                                                   <option value="">-Choose-</option>
                                                   <?php foreach($kanit as $k): ?>
-                                                    <option <?php if($data->kanit == $k['nama_actor']){echo "selected";} ?> value='<?= $k['nama_actor'] ?>'><?= $k['nama_actor'] ?></option>
+                                                    <option <?php if($kanit_current == $k['nama_operator']){echo "selected";} ?> value='<?= $k['nama_operator'] ?>'><?= $k['nama_operator'] ?></option>
                                                   <?php endforeach; ?>
                                                </select>
                                         </div>
@@ -959,6 +975,67 @@
             document.getElementById("loading").style.color = "red"; 
             return true;
         });
+    });
+
+    // Auto-select Group based on Kanit selection (and lock it)
+    // Keep logic consistent with add_dpr.php (normalize + contains), so trailing spaces / full names work.
+    function getGroupFromKanit(kanit) {
+        var raw = (kanit || '').toString().trim();
+        if (!raw) return '';
+
+        // normalize: lowercase + remove non-letters to make matching resilient (spaces, dots, etc.)
+        var norm = raw.toLowerCase().replace(/[^a-z]/g, '');
+
+        // Seniors
+        if (norm.indexOf('matsohe') !== -1) return 'A';
+        if (norm.indexOf('marjoko') !== -1) return 'B';
+        if (norm.indexOf('suroto') !== -1) return 'C';
+
+        // Juniors
+        if (norm.indexOf('rinaldi') !== -1) return 'A';
+        if (norm.indexOf('alan') !== -1) return 'B';
+        if (norm.indexOf('ramadhan') !== -1) return 'C';
+
+        return '';
+    }
+
+    function bindAutoGroupByKanit() {
+        var $kanit = $('#kanit');
+        var $group = $('#group');
+        if (!$kanit.length || !$group.length) return;
+
+        function apply() {
+            var g = getGroupFromKanit($kanit.val());
+            var hiddenSelector = 'input[type="hidden"][name="user[0][group]"][data-auto-group="1"]';
+            var $hidden = $(hiddenSelector);
+
+            if (g) {
+                $group.val(g).trigger('change');
+                $group.prop('disabled', true);
+
+                if (!$hidden.length) {
+                    $('<input>', { type: 'hidden', name: 'user[0][group]', value: g })
+                        .attr('data-auto-group', '1')
+                        .insertAfter($group);
+                } else {
+                    $hidden.val(g);
+                }
+
+                if (window.DPR_DEBUG) {
+                    console.log('[DPR] auto group by kanit', { kanit: $kanit.val(), group: g });
+                }
+            } else {
+                $group.prop('disabled', false);
+                $hidden.remove();
+            }
+        }
+
+        $kanit.on('change', apply);
+        apply();
+    }
+
+    $(document).ready(function() {
+        bindAutoGroupByKanit();
     });
 </script>
 

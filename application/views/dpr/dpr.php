@@ -270,7 +270,7 @@
                                     foreach ($data_tabel->result_array() as $data) {
                                         $no++;
                                         // qty_lt is now in MINUTES, convert to hours for CDT calculation
-                                        $cdt = (($data['nwt_mp'] + $data['ot_mp']) - ($data['production_time'] + ($data['qty_lt'] / 60)));
+                                        $cdt = (($data['nwt_mp'] ?? 0) + ($data['ot_mp'] ?? 0) - (($data['production_time'] ?? 0) + (($data['qty_lt'] ?? 0) / 60)));
                                         $cdt_new = round($cdt, 1);
                                         $hasil = $data['cek_kanit'];
                                         $hasil2 = $data['cek_kasi'];
@@ -296,13 +296,13 @@
                                             echo '<td style="background-color:' . $background . '">' . $data['mesin'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['shift'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['kanit'] . '</td>';
-                                            echo '<td style="background-color:' . $background . '">' . $data['ct_mc'] . '</td>';
-                                            echo '<td style="background-color:' . $background . '">' . $data['gross_prod'] . '</td>';
-                                            echo '<td style="background-color:' . $background . '">' . $data['nett_prod'] . '</td>';
+                                            echo '<td style="background-color:' . $background . '">' . ($data['ct_mc'] ?? 0) . '</td>';
+                                            echo '<td style="background-color:' . $background . '">' . ($data['gross_prod'] ?? 0) . '</td>';
+                                            echo '<td style="background-color:' . $background . '">' . ($data['nett_prod'] ?? 0) . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['kode_product'] . ' - ' . $data['nama_product'] . '</td>';
-                                            echo '<td style="background-color:' . $background . '">' . $data['qty_ok'] . '</td>';
-                                            echo '<td style="background-color:' . $background . '">' . $data['qty_ng'] . '</td>';
-                                            echo '<td style="background-color:' . $background . '">' . round($data['qty_lt'] / 60, 2) . '</td>';
+                                            echo '<td style="background-color:' . $background . '">' . ($data['qty_ok'] ?? 0) . '</td>';
+                                            echo '<td style="background-color:' . $background . '">' . ($data['qty_ng'] ?? 0) . '</td>';
+                                            echo '<td style="background-color:' . $background . '">' . round(($data['qty_lt'] ?? 0) / 60, 2) . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['keterangan'] . '</td>';
                                             echo '<td style="background-color:' . $background . '">' . (!empty($data['cutting_tools_codes']) ? '<b>' . $data['cutting_tools_codes'] . '</b>' : '') . '</td>';
                                             if ($hasil == null) {
@@ -320,90 +320,90 @@
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['mesin'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['shift'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['group'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['nwt_mp'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['production_time'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['ot_mp'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . round($data['qty_lt'] / 60, 2) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['nwt_mp'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['production_time'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['ot_mp'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . round(($data['qty_lt'] ?? 0) / 60, 2) . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['kode_product'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['nama_product'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '">' . $data['lot_global'] . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['tooling'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['qty_ok'] . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['qty_ok'] ?? 0) . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b></b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['target_mc'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['qty_ng'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['ct_mc'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['ct_mc_aktual'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['nett_prod'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['gross_prod'] . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['target_mc'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['qty_ng'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['ct_mc'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['ct_mc_aktual'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['nett_prod'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['gross_prod'] ?? 0) . '</b></td>';
 
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['bending'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['berawan'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['blackdot'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['broken'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['crack'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['dent'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['dirty'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['discolour'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['ejector_mark'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['flash'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['flow_gate'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['flow_mark'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['fm'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['gas_burn'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['gas_mark'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['gate_bolong'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['gate_long'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['hangus'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['hike'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['oil'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['oversize'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['pin_plong'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['pin_seret'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['scratch'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['settingan'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['short_shoot'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['silver'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['sink_mark'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['undercut'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['under_size'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['void'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['waving'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['weld_line'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['white_dot'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['white_mark'] . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['bending'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['berawan'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['blackdot'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['broken'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['crack'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['dent'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['dirty'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['discolour'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['ejector_mark'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['flash'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['flow_gate'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['flow_mark'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['fm'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['gas_burn'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['gas_mark'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['gate_bolong'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['gate_long'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['hangus'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['hike'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['oil'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['oversize'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['pin_plong'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['pin_seret'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['scratch'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['settingan'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['short_shoot'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['silver'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['sink_mark'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['undercut'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['under_size'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['void'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['waving'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['weld_line'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['white_dot'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['white_mark'] ?? 0) . '</b></td>';
 
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['adjust_parameter'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['pre_heating_material'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['cleaning'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['set_up_mold'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['set_up_par_machine'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['ipqc_inspection'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['no_packing'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['no_material'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['material_problem'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['no_operator'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['daily_check_list'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['overhoule_mold'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['mold_problem'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['trial'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['machine'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['hopper_dryer'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['robot'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['mtc'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['cooling_tower'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['compressor'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['listrik'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['qc_lolos'] . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['adjust_parameter'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['pre_heating_material'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['cleaning'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['set_up_mold'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['set_up_par_machine'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['ipqc_inspection'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['no_packing'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['no_material'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['material_problem'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['no_operator'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['daily_check_list'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['overhoule_mold'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['mold_problem'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['trial'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['machine'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['hopper_dryer'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['robot'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['mtc'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['cooling_tower'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['compressor'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['listrik'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['qc_lolos'] ?? 0) . '</b></td>';
 
-                                            echo '<td style="background-color:' . $background . '"><b>' . $cdt_new . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($cdt_new ?? 0) . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b></b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['mach_use'] . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['mach_use'] ?? 0) . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b></b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['persen_ot'] . '</b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['runner'] . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['persen_ot'] ?? 0) . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['runner'] ?? 0) . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b></b></td>';
-                                            echo '<td style="background-color:' . $background . '"><b>' . $data['loss_purge'] . '</b></td>';
+                                            echo '<td style="background-color:' . $background . '"><b>' . ($data['loss_purge'] ?? 0) . '</b></td>';
                                             echo '<td style="background-color:' . $background . '"><b></b></td>';
                                             echo '<td style="background-color:' . $background . '"><b></b></td>';
                                             echo '<td style="background-color:' . $background . '"><b>' . $data['operator'] . '</b></td>';
@@ -442,11 +442,11 @@
                                             }
                                             echo '</tr>';
                                         }
-                                        $total      += $data['qty_ok'];
-                                        $total_nwt  += $data['nwt_mp'];
-                                        $total_ot   += $data['ot_mp'];
-                                        $total_ng   += $data['qty_ng'];
-                                        $total_lt   += $data['qty_lt'];
+                                        $total      += ($data['qty_ok'] ?? 0);
+                                        $total_nwt  += ($data['nwt_mp'] ?? 0);
+                                        $total_ot   += ($data['ot_mp'] ?? 0);
+                                        $total_ng   += ($data['qty_ng'] ?? 0);
+                                        $total_lt   += ($data['qty_lt'] ?? 0);
                                     }
                                     ?>
                              </tbody>
@@ -592,7 +592,7 @@
                                          <h2 class="font-bold">OK</h2>
                                      </div>
                                      <div class="col-9 text-right">
-                                         <h2 class="font-bold"><?= $total; ?></h2>
+                                         <h2 class="font-bold"><?= $total ?: 0; ?></h2>
                                      </div>
                                  </div>
                              </div>
@@ -604,7 +604,7 @@
                                          <h2 class="font-bold">NG</h2>
                                      </div>
                                      <div class="col-9 text-right">
-                                         <h2 class="font-bold"><?= $total_ng; ?></h2>
+                                         <h2 class="font-bold"><?= $total_ng ?: 0; ?></h2>
                                      </div>
                                  </div>
                              </div>
@@ -616,7 +616,7 @@
                                          <h2 class="font-bold">LT</h2>
                                      </div>
                                      <div class="col-9 text-right">
-                                         <h2 class="font-bold"><?= $total_lt; ?></h2>
+                                         <h2 class="font-bold"><?= $total_lt ?: 0; ?></h2>
                                      </div>
                                  </div>
                              </div>
@@ -628,7 +628,7 @@
                                          <h2 class="font-bold">NWT</h2>
                                      </div>
                                      <div class="col-9 text-right">
-                                         <h2 class="font-bold"><?= $total_nwt; ?></h2>
+                                         <h2 class="font-bold"><?= $total_nwt ?: 0; ?></h2>
                                      </div>
                                  </div>
                              </div>
@@ -640,7 +640,7 @@
                                          <h2 class="font-bold">OT</h2>
                                      </div>
                                      <div class="col-9 text-right">
-                                         <h2 class="font-bold"><?= $total_ot; ?></h2>
+                                         <h2 class="font-bold"><?= $total_ot ?: 0; ?></h2>
                                      </div>
                                  </div>
                              </div>
@@ -760,7 +760,7 @@
                                         echo '<td style="background-color:' . $background . '">' . $data['kanit'] . '</td>';
                                         // echo '<td style="background-color:'.$background.'">'.$data['mesin'].'</td>';
                                         echo '<td style="background-color:' . $background . '">' . number_format($data['CTStd2'], 2) . '</td>';
-                                        echo '<td style="background-color:' . $background . '">' . $data['gross_prod'] . '</td>';
+                                        echo '<td style="background-color:' . $background . '">' . ($data['gross_prod'] ?? 0) . '</td>';
                                         // echo '<td style="background-color:'.$background.'">'.$data['kp_pr'].'</td>';
                                         echo '<td style="background-color:' . $background . '">' . $data['np_pr'] . '</td>';
                                         // echo '<td style="background-color:'.$background.'">'.$data['proses'].'</td>';
@@ -948,11 +948,11 @@
                  },
                  {
                      extend: 'excel',
-                     title: 'ExampleFile'
+                     title: 'DPR_Report_<?php echo str_replace('-', '_', $dari); ?>_to_<?php echo str_replace('-', '_', $sampai); ?>_Shift_<?php echo $shift; ?>'
                  },
                  {
                      extend: 'pdf',
-                     title: 'ExampleFile'
+                     title: 'DPR_Report_<?php echo str_replace('-', '_', $dari); ?>_to_<?php echo str_replace('-', '_', $sampai); ?>_Shift_<?php echo $shift; ?>'
                  },
 
                  {
@@ -1010,11 +1010,11 @@
                  },
                  {
                      extend: 'excel',
-                     title: 'ExampleFile'
+                     title: 'DPR_Report_<?php echo str_replace('-', '_', $dari); ?>_to_<?php echo str_replace('-', '_', $sampai); ?>_Shift_<?php echo $shift; ?>'
                  },
                  {
                      extend: 'pdf',
-                     title: 'ExampleFile'
+                     title: 'DPR_Report_<?php echo str_replace('-', '_', $dari); ?>_to_<?php echo str_replace('-', '_', $sampai); ?>_Shift_<?php echo $shift; ?>'
                  },
 
                  {
@@ -1072,11 +1072,11 @@
                  },
                  {
                      extend: 'excel',
-                     title: 'ExampleFile'
+                     title: 'DPR_Report_<?php echo str_replace('-', '_', $dari); ?>_to_<?php echo str_replace('-', '_', $sampai); ?>_Shift_<?php echo $shift; ?>'
                  },
                  {
                      extend: 'pdf',
-                     title: 'ExampleFile'
+                     title: 'DPR_Report_<?php echo str_replace('-', '_', $dari); ?>_to_<?php echo str_replace('-', '_', $sampai); ?>_Shift_<?php echo $shift; ?>'
                  },
 
                  {

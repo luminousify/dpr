@@ -66,6 +66,125 @@ function writeNumeric(selector, value) {
     $(selector).val(formatted);
 }
 
+function flashField(selector) {
+    var $el = $(selector);
+    $el.addClass('flash-updated');
+    setTimeout(function() {
+        $el.removeClass('flash-updated');
+    }, 600);
+}
+
+function getGroupFromKanit(kanit) {
+    // Match by real dropdown values: sometimes full names are used (e.g. "Rinaldi Hanif F")
+    var raw = (kanit || '').toString().trim();
+    if (!raw) return '';
+
+    // normalize: lowercase + remove non-letters to make matching resilient (spaces, dots, etc.)
+    var norm = raw.toLowerCase().replace(/[^a-z]/g, '');
+
+    // Seniors
+    if (norm.indexOf('matsohe') !== -1 || norm.indexOf('matsoheh') !== -1 || norm.indexOf('matsohe') !== -1) return 'A';
+    if (norm.indexOf('marjoko') !== -1) return 'B';
+    if (norm.indexOf('suroto') !== -1) return 'C';
+
+    // Juniors
+    if (norm.indexOf('rinaldi') !== -1) return 'A';
+    if (norm.indexOf('alan') !== -1) return 'B';
+    if (norm.indexOf('ramadhan') !== -1) return 'C';
+
+    return '';
+}
+
+function bindAutoGroupByKanit() {
+    var $kanit = $('#kanit');
+    var $group = $('#group');
+    if (!$kanit.length || !$group.length) return;
+
+    function apply() {
+        var g = getGroupFromKanit($kanit.val());
+        var hiddenSelector = 'input[type="hidden"][name="user[0][group]"][data-auto-group="1"]';
+        var $hidden = $(hiddenSelector);
+
+        if (g) {
+            $group.val(g).trigger('change');
+            $group.prop('disabled', true);
+
+            if (!$hidden.length) {
+                $('<input>', { type: 'hidden', name: 'user[0][group]', value: g })
+                    .attr('data-auto-group', '1')
+                    .insertAfter($group);
+            } else {
+                $hidden.val(g);
+            }
+
+            if (window.DPR_DEBUG) {
+                console.log('[DPR] auto group by kanit', { kanit: $kanit.val(), group: g });
+            }
+        } else {
+            $group.prop('disabled', false);
+            $hidden.remove();
+        }
+    }
+
+    $kanit.on('change', apply);
+    apply(); // run once on page load (important for pre-selected Kanit)
+}
+
+function setFieldError($field, message) {
+    if (!$field || !$field.length) return;
+    var $group = $field.closest('.form-group');
+    var $hint = $group.find('.field-error');
+    if (!$hint.length) {
+        $hint = $('<div class="field-error"></div>').appendTo($group);
+    }
+    $hint.text(message);
+    $field.addClass('is-invalid');
+}
+
+function clearFieldError($field) {
+    if (!$field || !$field.length) return;
+    $field.removeClass('is-invalid');
+    $field.closest('.form-group').find('.field-error').remove();
+}
+
+function validateForm() {
+    var valid = true;
+    var requiredFields = [
+        {selector: '#tanggal', message: 'Tanggal wajib diisi'},
+        {selector: '#shift', message: 'Shift wajib dipilih'},
+        {selector: '#nwt', message: 'NWT wajib diisi', numeric: true},
+        {selector: '#qty', message: 'Qty OK wajib diisi', numeric: true},
+        {selector: '#id_bomS', message: 'Pilih BOM terlebih dahulu'},
+        {selector: '#mesin', message: 'Mesin wajib diisi'},
+        {selector: '#kanit', message: 'Kanit wajib dipilih'}
+    ];
+
+    requiredFields.forEach(function(field) {
+        var $el = $(field.selector);
+        var val = ($el.val() || '').toString().trim();
+
+        clearFieldError($el);
+
+        if (!val) {
+            setFieldError($el, field.message);
+            if (valid) { $el.focus(); }
+            valid = false;
+            return;
+        }
+
+        if (field.numeric) {
+            var num = Number(val.replace(/,/g, '.'));
+            if (!Number.isFinite(num) || num <= 0) {
+                setFieldError($el, 'Masukkan angka yang valid');
+                if (valid) { $el.focus(); }
+                valid = false;
+            }
+        }
+    });
+
+    return valid;
+}
+
 function canCalculateGrossNett() {
     return getNumericValue('#qty') > 0 &&
         getNumericValue('#ct_mc_aktual') > 0 &&
@@ -101,6 +220,9 @@ function initializeCalculationFields() {
 $(document).ready(function() {
     // Initialize all calculation fields to prevent NaN values
     initializeCalculationFields();
+
+    // Auto-select Group based on Kanit selection
+    bindAutoGroupByKanit();
     
     // Set current date as default
     document.getElementById("tanggal").valueAsDate = new Date();
@@ -117,6 +239,28 @@ $(document).ready(function() {
     // Apply restrictions to date input
     document.getElementById("tanggal").setAttribute('max', maxDate);
     document.getElementById("tanggal").setAttribute('min', minDateString);
+
+    // Mobile-friendly searchable selects
+    if ($.fn.select2) {
+        $('#kanit, #group, #shift').select2({
+            width: '100%',
+            dropdownAutoWidth: true,
+            minimumResultsForSearch: 5,
+            placeholder: 'Pilih'
+        });
+    }
+
+    // Clear validation state on change/typing
+    $('#my-form').on('input change', 'input, select', function() {
+        clearFieldError($(this));
+    });
+
+    // Prevent Enter from submitting inside dynamic tables
+    $('#my-form').on('keypress', 'input, select', function(e) {
+        if (e.key === 'Enter' && $(this).closest('table').length) {
+            e.preventDefault();
+        }
+    });
 
     // BOM Autocomplete with debouncing
     $('.autocompleteBom').autocomplete({
@@ -138,9 +282,7 @@ $(document).ready(function() {
             $('#kp').html(ui.item.kp_pr);
             $('#id_bomS').val(ui.item.id_bom);
             $('#ct_mc_aktual').val(ui.item.cyt_mc_bom);
-            $('#ct_mp_aktual').val(ui.item.cyt_mp_bom);
             $('#ct_mc').val(ui.item.cyt_mc_bom);
-            $('#ct_mp').val(ui.item.cyt_mp_bom);
             // Store cycle time quote for target calculation
             $('#ct_quo').val(ui.item.cyt_quo || ui.item.cyt_mc_bom); // Fallback to cyt_mc_bom if cyt_quo is not available
             $('#customer').val(ui.item.customer);
@@ -334,6 +476,13 @@ $(document).ready(function() {
     $("#my-form").submit(function(e) {
         GrossNett();
 
+        if (!validateForm()) {
+            e.preventDefault();
+            $('#loading').html('');
+            $('#submit').prop('disabled', false).val('Save');
+            return false;
+        }
+
         // FIX: Validate id_production before submission
         var idProduction = $('#id_production').val();
         if (!idProduction || idProduction.trim() === '') {
@@ -351,8 +500,13 @@ $(document).ready(function() {
             writeNumeric('#gross_produksi', getNumericValue('#gross_produksi'));
         }
 
-        $("#submit").attr("disabled", true);
-        $('#loading').html("Loading, please wait...");
+        var $submit = $('#submit');
+        if (!$submit.data('original-text')) {
+            $submit.data('original-text', $submit.val());
+        }
+
+        $submit.prop('disabled', true).val('Saving...');
+        $('#loading').html("Processing...");
         document.getElementById("loading").style.color = "red";
         return true;
     });
@@ -396,7 +550,6 @@ function setTarget() {
     } else {
         $('#target_mc').val('');
     }
-    $('#target_mp').val(0);
     GrossNett();
 }
 
@@ -551,6 +704,13 @@ function GrossNett() {
 
     writeNumeric('#gross_produksi', roundedGross);
     writeNumeric('#nett_produksi', roundedNett);
+    $('#production_time').attr('title', '(Qty OK + NG) / cavity * CT / 3600');
+    $('#gross_produksi').attr('title', '3600 / ((OK / cavity std) / (WorkHour + OT))');
+    $('#nett_produksi').attr('title', '3600 / ((OK / cavity std) / (WorkHour + OT - LT))');
+    flashField('#production_time');
+    flashField('#gross_produksi');
+    flashField('#nett_produksi');
+    flashField('#cal_dt');
 }
 
 // Custom rounding function
@@ -657,7 +817,11 @@ function total() {
             sum += price;
         }
     });
-    $('#amountNG').val(Number.isFinite(sum) ? sum : 0);
+    var finalSum = Number.isFinite(sum) ? sum : 0;
+    $('#amountNG').val(finalSum);
+    $('#ng-total-badge').text('Total NG: ' + finalSum);
+    flashField('#ng-total-badge');
+    flashField('#amountNG');
 }
 
 // Calculate total LT (sum minutes, display as hours)
@@ -682,6 +846,10 @@ function totalLT() {
         }).appendTo('form');
     }
     hiddenLtField.val(sum_minutes);
+
+    $('#lt-total-badge').text('Total LT: ' + (Number.isFinite(sum_hours) ? sum_hours.toFixed(2) : '0') + ' Jam');
+    flashField('#lt-total-badge');
+    flashField('#amountLT');
 }
 
 // Calculate total Start/Stop time

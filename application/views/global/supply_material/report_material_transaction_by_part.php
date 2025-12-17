@@ -181,7 +181,7 @@
                     { extend: 'copy'},
                     {extend: 'csv'},
                     {extend: 'excel', title: 'Material Transaction By Product ID'},
-                    {extend: 'pdf', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'Data_2025_12_09'},
 
                     {extend: 'print',
                      customize: function (win){

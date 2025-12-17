@@ -179,8 +179,8 @@
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Material Transaction by Machine',messageTop: 'Peserta Psikotest PT Padma Soode Indonesia',},
-                    {extend: 'pdf', title: 'ExampleFile'},
+                    {extend: 'excel', title: 'Material Transaction by Machine',messageTop: 'Peserta Psikotest PT Ciptajaya Kreasindo Utama',},
+                    {extend: 'pdf', title: 'Data_2025_12_09'},
 
                     {extend: 'print',
                      customize: function (win){

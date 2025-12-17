@@ -68,8 +68,13 @@
                                      <th><b>No</b></th>
                                      <th><b>Product ID</b></th>
                                      <th><b>Product Name</b></th>
-                                     <?php if ($valueNya > 5) {  ?>
+                                     <?php if ($jenis === 'qty_ok') { ?>
                                          <th><b>Customer</b></th>
+                                     <?php } else if ($valueNya > 5) {  ?>
+                                         <th><b>Customer</b></th>
+                                     <?php } ?>
+                                     <?php if ($jenis === 'qty_ok') { ?>
+                                         <th><b>Total Production</b></th>
                                      <?php } ?>
                                      <?php if ($valueNya > 1 && $valueNya < 5) {  ?>
                                          <th><b>Proses</b></th>
@@ -87,9 +92,11 @@
                                          <th><b>CT Aktual</b></th>
                                      <?php } ?>
                                      <th><?= $name; ?></th>
-                                     <?php for ($i = 1; $i <= $angka; $i++) { ?><th style="background:#1ab394;color: white;text-align: center;">
-                                             <center><?php echo $i; ?></center>
-                                         </th><?php } ?>
+                                     <?php for ($i = 1; $i <= $angka; $i++) { ?>
+                                        <th style="background:#1ab394;color: white;text-align: center;">
+                                            <center><?php echo $i; ?></center>
+                                        </th>
+                                     <?php } ?>
                                      <?php if ($valueNya > 0 && $valueNya < 6) {  ?>
                                          <th><b>Alias BOM</b></th>
                                          <th><b>ID BOM</b></th>
@@ -111,8 +118,13 @@
                                         '</td>';
                                         echo '<td class="str">' . $data['kode_product'], '</td>';
                                         echo '<td>' . $data['nama_product'], '</td>';
-                                        if ($valueNya > 5) {
+                                        if ($jenis === 'qty_ok') {
                                             echo '<td>' . $data['customer'], '</td>';
+                                        } else if ($valueNya > 5) {
+                                            echo '<td>' . $data['customer'], '</td>';
+                                        }
+                                        if ($jenis === 'qty_ok') {
+                                            echo '<td>' . round($data['total_production'], 2) . '</td>';
                                         }
                                         if ($valueNya > 1 && $valueNya < 5) {
                                             echo '<td>' . $data['nama_proses'], '</td>';
@@ -131,12 +143,23 @@
                                         }
                                        $row_total = round($data['total'], 2);
                                        echo '<td>' . $row_total, '</td>';
-                                       $grand_total_overall += $row_total;
+                                       
+                                       // Track grand total separately for qty_ok reports
+                                       if ($jenis === 'qty_ok') {
+                                           // For qty_ok reports, we need to add the total production to the grand total
+                                           $grand_total_overall += round($data['total_production'], 2);
+                                       } else {
+                                           $grand_total_overall += $row_total;
+                                       }
+                                       
+                                       // Display daily data
                                        for ($i = 1; $i <= $angka; $i++) {
+                                           // Show the value for the day (OK quantity)
                                            $dayVal = round($data['t' . $i . $name], 2);
                                            echo '<td>' . $dayVal . '</td>';
                                            $grand_total_days[$i] += $dayVal;
                                        }
+                                       
                                         if ($valueNya > 0 && $valueNya < 6) {
                                             echo '<td>' . $data['alias_bom'], '</td>';
                                             echo '<td>' . $data['id_bom'], '</td>';
@@ -151,8 +174,13 @@
                                      <th><b>No</b></th>
                                      <th><b>Product ID</b></th>
                                      <th><b>Product Name</b></th>
-                                     <?php if ($valueNya > 5) {  ?>
+                                     <?php if ($jenis === 'qty_ok') { ?>
                                          <th><b>Customer</b></th>
+                                     <?php } else if ($valueNya > 5) {  ?>
+                                         <th><b>Customer</b></th>
+                                     <?php } ?>
+                                     <?php if ($jenis === 'qty_ok') { ?>
+                                         <th><b>Total Production</b></th>
                                      <?php } ?>
                                      <?php if ($valueNya > 1 && $valueNya < 6) {  ?>
                                          <th><b>Proses</b></th>
@@ -170,10 +198,11 @@
                                          <th><b>CT Aktual</b></th>
                                      <?php } ?>
                                      <th><?= $name; ?></th>
-                                     <?php for ($i = 1; $i <= $angka; $i++) { ?><th style="background:#1ab394;color: white;text-align: center;">
-                                             <center><?php echo $i; ?>
-                                         </th>
-                                         </center><?php } ?>
+                                     <?php for ($i = 1; $i <= $angka; $i++) { ?>
+                                        <th style="background:#1ab394;color: white;text-align: center;">
+                                            <center><?php echo $i; ?></center>
+                                        </th>
+                                     <?php } ?>
                                      <?php if ($valueNya > 0 && $valueNya < 6) {  ?>
                                          <th><b>Alias BOM</b></th>
                                          <th><b>ID BOM</b></th>
@@ -186,7 +215,14 @@
                                     echo '<th></th>'; // No
                                     echo '<th></th>'; // Product ID
                                     echo '<th style="text-align:right;">GRAND TOTAL:</th>'; // Product Name as label
-                                    if ($valueNya > 5) { echo '<th></th>'; } // Customer (1 column)
+                                    
+                                    // Customer column - conditional for qty_ok report
+                                    if ($jenis === 'qty_ok') { echo '<th></th>'; } 
+                                    else if ($valueNya > 5) { echo '<th></th>'; } // Customer (1 column)
+                                    
+                                    // Total Production column for qty_ok report
+                                    if ($jenis === 'qty_ok') { echo '<th></th>'; }
+                                    
                                     if ($valueNya > 1 && $valueNya < 5) { echo '<th></th>'; } // Proses (1 column)
                                     if ($valueNya > 1 && $valueNya < 5) { echo '<th></th>'; } // Machine (1 column)
                                     if ($valueNya > 2 && $valueNya < 5) { echo '<th></th>'; } // Shift (1 column)
@@ -195,10 +231,12 @@
                                     }
                                     // Measure column - qty_ok or other metric
                                     echo '<th style="text-align:center;"><b>' . number_format($grand_total_overall, 2) . '</b></th>';
+                                    
                                     // Day columns
                                     for ($i = 1; $i <= $angka; $i++) {
                                         echo '<th style="text-align:center;"><b>' . number_format($grand_total_days[$i], 2) . '</b></th>';
                                     }
+                                    
                                     if ($valueNya > 0 && $valueNya < 6) { echo '<th></th><th></th>'; } // Alias BOM, ID BOM (2 columns)
                                     ?>
                                 </tr>
@@ -566,7 +604,13 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
              $('.dataTables-example tfoot tr.search-row th').each(function() {
                  $(this).html('<input type="text" placeholder="Search" style="width:100%" />');
              });
-             var iniValue = parseInt($('#iniValue').val()) + 3;
+             // Calculate the number of fixed columns based on the report type and options
+            var iniValue = parseInt($('#iniValue').val()) + 3;
+            
+            // For qty_ok reports, we need extra column for Customer and Total Production
+            <?php if ($jenis === 'qty_ok') { ?>
+                iniValue += 2; // Add 2 more columns for Customer and Total Production
+            <?php } ?>
              if (iniValue == 9) {
                  iniValue = 0;
              }
@@ -615,7 +659,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                     },
                     {
                         extend: 'excel',
-                        title: 'ExampleFile',
+                        title: '<?php echo ucfirst(str_replace('_', ' ', $jenis)); ?>_Report_<?php echo str_replace(' ', '_', $name); ?>_<?php echo str_replace('-', '_', $tanggal); ?>',
                         footer: true,
                         exportOptions: {
                             orthogonal: 'export',
@@ -631,7 +675,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                     },
                     {
                         extend: 'pdf',
-                        title: 'ExampleFile',
+                        title: '<?php echo ucfirst(str_replace('_', ' ', $jenis)); ?>_Report_<?php echo str_replace(' ', '_', $name); ?>_<?php echo str_replace('-', '_', $tanggal); ?>',
                         footer: true,
                         exportOptions: {
                             orthogonal: 'export',

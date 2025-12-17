@@ -1,5 +1,10 @@
     <!-- Mainly scripts -->
-    <script src="<?= base_url(); ?>template/js/jquery-3.1.1.min.js"></script>
+    <script>
+    // Only load jQuery if it's not already loaded
+    if (typeof window.DPR_JQUERY_LOADED === 'undefined') {
+        document.write('<script src="<?= base_url(); ?>template/js/jquery-3.1.1.min.js"><\/script>');
+    }
+    </script>
     <script src="<?= base_url(); ?>template/js/select2.min.js"></script>
     <script src="<?= base_url(); ?>template/js/popper.min.js"></script>
     <script src="<?= base_url(); ?>template/js/bootstrap.js"></script>
@@ -96,7 +101,7 @@
                     showMethod: 'slideDown',
                     timeOut: 4000
                 };
-                toastr.success('PT Padma Soode Indonesia', 'Welcome To DPR Website');
+                toastr.success('PT Ciptajaya Kreasindo Utama', 'Welcome To DPR Website');
 
             }, 1300);
 

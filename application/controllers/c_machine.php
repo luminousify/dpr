@@ -45,7 +45,8 @@ class c_machine extends CI_Controller {
                 'data_tabelTotalSisaMPHadir3'   => $this->mm->tampil_sisa_mp_hadir($dari ,$sampai, 3),
                 'dari'          => $dari,
                 'sampai'        => $sampai,
-                'line'        => $line
+                'line'        => $line,
+                'lines'       => $this->mm->get_distinct_lines()
             ];
       $this->load->view('machine/1machine' , $data);
       }
@@ -76,7 +77,8 @@ class c_machine extends CI_Controller {
                 'kanit'               => $this->op->tampil_select_group('t_operator','jabatan','kanit','nama_operator'),
                 'dari'          => $dari,
                 'sampai'        => $sampai,
-                'line'        => $line
+                'line'        => $line,
+                'lines'       => $this->mm->get_distinct_lines()
               ];
         $this->load->view('machine/1machine' , $data);
       }

@@ -93,7 +93,7 @@
 <?php echo form_close(); ?>
         <div class="row">
             <div class="col-md-6">
-                Copyright PT Padma Soode Indonesia
+                Copyright PT Ciptajaya Kreasindo Utama
             </div>
             <div class="col-md-6 text-right">
                <small>© <?= date('Y'); ?></small>

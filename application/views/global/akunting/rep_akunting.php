@@ -834,7 +834,7 @@ $(document).ready(function() {
                         }
                     },
                     // END Replacement for Excel Button
-                    {extend: 'pdf', title: 'ExampleFile'}, // Keep other buttons as they are
+                    {extend: 'pdf', title: 'Data_2025_12_09'}, // Keep other buttons as they are
 
                     {extend: 'print',
                      customize: function (win){

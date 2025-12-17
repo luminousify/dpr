@@ -180,7 +180,7 @@
                     { extend: 'copy'},
                     {extend: 'csv'},
                     {extend: 'excel', title: 'Material Transaction by Machine'},
-                    {extend: 'pdf', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'Data_2025_12_09'},
 
                     {extend: 'print',
                      customize: function (win){

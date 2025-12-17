@@ -32,7 +32,9 @@ class m_report extends CI_Model
                 p.kode_product,
                 p.nama_product,
                 SUM(po.qty_ok) as total_ok,
-                SUM(po.qty_ng) as total_ng
+                SUM(po.qty_ng) as total_ng,
+                SUM(po.qty_ok + po.qty_ng) as total_production,
+                GROUP_CONCAT(DISTINCT po.customer) as customers
               FROM t_production_op po
               LEFT JOIN t_bom b ON po.id_bom = b.id_bom
               LEFT JOIN t_product p ON b.id_product = p.id_product

@@ -515,8 +515,8 @@ $(document).ready(function() {
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'ExampleFile'},
-                    {extend: 'pdf', title: 'ExampleFile'},
+                    {extend: 'excel', title: 'Defect_Report_<?php echo str_replace("-", "_", $bulan); ?>_<?php echo $tahun; ?>'},
+                    {extend: 'pdf', title: 'Defect_Report_<?php echo str_replace("-", "_", $bulan); ?>_<?php echo $tahun; ?>'},
 
                     {extend: 'print',
                      customize: function (win){

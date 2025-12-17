@@ -25,9 +25,17 @@
             <div class="row">
                 <div class="col-sm-6">
                             <select name="line" id="line_select" class="form-control" required=""  >
-                                <option value="1" selected>1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
+                                <?php
+                                    $lines = (isset($lines) && is_array($lines)) ? $lines : [];
+                                    $defaultLine = !empty($lines) ? (string) $lines[0] : '';
+                                ?>
+                                <?php if (empty($lines)) { ?>
+                                    <option value="" selected disabled>-Choose-</option>
+                                <?php } else { ?>
+                                    <?php foreach ($lines as $ln) { $ln = (string) $ln; ?>
+                                        <option value="<?= htmlspecialchars($ln); ?>" <?= ($ln === $defaultLine) ? 'selected' : ''; ?>><?= htmlspecialchars($ln); ?></option>
+                                    <?php } ?>
+                                <?php } ?>
                             </select>
                         </div>
                 <div class="col-sm-6">
@@ -52,9 +60,13 @@
                         </div>
                         <div class="col-sm-3">
                             <select name="line"  class="form-control" required=""  >
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
+                                <?php if (empty($lines)) { ?>
+                                    <option value="" selected disabled>-Choose-</option>
+                                <?php } else { ?>
+                                    <?php foreach ($lines as $ln) { $ln = (string) $ln; ?>
+                                        <option value="<?= htmlspecialchars($ln); ?>" <?= ($ln === $defaultLine) ? 'selected' : ''; ?>><?= htmlspecialchars($ln); ?></option>
+                                    <?php } ?>
+                                <?php } ?>
                             </select>
                         </div>
                         <div class="col-sm-1"><input type="submit" name="copy" class="btn btn-primary" value="Copy"></div>
@@ -80,9 +92,11 @@
                             <label><b>Line</b></label>
                             <select name="line_new"  class="form-control" required=""  >
                                 <option value="All" <?= (!isset($line) || $line == 'All' || $line === '') ? 'selected' : ''; ?>>All</option>
-                                <option value="1" <?= (isset($line) && ($line == '1' || $line == 1)) ? 'selected' : ''; ?>>1</option>
-                                <option value="2" <?= (isset($line) && ($line == '2' || $line == 2)) ? 'selected' : ''; ?>>2</option>
-                                <option value="3" <?= (isset($line) && ($line == '3' || $line == 3)) ? 'selected' : ''; ?>>3</option>
+                                <?php if (!empty($lines)) { ?>
+                                    <?php foreach ($lines as $ln) { $ln = (string) $ln; ?>
+                                        <option value="<?= htmlspecialchars($ln); ?>" <?= (isset($line) && (string) $line === $ln) ? 'selected' : ''; ?>><?= htmlspecialchars($ln); ?></option>
+                                    <?php } ?>
+                                <?php } ?>
                             </select>
                         </div>
                         <div class="col-sm-2 mb-2">
@@ -440,8 +454,8 @@ $(document).ready(function() {
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'ExampleFile'},
-                    {extend: 'pdf', title: 'ExampleFile'},
+                    {extend: 'excel', title: 'Data_2025_12_09'},
+                    {extend: 'pdf', title: 'Data_2025_12_09'},
 
                     {extend: 'print',
                      customize: function (win){

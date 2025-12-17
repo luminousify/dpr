@@ -526,7 +526,7 @@ $(document).ready(function() {
                     { extend: 'copy'},
                     {extend: 'csv'},
                     {extend: 'excel', title: 'Report Akunting <?php echo isset($start_date) ? date('d M Y', strtotime($start_date)) : date('d M Y'); ?> - <?php echo isset($end_date) ? date('d M Y', strtotime($end_date)) : date('d M Y'); ?>',message: 'Report Qty by Customer <br><?php echo isset($start_date) ? date('d M Y', strtotime($start_date)) : date('d M Y'); ?> - <?php echo isset($end_date) ? date('d M Y', strtotime($end_date)) : date('d M Y'); ?>'},
-                    {extend: 'pdf', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'Data_2025_12_09'},
 
                     {extend: 'print',
                      customize: function (win){

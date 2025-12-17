@@ -284,43 +284,86 @@ class m_dpr extends CI_Model
     } else {
       $pilihanNya = 'p.id_product ,';
     }
-
-    $query = $this->db->query("SELECT *  , SUM(p.`$jenis`) AS total, 
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '01') THEN `p`.`$jenis` ELSE NULL END)) AS `t1$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '02') THEN `p`.`$jenis` ELSE NULL END)) AS `t2$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '03') THEN `p`.`$jenis` ELSE NULL END)) AS `t3$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '04') THEN `p`.`$jenis` ELSE NULL END)) AS `t4$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '05') THEN `p`.`$jenis` ELSE NULL END)) AS `t5$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '06') THEN `p`.`$jenis` ELSE NULL END)) AS `t6$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '07') THEN `p`.`$jenis` ELSE NULL END)) AS `t7$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '08') THEN `p`.`$jenis` ELSE NULL END)) AS `t8$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '09') THEN `p`.`$jenis` ELSE NULL END)) AS `t9$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '10') THEN `p`.`$jenis` ELSE NULL END)) AS `t10$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '11') THEN `p`.`$jenis` ELSE NULL END)) AS `t11$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '12') THEN `p`.`$jenis` ELSE NULL END)) AS `t12$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '13') THEN `p`.`$jenis` ELSE NULL END)) AS `t13$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '14') THEN `p`.`$jenis` ELSE NULL END)) AS `t14$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '15') THEN `p`.`$jenis` ELSE NULL END)) AS `t15$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '16') THEN `p`.`$jenis` ELSE NULL END)) AS `t16$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '17') THEN `p`.`$jenis` ELSE NULL END)) AS `t17$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '18') THEN `p`.`$jenis` ELSE NULL END)) AS `t18$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '19') THEN `p`.`$jenis` ELSE NULL END)) AS `t19$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '20') THEN `p`.`$jenis` ELSE NULL END)) AS `t20$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '21') THEN `p`.`$jenis` ELSE NULL END)) AS `t21$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '22') THEN `p`.`$jenis` ELSE NULL END)) AS `t22$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '23') THEN `p`.`$jenis` ELSE NULL END)) AS `t23$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '24') THEN `p`.`$jenis` ELSE NULL END)) AS `t24$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '25') THEN `p`.`$jenis` ELSE NULL END)) AS `t25$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '26') THEN `p`.`$jenis` ELSE NULL END)) AS `t26$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '27') THEN `p`.`$jenis` ELSE NULL END)) AS `t27$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '28') THEN `p`.`$jenis` ELSE NULL END)) AS `t28$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '29') THEN `p`.`$jenis` ELSE NULL END)) AS `t29$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '30') THEN `p`.`$jenis` ELSE NULL END)) AS `t30$jenis`,
-                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '31') THEN `p`.`$jenis` ELSE NULL END)) AS `t31$jenis`
-                              FROM `v_production_op` AS p 
-                              WHERE SUBSTR(p.tanggal,1,7) = '$tanggal'
-                              GROUP BY $pilihanNya  SUBSTR(p.tanggal,1,7)
-                              order by p.`mesin` ");
+    
+    // Check if this is a qty_ok report to include customer and total production
+    if ($jenis === 'qty_ok') {
+      $query = $this->db->query("SELECT * , p.customer, 
+                      SUM(p.qty_ok + p.qty_ng) AS total_production,
+                      SUM(p.`$jenis`) AS total, 
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '01') THEN `p`.`$jenis` ELSE NULL END)) AS `t1$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '02') THEN `p`.`$jenis` ELSE NULL END)) AS `t2$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '03') THEN `p`.`$jenis` ELSE NULL END)) AS `t3$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '04') THEN `p`.`$jenis` ELSE NULL END)) AS `t4$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '05') THEN `p`.`$jenis` ELSE NULL END)) AS `t5$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '06') THEN `p`.`$jenis` ELSE NULL END)) AS `t6$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '07') THEN `p`.`$jenis` ELSE NULL END)) AS `t7$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '08') THEN `p`.`$jenis` ELSE NULL END)) AS `t8$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '09') THEN `p`.`$jenis` ELSE NULL END)) AS `t9$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '10') THEN `p`.`$jenis` ELSE NULL END)) AS `t10$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '11') THEN `p`.`$jenis` ELSE NULL END)) AS `t11$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '12') THEN `p`.`$jenis` ELSE NULL END)) AS `t12$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '13') THEN `p`.`$jenis` ELSE NULL END)) AS `t13$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '14') THEN `p`.`$jenis` ELSE NULL END)) AS `t14$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '15') THEN `p`.`$jenis` ELSE NULL END)) AS `t15$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '16') THEN `p`.`$jenis` ELSE NULL END)) AS `t16$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '17') THEN `p`.`$jenis` ELSE NULL END)) AS `t17$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '18') THEN `p`.`$jenis` ELSE NULL END)) AS `t18$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '19') THEN `p`.`$jenis` ELSE NULL END)) AS `t19$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '20') THEN `p`.`$jenis` ELSE NULL END)) AS `t20$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '21') THEN `p`.`$jenis` ELSE NULL END)) AS `t21$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '22') THEN `p`.`$jenis` ELSE NULL END)) AS `t22$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '23') THEN `p`.`$jenis` ELSE NULL END)) AS `t23$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '24') THEN `p`.`$jenis` ELSE NULL END)) AS `t24$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '25') THEN `p`.`$jenis` ELSE NULL END)) AS `t25$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '26') THEN `p`.`$jenis` ELSE NULL END)) AS `t26$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '27') THEN `p`.`$jenis` ELSE NULL END)) AS `t27$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '28') THEN `p`.`$jenis` ELSE NULL END)) AS `t28$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '29') THEN `p`.`$jenis` ELSE NULL END)) AS `t29$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '30') THEN `p`.`$jenis` ELSE NULL END)) AS `t30$jenis`,
+                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '31') THEN `p`.`$jenis` ELSE NULL END)) AS `t31$jenis`
+                                FROM `v_production_op` AS p 
+                                WHERE SUBSTR(p.tanggal,1,7) = '$tanggal'
+                                GROUP BY $pilihanNya p.customer, SUBSTR(p.tanggal,1,7)
+                                order by p.`mesin` ");
+    } else {
+      // Original query for other report types
+      $query = $this->db->query("SELECT *  , SUM(p.`$jenis`) AS total, 
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '01') THEN `p`.`$jenis` ELSE NULL END)) AS `t1$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '02') THEN `p`.`$jenis` ELSE NULL END)) AS `t2$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '03') THEN `p`.`$jenis` ELSE NULL END)) AS `t3$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '04') THEN `p`.`$jenis` ELSE NULL END)) AS `t4$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '05') THEN `p`.`$jenis` ELSE NULL END)) AS `t5$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '06') THEN `p`.`$jenis` ELSE NULL END)) AS `t6$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '07') THEN `p`.`$jenis` ELSE NULL END)) AS `t7$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '08') THEN `p`.`$jenis` ELSE NULL END)) AS `t8$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '09') THEN `p`.`$jenis` ELSE NULL END)) AS `t9$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '10') THEN `p`.`$jenis` ELSE NULL END)) AS `t10$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '11') THEN `p`.`$jenis` ELSE NULL END)) AS `t11$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '12') THEN `p`.`$jenis` ELSE NULL END)) AS `t12$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '13') THEN `p`.`$jenis` ELSE NULL END)) AS `t13$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '14') THEN `p`.`$jenis` ELSE NULL END)) AS `t14$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '15') THEN `p`.`$jenis` ELSE NULL END)) AS `t15$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '16') THEN `p`.`$jenis` ELSE NULL END)) AS `t16$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '17') THEN `p`.`$jenis` ELSE NULL END)) AS `t17$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '18') THEN `p`.`$jenis` ELSE NULL END)) AS `t18$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '19') THEN `p`.`$jenis` ELSE NULL END)) AS `t19$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '20') THEN `p`.`$jenis` ELSE NULL END)) AS `t20$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '21') THEN `p`.`$jenis` ELSE NULL END)) AS `t21$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '22') THEN `p`.`$jenis` ELSE NULL END)) AS `t22$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '23') THEN `p`.`$jenis` ELSE NULL END)) AS `t23$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '24') THEN `p`.`$jenis` ELSE NULL END)) AS `t24$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '25') THEN `p`.`$jenis` ELSE NULL END)) AS `t25$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '26') THEN `p`.`$jenis` ELSE NULL END)) AS `t26$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '27') THEN `p`.`$jenis` ELSE NULL END)) AS `t27$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '28') THEN `p`.`$jenis` ELSE NULL END)) AS `t28$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '29') THEN `p`.`$jenis` ELSE NULL END)) AS `t29$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '30') THEN `p`.`$jenis` ELSE NULL END)) AS `t30$jenis`,
+                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '31') THEN `p`.`$jenis` ELSE NULL END)) AS `t31$jenis`
+                                  FROM `v_production_op` AS p 
+                                  WHERE SUBSTR(p.tanggal,1,7) = '$tanggal'
+                                  GROUP BY $pilihanNya SUBSTR(p.tanggal,1,7)
+                                  order by p.`mesin` ");
+    }
 
     return $query;
   }
