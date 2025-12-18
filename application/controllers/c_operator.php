@@ -257,26 +257,5 @@ class c_operator extends CI_Controller
 		$this->load->view('online/tes', $data);
 	}
 
-	function check_prod_plan()
-	{
-
-		$result = $this->op->search_prod_plan($_POST['date']);
-		// 
-		// if (isset($_GET['term'])) {
-		//     $result = $this->op->search_Losstime($_GET['term']); 
-		if (count($result) > 0) {
-			foreach ($result as $row)
-				$arr_result[] = array(
-					'kp_pr'     => $row->id_bom . " ( " . $row->kode_produk . " ( " . $row->nama_produk . " ) )",
-					'nama_produk'    => $row->nama_produk,
-					'material_name'  => $row->material_name,
-					'prod_qty'       => $row->prod_qty,
-					'no_mesin'       => $row->no_mesin,
-					'cavity'       => $row->cavity,
-					'id_bom'       => $row->id_bom,
-					'cyt_mc'       => $row->cyt_mc
-				);
-			echo json_encode($arr_result);
-		}
-	}
+	
 }

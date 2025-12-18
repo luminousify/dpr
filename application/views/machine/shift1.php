@@ -19,7 +19,6 @@
                                     <th>Group</th>
                                     <th>Shift</th>
                                     <th>Run</th>
-                                    <th>Send</th>
                                     <th>Edit</th>
                                     <?php
                                     $user = $this->session->userdata('posisi');
@@ -67,16 +66,6 @@
                                     <td><?= $data['group']; ?></td>
                                     <td><?= $data['shift']; ?></td>
                                     <td><?= $data['running']; ?></td>
-                                    <td><?php 
-                                    if($data['send'] == 0){ ?>
-                                         <button class="btn btn-success btn-circle runBtn" data-machno="<?= $data['no_mesin'] ?>" type="button"><i class="fa fa-play"></i></button>
-
-                                <?php }
-                                else{ ?>
-                                 <a href="#"><button class="btn btn-success btn-circle" type="button"><i class="fa fa-check"></i></button>
-                            <?php }
-                                     ?>
-                                </td>
                                     <td>
                                         <a href="<?= base_url('c_machine/edit/'.$data['id_machine_use']); ?>"><button class="btn btn-success btn-circle" type="button"><i class="fa fa-pencil"></i></button>
                                     </td>
@@ -111,7 +100,6 @@
                                     <th>Group</th>
                                     <th>Shift</th>
                                     <th>Run</th>
-                                    <th>Send</th>
                                     <th>Edit</th>
                                     <?php
                                     $user = $this->session->userdata('posisi');

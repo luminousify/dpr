@@ -217,15 +217,7 @@ class m_operator extends CI_Model
                 }
         }
 
-        function search_prod_plan($date){ 
-                $this->db->where('tanggal', $date);
-                 // Produces: WHERE name = 'Joe'                
-                 // $this->db->like('nama', $title , 'both');
-                // $this->db->having('type', 'LT');
-                // $this->db->order_by('nama', 'ASC');
-                // $this->db->limit(5);
-                 return $this->db->get('v_search_prod_plan')->result();
-        }
+        
 
         // Add cutting tool usages for a production record
         function add_cutting_tools_usage($id_production, $cutting_tools_ids) {

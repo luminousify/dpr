@@ -313,7 +313,9 @@ class c_machine extends CI_Controller {
       $data = [
               'data'          => $this->data,
               'aktif'         => 'machine',
-              'action'        => 'Add'
+              'action'        => 'Add',
+              'kanit'         => $this->op->tampil_select_group('t_operator','jabatan','kanit','nama_operator'),
+              'lines'         => $this->mm->get_distinct_lines()
             ];
       $this->load->view('machine/add_family_mold' , $data);
   }

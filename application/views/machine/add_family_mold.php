@@ -84,15 +84,7 @@
                     <td>
                         <select name="user[0][group]" id="group" class="form-control" style="width: 110px"; required=""  >
                             <option value="">-Choose-</option>
-                            <option value='ABDUL BASIR B W'>ABDUL BASIR B W</option>
-                            <option value='AGUS MARTANTO'>AGUS MARTANTO</option>
-                            <option value='AGUS SALIM'>AGUS SALIM</option>
-                            <option value='ALBERTO HUTABARAT'>ALBERTO HUTABARAT</option>
-                            <option value='ASROFI'>ASROFI</option>
-                            <option value='MARIDIN'>MARIDIN</option>
-                            <option value='MITUHU'>MITUHU</option>
-                            <option value='RIDWAN EFENDI'>RIDWAN EFENDI</option>
-                            <option value='SUKIRMAN'>SUKIRMAN</option>
+                            <?php foreach ($kanit as $b) { echo "<option value='$b[nama_operator]'>$b[nama_operator]</option>";}?>
                         </select>
                     </td>
                     <td>
@@ -107,7 +99,7 @@
                         <input type="hidden" name="user[0][target]" id="target_mc" class="form-control">
                         <input type="hidden" name="user[0][target_ppic]" id="target_ppic" class="form-control">
                     </td>
-                    <td><input type="text" class="form-control" name="user[0][operator]"></td>
+                    <td><input type="text" class="form-control" name="user[0][operator]" id="operator0"></td>
                     <td><input type="text" name="user[0][man_power]" class="form-control" value="0.5"></td>
                     <td>
                         <select name="user[0][jenis_mesin]" class="form-control">
@@ -126,10 +118,7 @@
                     <td>
                         <select name="user[0][line]" class="form-control" style="width: 110px;">
                             <option value="">-Choose-</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
+                            <?php foreach ($lines as $line_value) { echo "<option value='$line_value'>$line_value</option>";}?>
                         </select>
                     </td>
                 </tr>
@@ -149,9 +138,6 @@
                             <input type="submit" id="btn-add" name="simpan" value="<?= $action; ?>" class="btn btn-success">
                          
                         </div>
-                     </div>
-                     <div class="col-2">
-                     <a class="btn btn-danger" style="color:white" onclick="checkDataProdPlan()">Check </a><b><h5> Note : cek schedule ppic terlebih dahulu sebelum melanjutkan proses berikutnya!</b></h5>
                      </div>
                      <div class="col-4">
 
@@ -194,8 +180,6 @@
             }
         }
         $(document).ready(function(){
-            $('#btn-add').prop('disabled', true)
-
             $('.autocompleteBom').autocomplete({
                 source: "<?php echo site_url('c_operator/get_autocomplete');?>",
                 select: function (event, ui) {
@@ -242,83 +226,27 @@
             //$('#no_mesin').val($('#machine_ton').text());
         }
 
-        function checkDataProdPlan()
-    {
-        $('#btn-add').prop('disabled', false)
-        //current
-        var tgl_input = $('#tgl_input').val();
-        var shift_input = $('#shift').val();
-        var group_input = $('#group').val();
-        
-        // console.log(tgl_input);
-        // console.log(shift_input);
-        // console.log(group_input);
-        // var res = bom.substring(0, 3);
-        
+        function bindOperatorAutocomplete(x) {
+            var $op = $('#operator' + x);
+            if (!$op.length) return;
+            // prevent double-binding when called multiple times
+            if ($op.data('uiAutocompleteBound')) return;
+            $op.data('uiAutocompleteBound', true);
 
-        if(group_input != ''){
-            $.ajax({
-                      type    : "POST",
-                      url     : "<?php echo site_url('c_operator/check_prod_plan');?>",
-                      data    : "date=" + tgl_input,
-                      
-                      success : function(data){
-    
-                        
-            var jsonData = JSON.parse(data);
-            var kp_pr = jsonData[0].kp_pr;
-            var no_mesin = jsonData[0].no_mesin;
-            var kode_produk = jsonData[0].kode_produk;
-            var material_name = jsonData[0].material_name;
-            var prod_qty = jsonData[0].prod_qty;
-            var cavity = jsonData[0].cavity;
-            var id_bom = jsonData[0].id_bom;
-            var cyt_mc = jsonData[0].cyt_mc;
-            if(no_mesin === $('#no_mesin').val()){
-                    $('#id_bom').val(kp_pr)
-                    $('#id_bomS').val(id_bom);
-                    $('#ct_mc').val(cyt_mc);
-                    $('#cavity').val(cavity);
-                    var nwt = $('#nwt').val();
-                    var target = prod_qty;
-                    $('#target_ppic' ).val(target);
-                    console.log( $('#id_bomS').val())
-                    console.log( $('#ct_mc').val())
-                    console.log( $('#cavity').val())
-                    console.log( $('#target_mc').val())
-                    console.log( $('#target_ppic').val())
-                    alert("Production Plan Data Found!");
+            $op.autocomplete({
+                source: "<?php echo site_url('c_operator/get_autocompleteOperator');?>",
+                minLength: 1,
+                select: function (event, ui) {
+                    if (ui && ui.item && ui.item.value) {
+                        $op.val(ui.item.value);
+                    }
+                    return false;
                 }
-                else{
-                    alert("Production Plan Not Found!");
-                } 
-       
-                         
-                    }});
+            });
         }
-        else{
-           
-        }
-        // $.ajax({
-        //               type    : "POST",
-        //               url     : "<?php echo site_url('c_operator/getdatabomMesinDPR');?>",
-        //               data    : "id_bom=" + id_bom,
-        //               success : function(data){
-        //                   console.log(data);
-        //             }});
 
-        //  var nama     = $("#namaNG").val();
-        //  var kategori = $('#kategoriNG').val();
-        //  var type     = $('#typeNG').val();
-        //  var satuan   = $('#satuanNG').val();
-        //  var qty      = $('#qtyNG').val();
-        //  var markup = "<tr><td><input type='button' value='X'></td><td>"+sv+"</td>"+
-        //  "<td><input type='hidden' name='detail["+save+"][nama]' value='"+nama+"'/>"+nama+"</td>"+
-        //  "<td><input type='hidden' name='detail["+save+"][kategori]' value='"+kategori+"''>"+kategori+"</td>"+
-        //  "<td><input type='hidden' name='detail["+save+"][qty]' value="+qty+" class='nilai'>"+qty+"</td>"+
-        //  "<td><input type='hidden' name='detail["+save+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detail["+save+"][type]' value="+type+"></td>"+
-        //  "</tr>";
-        //  $('.formNG').val('');
-    }
+        $(document).ready(function(){
+            bindOperatorAutocomplete(0);
+        });
 
     </script>
