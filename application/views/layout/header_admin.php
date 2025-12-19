@@ -17,12 +17,12 @@
    <link href="<?php echo base_url('css/font-awesome.min.css'); ?>" rel="stylesheet" type="text/css" />
    <link href="<?php echo base_url('css/AdminLTE.min.css'); ?>" rel="stylesheet" type="text/css" />
 
-  <link rel="stylesheet" type="text/css" href="<?= base_url('freeze_new/jquery.dataTables.min.css') ?>">
-   <link rel="stylesheet" type="text/css" href="<?= base_url('freeze_new/fixedColumns.dataTables.min.css') ?>">
+  <link rel="stylesheet" type="text/css" href="<?= base_url('assets/scripts/jquery.dataTables.min.css') ?>">
+   <link rel="stylesheet" type="text/css" href="<?= base_url('assets/scripts/dataTables.fixedColumns.min.css') ?>">
   
- <script type="text/javascript" language="javascript" src="<?= base_url('freeze_new/jquery-3.5.1.js') ?>"></script>
-  <script type="text/javascript" language="javascript" src="<?= base_url('freeze_new/jquery.dataTables.min.js'); ?>"></script>
-  <script type="text/javascript" language="javascript" src="<?= base_url('freeze_new/dataTables.fixedColumns.min.js'); ?>"></script>
+ <script type="text/javascript" language="javascript" src="<?= base_url('assets/scripts/jquery-3.5.1.js') ?>"></script>
+  <script type="text/javascript" language="javascript" src="<?= base_url('assets/scripts/jquery.dataTables.min.js'); ?>"></script>
+  <script type="text/javascript" language="javascript" src="<?= base_url('assets/scripts/dataTables.fixedColumns.min.js'); ?>"></script>
 
   <!-- select -->
   <script type="text/javascript" src="<?php echo base_url(); ?>/autocomplete/js/jquery.multiple.select.js"></script>
