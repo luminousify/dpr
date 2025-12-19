@@ -699,6 +699,7 @@ $(document).ready(function() {
         }
     });
 });
+});
 
 // Global error handler for quota exceeded issues
 window.addEventListener('error', function(e) {
