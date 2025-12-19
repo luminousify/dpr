@@ -141,7 +141,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                 };
             }
             
-            console.log('Custom PDF export handler installed (High Resolution)');
+            console.log('Custom PDF export handler installed (Optimized Resolution)');
         }
     }, 100);
 })();
