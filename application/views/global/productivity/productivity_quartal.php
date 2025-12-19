@@ -2,13 +2,6 @@
 <?php $this->load->view('layout/sidebar'); ?>
 
 <!-- We need to ensure jQuery is loaded before any plugins -->
-<script>
-    // Check if jQuery is already loaded
-    if (typeof jQuery === 'undefined') {
-        document.write('<script src="<?= base_url(); ?>template/js/jquery-3.1.1.min.js"><\/script>');
-    }
-</script>
-
 <!-- DataTables CSS -->
 <link href="<?= base_url(); ?>template/css/plugins/dataTables/datatables.min.css" rel="stylesheet">
 <link href="<?= base_url(); ?>template/css/fixedColumns.bootstrap4.min.css" rel="stylesheet">

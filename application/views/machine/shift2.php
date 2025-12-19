@@ -109,6 +109,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
+                                    <th></th>
                                     <th>Run</th>
                                     <th>Line</th>
                                     <th>No. MC</th>

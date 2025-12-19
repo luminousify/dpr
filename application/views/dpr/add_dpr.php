@@ -1155,6 +1155,6 @@ $(document).ready(function(){
     </script>
     </form>
 
-    <?php $this->load->view('layout/footer'); ?>
+    <?php $this->load->view('layout/footer', ['jquery_loaded' => true]); ?>
   </body>
 </html>
