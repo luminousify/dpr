@@ -2,6 +2,7 @@
 <?php $this->load->view('layout/sidebar'); ?>
 
 <link href="<?= base_url(); ?>template/css/plugins/dataTables/datatables.min.css" rel="stylesheet">
+<link href="<?= base_url(); ?>assets/css/select.dataTables.min.css" rel="stylesheet">
 
 <link href="<?= base_url(); ?>template/css/fixedColumns.bootstrap4.min.css" rel="stylesheet">
 
@@ -14,6 +15,32 @@
         margin: 0 auto;
     }
     tr {background-color: white} 
+    
+    /* Batch delete controls styling */
+    .batch-controls {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .row-checkbox {
+        transform: scale(1.2);
+    }
+    
+    .select-all-checkbox {
+        transform: scale(1.2);
+    }
+    
+    .dataTables_wrapper .dataTables_scroll {
+        clear: both;
+    }
+    
+    /* Highlight selected rows */
+    .selected-row {
+        background-color: #e3f2fd !important;
+    }
 } 
 </style>
 
@@ -97,25 +124,30 @@
     </div>
     <br/>
     <div class="row">
-        <?= form_open('c_machine/index'); ?>  
+        <!-- Dual approach: POST form + GET fallback -->
+        <?= form_open('c_machine/index', array('method' => 'post', 'id' => 'dateFilterForm')); ?>  
         <div class="col-sm-60" style="margin-left:100px;">
             <h2>Filter</h2>
             <div class="row">
                         <div class="col-sm-3 mb-2">
                             <label><b>Tanggal Dari</b></label>
-                            <input type="date" name="tanggal_dari" class="form-control" value="<?= $dari; ?>"> 
+                            <input type="date" name="tanggal_dari" class="form-control" value="<?= isset($dari) ? htmlspecialchars($dari) : (isset($_SESSION['machine_filter']['dari']) ? htmlspecialchars($_SESSION['machine_filter']['dari']) : date('Y-m-d')); ?>"> 
                         </div>
                         <div class="col-sm-3 mb-2">
                             <label><b>Tanggal Sampai</b></label>
-                            <input type="date" name="tanggal_sampai" class="form-control" value="<?= $sampai; ?>"> 
+                            <input type="date" name="tanggal_sampai" class="form-control" value="<?= isset($sampai) ? htmlspecialchars($sampai) : (isset($_SESSION['machine_filter']['sampai']) ? htmlspecialchars($_SESSION['machine_filter']['sampai']) : date('Y-m-d')); ?>"> 
                         </div>
                         <div class="col-sm-3 mb-2">
                             <label><b>Line</b></label>
+                            <?php 
+                            // Use session data as fallback for line selection
+                            $current_line = isset($line) ? $line : (isset($_SESSION['machine_filter']['line']) ? $_SESSION['machine_filter']['line'] : 'All');
+                            ?>
                             <select name="line_new"  class="form-control" required=""  >
-                                <option value="All" <?= (!isset($line) || $line == 'All' || $line === '') ? 'selected' : ''; ?>>All</option>
+                                <option value="All" <?= ($current_line == 'All' || $current_line === '') ? 'selected' : ''; ?>>All</option>
                                 <?php if (!empty($lines)) { ?>
                                     <?php foreach ($lines as $ln) { $ln = (string) $ln; ?>
-                                        <option value="<?= htmlspecialchars($ln); ?>" <?= (isset($line) && (string) $line === $ln) ? 'selected' : ''; ?>><?= htmlspecialchars($ln); ?></option>
+                                        <option value="<?= htmlspecialchars($ln); ?>" <?= ($current_line === $ln) ? 'selected' : ''; ?>><?= htmlspecialchars($ln); ?></option>
                                     <?php } ?>
                                 <?php } ?>
                             </select>
@@ -130,6 +162,52 @@
         </div>
         <?= form_close(); ?>
     </div>
+
+    <!-- JavaScript fallback - if POST fails, use GET -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('dateFilterForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Store form data in session storage as backup
+                const formData = new FormData(form);
+                const data = {};
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+                sessionStorage.setItem('dateFilterBackup', JSON.stringify(data));
+                
+                // Also create GET version as backup
+                const dari = data.tanggal_dari || '';
+                const sampai = data.tanggal_sampai || '';
+                const line = data.line_new || 'All';
+                
+                if (dari && sampai) {
+                    const getURL = '<?= base_url() ?>c_machine/index?tanggal_dari=' + encodeURIComponent(dari) + '&tanggal_sampai=' + encodeURIComponent(sampai) + '&line_new=' + encodeURIComponent(line) + '&show=1';
+                    sessionStorage.setItem('dateFilterGetURL', getURL);
+                }
+            });
+        }
+        
+        // If there's GET data in URL, restore it to form
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('tanggal_dari')) {
+            const dariInput = document.querySelector('input[name="tanggal_dari"]');
+            const sampaiInput = document.querySelector('input[name="tanggal_sampai"]');
+            const lineInput = document.querySelector('select[name="line_new"]');
+            
+            if (dariInput && urlParams.get('tanggal_dari')) {
+                dariInput.value = urlParams.get('tanggal_dari');
+            }
+            if (sampaiInput && urlParams.get('tanggal_sampai')) {
+                sampaiInput.value = urlParams.get('tanggal_sampai');
+            }
+            if (lineInput && urlParams.get('line_new')) {
+                lineInput.value = urlParams.get('line_new');
+            }
+        }
+    });
+    </script>
 </div>
 
 
@@ -205,6 +283,7 @@
     <script src="<?= base_url(); ?>template/js/plugins/dataTables/datatables.min.js"></script>
     <script src="<?= base_url(); ?>template/js/plugins/dataTables/dataTables.bootstrap4.min.js"></script>
     <script src="<?= base_url(); ?>template/js/plugins/dataTables/dataTables.fixedColumns.min.js"></script>
+    <script src="<?= base_url(); ?>assets/scripts/dataTables.select.min.js"></script>
     <!-- Page-Level Scripts -->
 
     <script src="<?= base_url(); ?>template/js/grafik/highcharts.js"></script>
@@ -578,7 +657,156 @@ $(document).ready(function() {
         alert("Connection is closed...");
     };
 });
+
+// Batch Delete Functionality
+console.log("Initializing batch delete functionality...");
+$(document).ready(function() {
+    console.log("Document ready - setting up batch delete functionality");
+    
+    // Check if jQuery is properly loaded
+    if (typeof $ === 'undefined') {
+        console.error("jQuery not loaded!");
+        return;
+    }
+    
+    // Function to update selected count and show/hide controls
+    function updateBatchControls(shiftClass, controlId, countId, selectAllCheckboxId) {
+        var checkboxes = $('.' + shiftClass + ':checked');
+        var count = checkboxes.length;
+        var controls = $('#' + controlId);
+        var countSpan = $('#' + countId);
+        var selectAllCheckbox = $('#' + selectAllCheckboxId);
+        
+        if (count > 0) {
+            controls.show();
+            countSpan.html('<strong>' + count + '</strong> rows selected');
+        } else {
+            controls.hide();
+        }
+        
+        // Update select all checkbox state
+        var totalCheckboxes = $('.' + shiftClass);
+        selectAllCheckbox.prop('checked', totalCheckboxes.length > 0 && totalCheckboxes.length === count);
+    }
+    
+    // Function to handle checkbox changes for all shifts
+    function setupBatchDeleteHandlers(shiftClass, controlId, countId, selectAllCheckboxId, selectAllBtnId, deselectAllBtnId, deleteBtnId) {
+        console.log("Setting up batch delete handlers for:", shiftClass);
+        
+        try {
+            // Row checkbox changes
+            $(document).on('change', '.' + shiftClass, function() {
+                console.log("Checkbox changed for class:", shiftClass);
+                updateBatchControls(shiftClass, controlId, countId, selectAllCheckboxId);
+            });
+        
+        // Select all checkbox in header
+        $(document).on('change', '#' + selectAllCheckboxId, function() {
+            var checked = $(this).prop('checked');
+            $('.' + shiftClass).prop('checked', checked);
+            updateBatchControls(shiftClass, controlId, countId, selectAllCheckboxId);
         });
+        
+        // Select all button
+        $(document).on('click', '#' + selectAllBtnId, function() {
+            $('.' + shiftClass).prop('checked', true);
+            updateBatchControls(shiftClass, controlId, countId, selectAllCheckboxId);
+        });
+        
+        // Deselect all button
+        $(document).on('click', '#' + deselectAllBtnId, function() {
+            $('.' + shiftClass).prop('checked', false);
+            updateBatchControls(shiftClass, controlId, countId, selectAllCheckboxId);
+        });
+        
+        // Delete selected button
+        $(document).on('click', '#' + deleteBtnId, function() {
+            var checkboxes = $('.' + shiftClass + ':checked');
+            var ids = [];
+            
+            checkboxes.each(function() {
+                ids.push($(this).val());
+            });
+            
+            if (ids.length === 0) {
+                alert('No rows selected for deletion.');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to delete ' + ids.length + ' selected record(s)?')) {
+                $.ajax({
+                    url: '<?= base_url("c_machine/batch_delete_machine_use"); ?>',
+                    type: 'POST',
+                    data: {
+                        ids: ids
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            // Remove deleted rows from table
+                            checkboxes.closest('tr').remove();
+                            // Update controls
+                            updateBatchControls(shiftClass, controlId, countId, selectAllCheckboxId);
+                            // Refresh the page after a short delay to update totals
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error occurred while deleting records. Please try again.');
+                        console.error('AJAX Error:', error);
+                    }
+                });
+            }
+        });
+        } catch (error) {
+            console.error("Error in setupBatchDeleteHandlers for", shiftClass, ":", error);
+        }
+    }
+    
+    try {
+        // Setup handlers for all three shifts
+        console.log("Setting up handlers for all three shifts");
+        
+        setupBatchDeleteHandlers(
+            'shift1-checkbox', 
+            'batch-controls-shift1', 
+            'selected-count-shift1', 
+            'select-all-checkbox-shift1',
+            'select-all-shift1',
+            'deselect-all-shift1',
+            'delete-selected-shift1'
+        );
+        
+        setupBatchDeleteHandlers(
+            'shift2-checkbox', 
+            'batch-controls-shift2', 
+            'selected-count-shift2', 
+            'select-all-checkbox-shift2',
+            'select-all-shift2',
+            'deselect-all-shift2',
+            'delete-selected-shift2'
+        );
+        
+        setupBatchDeleteHandlers(
+            'shift3-checkbox', 
+            'batch-controls-shift3', 
+            'selected-count-shift3', 
+            'select-all-checkbox-shift3',
+            'select-all-shift3',
+            'deselect-all-shift3',
+            'delete-selected-shift3'
+        );
+        
+        console.log("Batch delete functionality setup completed successfully");
+    } catch (error) {
+        console.error("Error setting up batch delete functionality:", error);
+    }
+});
 
 
     </script>

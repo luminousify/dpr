@@ -1,6 +1,29 @@
-            <table class="table table-striped table-bordered table-hover dataTables-example">
+            <!-- Batch Delete Controls for Shift 2 -->
+<div class="row mb-2 batch-controls" id="batch-controls-shift2" style="display: none;">
+    <div class="col-md-6">
+        <div class="btn-group">
+            <button type="button" class="btn btn-warning" id="select-all-shift2">
+                <i class="fa fa-check-square-o"></i> Select All
+            </button>
+            <button type="button" class="btn btn-secondary" id="deselect-all-shift2">
+                <i class="fa fa-square-o"></i> Deselect All
+            </button>
+        </div>
+        <span class="ml-3" id="selected-count-shift2">
+            <strong>0</strong> rows selected
+        </span>
+    </div>
+    <div class="col-md-6 text-right">
+        <button type="button" class="btn btn-danger" id="delete-selected-shift2">
+            <i class="fa fa-trash"></i> Delete Selected
+        </button>
+    </div>
+</div>
+
+<table class="table table-striped table-bordered table-hover dataTables-example" id="shift2-table">
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="select-all-checkbox-shift2" class="select-all-checkbox"></th>
                                     <th>Run</th>
                                     <th>Line</th>
                                     <th>No. MC</th>
@@ -34,7 +57,10 @@
                             <tbody>
                                 <?php $totalRun = 0; $totalMP = 0; $id = -1; $no = 0 ; foreach($data_tabel2->result_array() as $data)
                                 {  $no++; $id++; ?>
-                                <tr>
+                                <tr data-id="<?= $data['id_machine_use']; ?>">
+                                    <td>
+                                        <input type="checkbox" class="row-checkbox shift2-checkbox" value="<?= $data['id_machine_use']; ?>">
+                                    </td>
                                     <td>
                                         <center><?php if($data['running'] == 1) { ?><button class="btn btn-primary btn-circle" type="button"><i class="fa fa-check"></i></button><?php } else { echo '<button class="btn btn-danger btn-circle" type="button"><i class="fa fa-close"></i></button>';} ?></center>
                                     </td>

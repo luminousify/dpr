@@ -13,18 +13,66 @@ class c_machine extends CI_Controller {
             'bagian'     => $_SESSION['divisi'],
             ];
   $this->mm->cek_login();
+  
+  // Initialize machine filter session if not exists
+  if (!isset($_SESSION['machine_filter'])) {
+      $_SESSION['machine_filter'] = array(
+          'dari' => date('Y-m-d'),
+          'sampai' => date('Y-m-d'),
+          'line' => 'All'
+      );
   }
-
+  }
 
   function index()
   {
-    if($this->input->post('show'))
+    // Filter processing
+    
+    // Check for form submission - multiple methods for reliability (POST + GET)
+    $form_submitted = isset($_POST['show']) || 
+                     ($this->input->post('show') !== null) || 
+                     ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tanggal_dari'])) ||
+                     // Check for GET parameters as fallback
+                     (isset($_GET['show']) && isset($_GET['tanggal_dari']));
+    
+    
+    
+    if($form_submitted)
       {
+      // Get dates with multiple fallback methods (POST first, then GET)
       $dari   = $this->input->post('tanggal_dari');
       $sampai = $this->input->post('tanggal_sampai');
+      $line = $this->input->post('line_new');
+      
+      // Try direct $_POST as fallback
+      if (empty($dari)) $dari = isset($_POST['tanggal_dari']) ? $_POST['tanggal_dari'] : '';
+      if (empty($sampai)) $sampai = isset($_POST['tanggal_sampai']) ? $_POST['tanggal_sampai'] : '';
+      if (empty($line)) $line = isset($_POST['line_new']) ? $_POST['line_new'] : 'All';
+      
+      // If still empty, try GET parameters
+      if (empty($dari)) $dari = isset($_GET['tanggal_dari']) ? $_GET['tanggal_dari'] : '';
+      if (empty($sampai)) $sampai = isset($_GET['tanggal_sampai']) ? $_GET['tanggal_sampai'] : '';
+      if (empty($line) || $line === 'All') $line = isset($_GET['line_new']) ? $_GET['line_new'] : $line;
+      
+      // Validate date format
+      if (!empty($dari) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dari)) {
+          log_message('error', 'Invalid dari date format: ' . $dari);
+          $dari = date('Y-m-d');
+      }
+      if (!empty($sampai) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $sampai)) {
+          log_message('error', 'Invalid sampai date format: ' . $sampai);
+          $sampai = date('Y-m-d');
+      }
+      
+      // Store filter data in session for persistence
+      $_SESSION['machine_filter'] = array(
+          'dari' => $dari,
+          'sampai' => $sampai,
+          'line' => $line
+      );
+      
       $tahuns     = substr($sampai,0,4);
       $bulan      = substr($sampai,5,2);
-      $line = $this->input->post('line_new');
       $data = [
                 'data'          => $this->data,
                 'aktif'         => 'machine',
@@ -48,15 +96,24 @@ class c_machine extends CI_Controller {
                 'line'        => $line,
                 'lines'       => $this->mm->get_distinct_lines()
             ];
+      
       $this->load->view('machine/1machine' , $data);
       }
       else
       {
-        $dari      = date('Y-m-d');
-        $sampai    = date('Y-m-d');
+        // Check for session data as final fallback
+        if (isset($_SESSION['machine_filter'])) {
+          $dari = isset($_SESSION['machine_filter']['dari']) ? $_SESSION['machine_filter']['dari'] : date('Y-m-d');
+          $sampai = isset($_SESSION['machine_filter']['sampai']) ? $_SESSION['machine_filter']['sampai'] : date('Y-m-d');
+          $line = isset($_SESSION['machine_filter']['line']) ? $_SESSION['machine_filter']['line'] : 'All';
+        } else {
+          $dari      = date('Y-m-d');
+          $sampai    = date('Y-m-d');
+          $line = 'All';
+        }
+        
         $tahuns     = substr($sampai,0,4);
         $bulan      = substr($sampai,5,2);
-        $line = 'All';
         $data = [
                 'data'          => $this->data,
                 'aktif'         => 'machine',
@@ -230,6 +287,50 @@ class c_machine extends CI_Controller {
       redirect('c_machine/index');
     }
 
+  public function batch_delete_machine_use()
+    {
+      header('Content-Type: application/json');
+      
+      $ids = $this->input->post('ids');
+      
+      if (empty($ids) || !is_array($ids)) {
+        echo json_encode([
+          'success' => false,
+          'message' => 'No valid IDs provided'
+        ]);
+        return;
+      }
+      
+      // Filter valid IDs
+      $valid_ids = array_filter($ids, function($id) {
+        return is_numeric($id) && $id > 0;
+      });
+      
+      if (empty($valid_ids)) {
+        echo json_encode([
+          'success' => false,
+          'message' => 'No valid IDs provided'
+        ]);
+        return;
+      }
+      
+      $result = $this->mm->batch_delete_mu($valid_ids);
+      
+      if ($result) {
+        $deleted_count = count($valid_ids);
+        echo json_encode([
+          'success' => true,
+          'message' => "Successfully deleted {$deleted_count} record(s)",
+          'deleted_count' => $deleted_count
+        ]);
+      } else {
+        echo json_encode([
+          'success' => false,
+          'message' => 'Failed to delete records'
+        ]);
+      }
+    }
+
   public function delete_total_mp($id_mp)
   {
     $this->mm->delete_total_mp($id_mp);
@@ -323,13 +424,47 @@ class c_machine extends CI_Controller {
   function add()
   {
     $this->mm->add();
-    redirect('c_machine/index');
+    
+    // Check if we have filter data in session to preserve it
+    $redirect_url = 'c_machine/index';
+    if (isset($_SESSION['machine_filter'])) {
+        $dari = isset($_SESSION['machine_filter']['dari']) ? $_SESSION['machine_filter']['dari'] : '';
+        $sampai = isset($_SESSION['machine_filter']['sampai']) ? $_SESSION['machine_filter']['sampai'] : '';
+        $line = isset($_SESSION['machine_filter']['line']) ? $_SESSION['machine_filter']['line'] : '';
+        
+        if ($dari && $sampai) {
+            $redirect_url = 'c_machine/index?tanggal_dari=' . urlencode($dari) . 
+                           '&tanggal_sampai=' . urlencode($sampai) . 
+                           '&line_new=' . urlencode($line) . 
+                           '&show=1';
+            
+        }
+    }
+    
+    redirect($redirect_url);
   }
 
   function add_fm()
       {
         $this->mm->add_fm();
-        redirect('c_machine/index'); 
+        
+        // Check if we have filter data in session to preserve it
+        $redirect_url = 'c_machine/index';
+        if (isset($_SESSION['machine_filter'])) {
+            $dari = isset($_SESSION['machine_filter']['dari']) ? $_SESSION['machine_filter']['dari'] : '';
+            $sampai = isset($_SESSION['machine_filter']['sampai']) ? $_SESSION['machine_filter']['sampai'] : '';
+            $line = isset($_SESSION['machine_filter']['line']) ? $_SESSION['machine_filter']['line'] : '';
+            
+            if ($dari && $sampai) {
+                $redirect_url = 'c_machine/index?tanggal_dari=' . urlencode($dari) . 
+                               '&tanggal_sampai=' . urlencode($sampai) . 
+                               '&line_new=' . urlencode($line) . 
+                               '&show=1';
+                
+            }
+        }
+        
+        redirect($redirect_url); 
       } 
 
   function add_totalMP()

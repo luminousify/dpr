@@ -280,6 +280,24 @@ class m_machine extends CI_Model
                 $this->db->delete('machine_use');
         }
 
+        function batch_delete_mu($id_machine_uses){
+                if (empty($id_machine_uses) || !is_array($id_machine_uses)) {
+                        return false;
+                }
+                
+                // Filter out invalid IDs
+                $valid_ids = array_filter($id_machine_uses, function($id) {
+                        return is_numeric($id) && $id > 0;
+                });
+                
+                if (empty($valid_ids)) {
+                        return false;
+                }
+                
+                $this->db->where_in('id_machine_use', $valid_ids);
+                return $this->db->delete('machine_use');
+        }
+
         public function delete_total_mp($id_mp){
                 $this->db->where('id_mp', $id_mp);
                 $this->db->delete('total_mp');
