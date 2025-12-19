@@ -300,7 +300,7 @@ window.jspdf = window.jspdf || {};
 // Ensure jsPDF is globally available
 window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
-// Custom PDF export handler with HIGH RESOLUTION
+// Custom PDF export handler with optimized resolution
 (function() {
     // Wait for both Highcharts and jsPDF to be ready
     var checkReady = setInterval(function() {
@@ -310,14 +310,28 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
             // Get jsPDF reference
             var jsPDFConstructor = window.jsPDF || window.jspdf.jsPDF;
             
-            // Create custom PDF export function with HIGH RESOLUTION
+            // Create custom PDF export function with optimized resolution
             window.customPDFExport = function(chart) {
                 try {
-                    // Render at HIGH resolution for quality (3x larger)
-                    var renderWidth = 1200;  // High res width
-                    var renderHeight = 750;  // High res height
+                    // Check for quota exceeded errors
+                    if (navigator.storage && navigator.storage.estimate) {
+                        navigator.storage.estimate().then(function(estimate) {
+                            var usagePercentage = (estimate.usage / estimate.quota) * 100;
+                            if (usagePercentage > 80) {
+                                console.warn('Storage quota nearly exceeded: ' + usagePercentage.toFixed(2) + '%');
+                                alert('Storage quota nearly exceeded. Please clear browser cache.');
+                                return;
+                            }
+                        }).catch(function(error) {
+                            console.warn('Unable to check storage quota:', error);
+                        });
+                    }
                     
-                    // Get the SVG of the chart at high resolution
+                    // Use optimized resolution for better performance
+                    var renderWidth = 800;  // Optimized width (reduced from 1200)
+                    var renderHeight = 600;  // Optimized height (reduced from 750)
+                    
+                    // Get the SVG of the chart at optimized resolution
                     var svg = chart.getSVG({
                         chart: {
                             width: renderWidth,
@@ -325,7 +339,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                         }
                     });
                     
-                    // Create a HIGH RESOLUTION canvas
+                    // Create an optimized canvas
                     var canvas = document.createElement('canvas');
                     canvas.width = renderWidth;
                     canvas.height = renderHeight;
@@ -425,7 +439,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                 };
             }
             
-            console.log('Custom PDF export handler installed (High Resolution)');
+            console.log('Custom PDF export handler installed (Optimized Resolution)');
         }
     }, 100);
 })();
@@ -601,12 +615,11 @@ $(document).ready(function() {
 
 
             $('.runBtn').click(function() {
-                var machine_number = convertToMachno($(this).data('machno'));
-                console.log(machine_number);
-                
+    var machine_number = convertToMachno($(this).data('machno'));
+    console.log(machine_number);
+    
     // Function to get plan for machine today
     function getPlanforMachineToday(machno, callback) {
-        
         $.ajax({
             type: "POST",
             url: "<?php echo base_url(); ?>index.php/c_machine/getPlanforMachineToday/planformachine/machno/",
@@ -614,48 +627,87 @@ $(document).ready(function() {
             data: "machno=" + machno,
             success: function(data) {
                 callback(data);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error getting plan data:', error);
+                callback(null);
             }
         });
     }
 
-    var ws = new WebSocket("ws://192.168.50.127/ws");
+    // Create WebSocket with proper error handling and cleanup
+    var ws = null;
+    try {
+        ws = new WebSocket("ws://192.168.50.127/ws");
+        
+        ws.onopen = function() {
+            console.log("WebSocket connection established");
+            // Get plan data and send it through WebSocket
+            getPlanforMachineToday(machine_number, function(planData) {
+                if (planData) {
+                    console.log(planData);
+                    // Construct the message using planData
+                    var message = {
+                        "machno": planData.machno,
+                        "shift": planData.shift,
+                        "partno": planData.partno,
+                        "bomid": planData.bomid,
+                        "partname": planData.partname,
+                        "cav": planData.cav,
+                        "cytmc": planData.cytmc,
+                        "plan": planData.plan,
+                        "totalprod": 1000,
+                        "totalnc": 10,
+                        "user": "Joko",
+                        "opname": planData.opname,
+                        "lot": "LotNo"
+                    };
 
-    ws.onopen = function() {
-        // Get plan data and send it through WebSocket
-        getPlanforMachineToday(machine_number, function(planData) {
-            console.log(planData);
-            // Construct the message using planData
-            var message = {
-                "machno": planData.machno,
-                "shift": planData.shift,
-                "partno": planData.partno,
-                "bomid": planData.bomid,
-                "partname": planData.partname,
-                "cav": planData.cav,
-                "cytmc": planData.cytmc,
-                "plan": planData.plan,  // Assuming planData contains the plan information
-                "totalprod": 1000,
-                "totalnc": 10,
-                "user": "Joko",
-                "opname": planData.opname,
-                "lot": "LotNo"
-            };
+                    // Send the message
+                    ws.send("2s" + JSON.stringify(message));
+                    alert("Message is sent...");
+                } else {
+                    alert("Failed to get plan data");
+                }
+            });
+        };
 
-            // Send the message
-            ws.send("2s" + JSON.stringify(message));
-            alert("Message is sent...");
-        });
-    };
+        ws.onmessage = function(evt) {
+            var received_msg = evt.data;
+            console.log("Message received: " + received_msg);
+            alert("Message is received : " + received_msg);
+        };
 
-    ws.onmessage = function(evt) {
-        var received_msg = evt.data;
-        alert("Message is received : " + received_msg);
-    };
+        ws.onerror = function(error) {
+            console.error("WebSocket error:", error);
+            alert("WebSocket connection error");
+        };
 
-    ws.onclose = function() {
-        // WebSocket is closed.
-        alert("Connection is closed...");
-    };
+        ws.onclose = function() {
+            console.log("WebSocket connection closed");
+            // WebSocket is closed.
+            alert("Connection is closed...");
+        };
+    } catch (error) {
+        console.error("Failed to create WebSocket:", error);
+        alert("Failed to establish WebSocket connection");
+    }
+    
+    // Cleanup WebSocket on page unload to prevent memory leaks
+    $(window).on('beforeunload', function() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.close();
+        }
+    });
+});
+
+// Global error handler for quota exceeded issues
+window.addEventListener('error', function(e) {
+    if (e.message && e.message.includes('quota')) {
+        console.error('Quota exceeded error detected:', e.message);
+        alert('Storage quota exceeded. Please clear your browser cache and try again.');
+        e.preventDefault();
+    }
 });
 
 // Batch Delete Functionality
