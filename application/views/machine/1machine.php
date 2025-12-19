@@ -599,7 +599,6 @@ $(document).ready(function() {
                
 
             });
-        });
 
         $(document).ready(function() {
             $('.delete').click(function() {
