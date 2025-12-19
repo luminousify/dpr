@@ -224,7 +224,7 @@
                         </div>
                     </div>
                 <div class="ibox-content">
-                    <div class="table-responsive">
+                    
                         <div class="tabs-container">
                         <ul class="nav nav-tabs">
                                 <li><a class="nav-link active" data-toggle="tab" href="#tab-1">Shift 1</a></li>
@@ -269,9 +269,8 @@
 
                      </div>
 
-                     </div>
+                     
                 </div>
-</div>
 </div>
 </div>
 </div>
@@ -595,9 +594,44 @@ $(document).ready(function() {
                     }
                 } );
             } );
+        },
+        drawCallback: function(settings) {
+            // Trigger window resize to force FixedColumns recalculation
+            // Use a small timeout to ensure DOM is ready
+            setTimeout(function(){
+                $(window).trigger('resize');
+                
+                // Also try direct API access if available
+                var api = new $.fn.dataTable.Api(settings);
+                if (api.fixedColumns) {
+                    try {
+                        api.fixedColumns().relayout();
+                    } catch(e) {}
+                }
+            }, 50);
         }
                
 
+            });
+
+            // Adjust columns when switching tabs
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
+                var target = $(e.target).attr("href"); // Get the target tab selector
+                var table = $(target).find('table.dataTables-example').DataTable();
+                
+                // Use timeout to allow layout to settle
+                setTimeout(function(){
+                    table.columns.adjust().draw();
+                    // Force FixedColumns update
+                    if (table.fixedColumns) {
+                        try {
+                            table.fixedColumns().relayout();
+                        } catch(e) {
+                            console.log('fixedColumns relayout not supported, falling back to resize');
+                        }
+                    }
+                    $(window).trigger('resize');
+                }, 150);
             });
         });
 

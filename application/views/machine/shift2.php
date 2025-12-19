@@ -93,7 +93,7 @@
                                     <td><?= $data['shift']; ?></td>
                                     <td><?= $data['running']; ?></td>
                                     <td>
-                                        <a href="<?= base_url('c_machine/edit/'.$data['id_machine_use']); ?>"><button class="btn btn-success btn-circle" type="button"><i class="fa fa-pencil"></i></button>
+                                        <a href="<?= base_url('c_machine/edit/'.$data['id_machine_use']); ?>"><button class="btn btn-success btn-circle" type="button"><i class="fa fa-pencil"></i></button></a>
                                     </td>
                                     <?php
                                     $hapus = base_url('c_machine/delete_machine_use');
