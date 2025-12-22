@@ -702,7 +702,8 @@ class c_new extends CI_Controller
         'data'          => $this->data,
         'aktif'         => 'master',
         'action'        => 'Add',
-        'categories'    => $this->mm->get_all_kategori_defect() // Using existing model method
+        'categories'    => $this->mm->get_all_kategori_defect(), // For kategori field
+        'types'         => $this->mm->get_all_type_defect()      // For type field
       ];
       $this->load->view('master/master_defectAct', $data);
     } else {
@@ -711,7 +712,8 @@ class c_new extends CI_Controller
         'aktif'         => 'master',
         'data_tabel'    => $this->mm->edit_tampil($table, $where, $id),
         'action'        => 'Edit',
-        'categories'    => $this->mm->get_all_kategori_defect() // Using existing model method
+        'categories'    => $this->mm->get_all_kategori_defect(), // For kategori field
+        'types'         => $this->mm->get_all_type_defect()      // For type field
       ];
       $this->load->view('master/master_defectAct', $data);
     }

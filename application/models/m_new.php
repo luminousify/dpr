@@ -576,6 +576,17 @@ class m_new extends CI_Model
                 return $this->db->get('master_kategori_defect')->result();
         }
 
+        public function get_all_type_defect()
+        {
+                $this->db->distinct();
+                $this->db->select('type');
+                $this->db->from('t_defectdanlosstime');
+                $this->db->where('type IS NOT NULL');
+                $this->db->where('type !=', '');
+                $query = $this->db->get();
+                return $query->result();
+        }
+
         public function add_kategori_defect($nama_kategori)
         {
                 return $this->db->insert('master_kategori_defect', ['nama_kategori' => $nama_kategori]);
