@@ -299,8 +299,16 @@ class c_new extends CI_Controller
       }
       
       try {
-        $this->mm->add_action($table);
-        $this->session->set_flashdata('tambah', 'Data berhasil di tambahkan!');
+        $result = $this->mm->add_action($table);
+
+        // Provide detailed feedback based on results
+        if ($result['inserted_count'] > 0) {
+          $message = 'Data berhasil di tambahkan!';
+          if ($result['skipped_count'] > 0) {
+            $message .= ' (' . $result['skipped_count'] . ' data dilewati karena duplikat: ' . implode('; ', $result['errors']) . ')';
+          }
+          $this->session->set_flashdata('tambah', $message);
+        }
         redirect('c_new/' . $redirect);
       } catch (Exception $e) {
         // Log the error for debugging

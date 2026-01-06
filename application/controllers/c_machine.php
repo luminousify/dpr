@@ -469,27 +469,6 @@ class c_machine extends CI_Controller {
 
   function add_totalMP()
   {
-        $input_date = strtotime($this->input->post('user')[0]['tanggal']);
-        $current_year = date('Y');
-        $current_month = date('n'); // 1-12 format
-        
-        if($current_month == 1) { // January
-            $allowed_year = $current_year - 1;
-            $allowed_month = 12; // December
-            
-            if(date('Y', $input_date) != $allowed_year || date('n', $input_date) != $allowed_month) {
-                $this->session->set_flashdata('error', "Tanggal must be December $allowed_year");
-                redirect('c_machine/index');
-                return;
-            }
-        } else {
-            if(date('Y', $input_date) < $current_year) {
-                $this->session->set_flashdata('error', "Tanggal must be $current_year or newer");
-                redirect('c_machine/index');
-                return;
-            }
-        }
-
         $this->mm->add_totalMP();
         redirect('c_machine/index');
   }

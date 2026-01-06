@@ -82,6 +82,15 @@ class m_new extends CI_Model
                                 continue;
                         }
                         
+                        // Check for duplicate kode_product for t_product table
+                        if ($table === 't_product' && !empty($user['kode_product']) && trim($user['kode_product']) !== '') {
+                                if ($this->check_duplicate_kode_product($user['kode_product'])) {
+                                        $errors[] = "Kode Product '" . trim($user['kode_product']) . "' sudah ada! Gunakan kode product lain.";
+                                        log_message('debug', 'Skipping index ' . $index . ' - duplicate kode_product');
+                                        continue;
+                                }
+                        }
+                        
                         // Prepare data for insert - convert empty strings to NULL for optional fields
                         $insert_data = array();
                         foreach ($user as $key => $value) {
@@ -104,10 +113,7 @@ class m_new extends CI_Model
                         }
                 }
                 
-                if (!empty($errors)) {
-                        throw new Exception('Gagal menyimpan beberapa data: ' . implode(' | ', $errors));
-                }
-                
+                // Return detailed results instead of throwing exception for partial successes
                 if ($inserted_count == 0) {
                         // Generate table-specific error message
                         $error_message = 'Tidak ada data valid yang dapat disimpan.';
@@ -122,6 +128,14 @@ class m_new extends CI_Model
                 }
                 
                 log_message('debug', 'Total inserted: ' . $inserted_count);
+                
+                // Return detailed results for better user feedback
+                return [
+                        'success' => true,
+                        'inserted_count' => $inserted_count,
+                        'errors' => $errors,
+                        'skipped_count' => count($errors)
+                ];
         }
 
         function edit_tampil($table, $where, $id)
@@ -490,6 +504,13 @@ class m_new extends CI_Model
                                 continue;
                         }
 
+                        // Check for duplicate BOM (same id_product)
+                        if ($this->check_duplicate_bom($user['id_product'])) {
+                                $errors[] = "BOM untuk product ini sudah ada!";
+                                log_message('debug', 'Skipping BOM index ' . $index . ' - duplicate BOM for id_product: ' . $user['id_product']);
+                                continue;
+                        }
+
                         if (!$this->db->insert('t_bom', $user)) {
                                 $error = $this->db->error();
                                 $errors[] = "BOM baris " . ($index + 1) . ": " . $error['message'];
@@ -639,6 +660,41 @@ class m_new extends CI_Model
                 ];
                 $this->db->where('id', $id);
                 return $this->db->update('cutting_tools', $data);
+        }
+        
+        /**
+         * Check if kode_product already exists in t_product table
+         * Returns true if duplicate exists, false otherwise
+         */
+        public function check_duplicate_kode_product($kode_product)
+        {
+                if (empty($kode_product) || trim($kode_product) === '') {
+                        return false;
+                }
+                
+                $this->db->from('t_product');
+                $this->db->where('kode_product', trim($kode_product));
+                $count = $this->db->count_all_results();
+                
+                return $count > 0;
+        }
+
+        /**
+         * Check if BOM already exists for the same product
+         * Each product should only have one BOM
+         * Returns true if duplicate exists, false otherwise
+         */
+        public function check_duplicate_bom($id_product)
+        {
+                if (empty($id_product)) {
+                        return false;
+                }
+
+                $this->db->from('t_bom');
+                $this->db->where('id_product', $id_product);
+                $count = $this->db->count_all_results();
+
+                return $count > 0;
         }
         
         /**

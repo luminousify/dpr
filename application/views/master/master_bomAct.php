@@ -27,6 +27,16 @@
                         </div>
                     </div>
     <div class="ibox-content">
+    <?php if ($this->session->flashdata('gagal')): ?>
+        <div class="alert alert-danger mt-2" style="text-align: center;font-size: 12px" role="alert">
+            <?php echo $this->session->flashdata('gagal'); ?>
+        </div>
+    <?php endif; ?>
+    <?php if ($this->session->flashdata('success')): ?>
+        <div class="alert alert-success mt-2" style="text-align: center;font-size: 12px" role="alert">
+            <?php echo $this->session->flashdata('success'); ?>
+        </div>
+    <?php endif; ?>
      <form action="<?php echo site_url('c_new/add_bom')?>" method="post" id="bomForm" onsubmit="return validateBomForm()">
         <div class="card rounded">
             <div class="card-header">

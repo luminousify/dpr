@@ -72,37 +72,27 @@ class c_report extends CI_Controller
 
 	function productivity_quartal()
 	{
-		
-		if ($this->input->post('show') == 'Show') {
-			$tahun = $this->input->post('year');
+		// Determine the year from GET or POST, or use current year as default
+		$year_param = $this->input->get('year') ?: $this->input->post('year');
+
+		// Use year parameter if provided, otherwise default to current year
+		if (!empty($year_param)) {
+			$tahun = $year_param;
 		} else {
 			$tahun = date('Y');
 		}
 
+		// Build data array with all required variables
 		$data = [
 			'data'          => $this->data,
 			'aktif'         => 'global',
 			'productivity_q1'   => $this->mr->productivity_q1($tahun),
-			'productivity'  => $this->mr->get_annual_productivity($tahun), 
-			'year'         => $tahun,
-			'tahun'        => $tahun  
+			'productivity'  => $this->mr->get_annual_productivity($tahun),
+			'year'          => $tahun,
+			'tahun'         => $tahun
 		];
 
-
-		if ($this->input->post('show') == 'showUntilLastMonthOnly') {
-			$data = [
-			'data'          	=> $this->data,
-			'aktif'         	=> 'global',
-			'productivity_q1'   => $this->mr->productivity_q($tahun,date('n')-1),
-			'productivity_q2'   => $this->mr->productivity_q2($tahun),
-			'productivity_q3'   => $this->mr->productivity_q3($tahun),
-			'tahun'				=> $tahun,
-		];
-			;}else{
-		
-		}
-
-		
+		// Load the view with the data
 		$this->load->view('global/productivity/productivity_quartal', $data);
 	}
 

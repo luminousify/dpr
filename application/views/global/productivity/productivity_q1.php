@@ -14,6 +14,7 @@
                 </thead>
                 <tbody>
                     <?php $total = 0; $total_gross = 0;
+                        if (isset($productivity_q1) && $productivity_q1 && $productivity_q1->num_rows() > 0) {
                         $no = 0 ; foreach($productivity_q1->result_array() as $data)
                         {  $no++;
                             $namaBulan = array("","Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember");
@@ -33,9 +34,13 @@
                             //$total += $nett;
                             //$total_gross += $nett;
                             }
-                            
 
-                        }?>
+
+                        }
+                        } else {
+                            echo '<tr><td colspan="5" class="text-center">No data available for the selected year.</td></tr>';
+                        }
+                        ?>
 
                 </tbody>
             </table>
@@ -52,46 +57,54 @@
                 </tr>
                 </thead>
                 <tbody>
-                     <?php foreach($productivity_q1->result_array() as $data)
-                        {  
+                     <?php if (isset($productivity_q1) && $productivity_q1 && $productivity_q1->num_rows() > 0) {
+                        $data_row = $productivity_q1->row_array();
+                        foreach($productivity_q1->result_array() as $data)
+                        {
                              echo '<tr>';
                              echo '<td>Net Productivity Aktual (%)</td>';
-                              for($i=1;$i<=12;$i++) 
+                              for($i=1;$i<=12;$i++)
                             {
                                //$nett = ($data['nett'.$i] != 0) ? ($data['ct_std'.$i]/$data['nett'.$i])*100 : 0;
                                echo '<td>'.round($data['persen_nett'.$i] ?? 0, 1).'</td>';
                             }
                              echo '</tr>';
-                        } ?>
-                    <?php foreach($productivity_q1->result_array() as $data)
-                        {   
+                        }
+
+                        foreach($productivity_q1->result_array() as $data)
+                        {
                              echo '<tr>';
                              echo '<td>Gross Productivity Aktual (%)</td>';
-                              for($i=1;$i<=12;$i++) 
+                              for($i=1;$i<=12;$i++)
                             {
                                //$gross = ($data['nett'.$i] != 0) ? ($data['ct_std'.$i]/$data['gross'.$i])*100 : 0;
                                echo '<td>'.round($data['persen_gross'.$i] ?? 0, 1).'</td>';
                             }
                              echo '</tr>';
-                        } 
+                        }
+
                         echo '<tr>';
                         echo '<td>Net Prod Target (%)</td>';
-                            for($i=1;$i<=12;$i++) 
-                            {  
+                            for($i=1;$i<=12;$i++)
+                            {
                                echo '<td>'.($data['target_nett'] ?? 0).'</td>';
-                               
+
                             }
                         echo '</tr>';
 
                         echo '<tr>';
                         echo '<td>Gross Prod Target (%)</td>';
-                            for($i=1;$i<=12;$i++) 
-                            {  
+                            for($i=1;$i<=12;$i++)
+                            {
                                echo '<td>'.($data['target_gross'] ?? 0).'</td>';
-                               
+
                             }
                             echo '</tr>';
-                            ?>
+
+                        } else {
+                            echo '<tr><td colspan="13" class="text-center">No data available for the selected year.</td></tr>';
+                        }
+                        ?>
                 </tbody>
             </table>
         </div>

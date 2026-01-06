@@ -186,7 +186,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                         </div>
                     </div>
                 <div class="ibox-content">
-                  <?= form_open('c_report/annual_productivity'); ?>  
+                  <form method="get" action="<?= site_url('c_report/productivity_quartal'); ?>">
                     <div class="card rounded mb-4">
                         <div class="card-header">
                             <h2>Filter Data</h2>
@@ -213,7 +213,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                             <p><strong>*Catatan :</strong> Data yang muncul hanya data pada <strong>tahun ini saja</strong>, jika ingin melihat data yang lain silahkan gunakan fitur <strong>filter</strong>.</p>
                         </div>
                     </div>
-                    <?= form_close(); ?>
+                    </form>
                     
                     <!-- Custom Excel Export -->
                     <div class="card rounded mb-4 border-info">
