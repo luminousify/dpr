@@ -223,22 +223,9 @@ $(document).ready(function() {
 
     // Auto-select Group based on Kanit selection
     bindAutoGroupByKanit();
-    
-    // Set current date as default
+
+    // Set current date as default (no restrictions applied)
     document.getElementById("tanggal").valueAsDate = new Date();
-    
-    // Set date restrictions
-    var today = new Date();
-    var maxDate = today.toISOString().split('T')[0];
-    
-    // Calculate 2 days before
-    var minDate = new Date();
-    minDate.setDate(minDate.getDate() - 2);
-    var minDateString = minDate.toISOString().split('T')[0];
-    
-    // Apply restrictions to date input
-    document.getElementById("tanggal").setAttribute('max', maxDate);
-    document.getElementById("tanggal").setAttribute('min', minDateString);
 
     // Mobile-friendly searchable selects
     if ($.fn.select2) {
