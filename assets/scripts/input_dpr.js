@@ -774,7 +774,7 @@ function addLT(id) {
         "<td><input type='hidden' name='detailLT[" + saveLT + "][nama]' value='" + nama + "''>" + nama + "</td>" +
         "<td><input type='hidden' name='detailLT[" + saveLT + "][kategori]' value='" + kategori + "'>" + kategori + "</td>" +
         "<td><input type='hidden' name='detailLT[" + saveLT + "][qty]' value=" + qty_minutes + " class='nilai'>" + qty_hours + " Jam</td>" +
-        "<td><input type='hidden' name='detailLT[" + saveLT + "][satuan]' value=" + satuan + ">" + satuan + 
+        "<td><input type='hidden' name='detailLT[" + saveLT + "][satuan]' value='" + satuan + "'>Jam" +
         "<input type='hidden' name='detailLT[" + saveLT + "][type]' value=" + type + "></td>" +
         "</tr>";
     

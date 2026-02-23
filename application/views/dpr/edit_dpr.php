@@ -439,7 +439,7 @@
                                         </div>
                                 </div>
                                 <div class="col">
-                                    <button class="btn btn-success" class="form-control" onclick="addLT(); return false;">( + )</button>
+                                    <button type="button" class="btn btn-success" onclick="addLT(); return false;">( + )</button>
                                     <!--<button class="btn btn-primary" id="tambahLT">Add</button>-->
                                 </div>
                                 <div class="col-sm-12">
