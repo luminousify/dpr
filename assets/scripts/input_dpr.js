@@ -174,7 +174,7 @@ function validateForm() {
 
         if (field.numeric) {
             var num = Number(val.replace(/,/g, '.'));
-            if (!Number.isFinite(num) || num <= 0) {
+            if (!Number.isFinite(num) || num < 0) {
                 setFieldError($el, 'Masukkan angka yang valid');
                 if (valid) { $el.focus(); }
                 valid = false;
@@ -188,8 +188,7 @@ function validateForm() {
 function canCalculateGrossNett() {
     return getNumericValue('#qty') > 0 &&
         getNumericValue('#ct_mc_aktual') > 0 &&
-        (getNumericValue('#cavity') > 0 || getNumericValue('#cavity2') > 0) &&
-        getNumericValue('#nwt') > 0;
+        (getNumericValue('#cavity') > 0 || getNumericValue('#cavity2') > 0);
 }
 
 function clearProductionOutputs() {
