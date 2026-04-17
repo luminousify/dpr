@@ -3111,4 +3111,860 @@ public function tampil_grafikPPM_fixed($tahun)
         return $query;
     }
 
+    // ===================================================================
+    // NEW MODEL METHODS FOR ENHANCED EXCEL REPORTS (Pak Mursalim format)
+    // ===================================================================
+
+    /**
+     * Get productivity data matching Pak Mursalim's format (Std/Nett/Gross per product per month)
+     * Returns all products with SPMStd, CTStd, min/max CTSet, and monthly values
+     */
+    public function get_productivity_full_excel_data($year)
+    {
+        $sql = "SELECT
+                    '$year' as YY,
+                    p.kode_product as Product_ID,
+                    p.nama_product as Product_Name,
+                    p.cyt_quo as Max_SPM_Std,
+                    p.cyt_mc as Max_SPM_Std2,
+                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    '-' as Mm_Chk,
+                    p.cyt_mp as Min_SPM_Set,
+                    p.cyt_quo as Max_SPM_Set,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 1 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '01',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 2 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '02',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 3 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '03',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 4 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '04',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 5 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '05',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 6 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '06',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 7 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '07',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 8 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '08',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 9 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '09',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 10 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '10',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 11 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '11',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 12 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '12'
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                    AND po.ct_mc_aktual IS NOT NULL AND po.ct_mc_aktual > 0
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo
+                ORDER BY p.kode_product";
+        return $this->db->query($sql, array($year));
+    }
+
+    public function get_productivity_nett_excel_data($year)
+    {
+        $sql = "SELECT
+                    '$year' as YY,
+                    p.kode_product as Product_ID,
+                    p.nama_product as Product_Name,
+                    p.cyt_quo as Max_SPM_Std,
+                    p.cyt_mc as Max_SPM_Std2,
+                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    '-' as Mm_Chk,
+                    p.cyt_mp as Min_SPM_Set,
+                    p.cyt_quo as Max_SPM_Set,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 1 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '01',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 2 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '02',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 3 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '03',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 4 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '04',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 5 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '05',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 6 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '06',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 7 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '07',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 8 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '08',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 9 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '09',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 10 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '10',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 11 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '11',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 12 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '12'
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ? AND po.nett_prod > 0
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo
+                ORDER BY p.kode_product";
+        return $this->db->query($sql, array($year));
+    }
+
+    public function get_productivity_gross_excel_data($year)
+    {
+        $sql = "SELECT
+                    '$year' as YY,
+                    p.kode_product as Product_ID,
+                    p.nama_product as Product_Name,
+                    p.cyt_quo as Max_SPM_Std,
+                    p.cyt_mc as Max_SPM_Std2,
+                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    '-' as Mm_Chk,
+                    p.cyt_mp as Min_SPM_Set,
+                    p.cyt_quo as Max_SPM_Set,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 1 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '01',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 2 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '02',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 3 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '03',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 4 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '04',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 5 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '05',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 6 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '06',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 7 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '07',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 8 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '08',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 9 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '09',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 10 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '10',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 11 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '11',
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 12 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '12'
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ? AND po.gross_prod > 0
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo
+                ORDER BY p.kode_product";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get production qty data with Price column matching Pak Mursalim's format
+     */
+    public function get_production_qty_full_excel_data($year)
+    {
+        $sql = "SELECT
+                    '$year' as YY,
+                    p.kode_product as Product_ID,
+                    p.nama_product as Product_Name,
+                    p.cyt_quo as Max_SPM_Std,
+                    p.cyt_mc as Max_SPM_Std2,
+                    p.cost as Price,
+                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    p.cyt_mp as Min_SPM_Set,
+                    p.cyt_quo as Max_SPM_Set,
+                    SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '01',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '02',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '03',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '04',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '05',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '06',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '07',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '08',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '09',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '10',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '11',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '12'
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom AND YEAR(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost
+                HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
+                ORDER BY p.kode_product";
+        return $this->db->query($sql, array($year));
+    }
+
+    public function get_production_ok_full_excel_data($year)
+    {
+        $sql = "SELECT
+                    '$year' as YY,
+                    p.kode_product as Product_ID,
+                    p.nama_product as Product_Name,
+                    p.cyt_quo as Max_SPM_Std,
+                    p.cyt_mc as Max_SPM_Std2,
+                    p.cost as Price,
+                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    p.cyt_mp as Min_SPM_Set,
+                    p.cyt_quo as Max_SPM_Set,
+                    SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.qty_ok ELSE 0 END) as '01',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.qty_ok ELSE 0 END) as '02',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.qty_ok ELSE 0 END) as '03',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.qty_ok ELSE 0 END) as '04',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.qty_ok ELSE 0 END) as '05',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.qty_ok ELSE 0 END) as '06',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.qty_ok ELSE 0 END) as '07',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.qty_ok ELSE 0 END) as '08',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.qty_ok ELSE 0 END) as '09',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.qty_ok ELSE 0 END) as '10',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.qty_ok ELSE 0 END) as '11',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.qty_ok ELSE 0 END) as '12'
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom AND YEAR(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost
+                HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
+                ORDER BY p.kode_product";
+        return $this->db->query($sql, array($year));
+    }
+
+    public function get_production_ng_full_excel_data($year)
+    {
+        $sql = "SELECT
+                    '$year' as YY,
+                    p.kode_product as Product_ID,
+                    p.nama_product as Product_Name,
+                    p.cyt_quo as Max_SPM_Std,
+                    p.cyt_mc as Max_SPM_Std2,
+                    p.cost as Price,
+                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    p.cyt_mp as Min_SPM_Set,
+                    p.cyt_quo as Max_SPM_Set,
+                    SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '01',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '02',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '03',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '04',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '05',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '06',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '07',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '08',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '09',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '10',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '11',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '12'
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom AND YEAR(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost
+                HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
+                ORDER BY p.kode_product";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get machine use per machine per month (24 machines x 12 months) for Stop Time report
+     */
+    public function get_machine_use_per_machine_per_month($year)
+    {
+        $sql = "SELECT
+                    m.no_mesin as Mach,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.production_time ELSE 0 END), 2) as mc01,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.production_time ELSE 0 END), 2) as mc02,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.production_time ELSE 0 END), 2) as mc03,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.production_time ELSE 0 END), 2) as mc04,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.production_time ELSE 0 END), 2) as mc05,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.production_time ELSE 0 END), 2) as mc06,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.production_time ELSE 0 END), 2) as mc07,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.production_time ELSE 0 END), 2) as mc08,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.production_time ELSE 0 END), 2) as mc09,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.production_time ELSE 0 END), 2) as mc10,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.production_time ELSE 0 END), 2) as mc11,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.production_time ELSE 0 END), 2) as mc12
+                FROM t_no_mesin m
+                LEFT JOIN t_production_op po ON m.no_mesin = po.mesin AND YEAR(po.tanggal) = ?
+                WHERE m.aktif = 1
+                GROUP BY m.no_mesin
+                ORDER BY m.no_mesin";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get machine efficiency per machine per month (eff_mesin_new_rev1 style)
+     */
+    public function get_efficiency_per_machine_per_month($year)
+    {
+        $sql = "SELECT
+                    mesin as Mach,
+                    ROUND(SUM(CASE WHEN bulan = 1 THEN totalNWT ELSE 0 END), 2) as wh01,
+                    ROUND(SUM(CASE WHEN bulan = 1 THEN totalOT ELSE 0 END), 2) as ot01,
+                    ROUND(SUM(CASE WHEN bulan = 1 THEN machine_use ELSE 0 END), 2) as eff01,
+                    ROUND(SUM(CASE WHEN bulan = 1 THEN totalLT ELSE 0 END), 2) as lt01,
+                    ROUND(SUM(CASE WHEN bulan = 2 THEN totalNWT ELSE 0 END), 2) as wh02,
+                    ROUND(SUM(CASE WHEN bulan = 2 THEN totalOT ELSE 0 END), 2) as ot02,
+                    ROUND(SUM(CASE WHEN bulan = 2 THEN machine_use ELSE 0 END), 2) as eff02,
+                    ROUND(SUM(CASE WHEN bulan = 2 THEN totalLT ELSE 0 END), 2) as lt02,
+                    ROUND(SUM(CASE WHEN bulan = 3 THEN totalNWT ELSE 0 END), 2) as wh03,
+                    ROUND(SUM(CASE WHEN bulan = 3 THEN totalOT ELSE 0 END), 2) as ot03,
+                    ROUND(SUM(CASE WHEN bulan = 3 THEN machine_use ELSE 0 END), 2) as eff03,
+                    ROUND(SUM(CASE WHEN bulan = 3 THEN totalLT ELSE 0 END), 2) as lt03,
+                    ROUND(SUM(CASE WHEN bulan = 4 THEN totalNWT ELSE 0 END), 2) as wh04,
+                    ROUND(SUM(CASE WHEN bulan = 4 THEN totalOT ELSE 0 END), 2) as ot04,
+                    ROUND(SUM(CASE WHEN bulan = 4 THEN machine_use ELSE 0 END), 2) as eff04,
+                    ROUND(SUM(CASE WHEN bulan = 4 THEN totalLT ELSE 0 END), 2) as lt04,
+                    ROUND(SUM(CASE WHEN bulan = 5 THEN totalNWT ELSE 0 END), 2) as wh05,
+                    ROUND(SUM(CASE WHEN bulan = 5 THEN totalOT ELSE 0 END), 2) as ot05,
+                    ROUND(SUM(CASE WHEN bulan = 5 THEN machine_use ELSE 0 END), 2) as eff05,
+                    ROUND(SUM(CASE WHEN bulan = 5 THEN totalLT ELSE 0 END), 2) as lt05,
+                    ROUND(SUM(CASE WHEN bulan = 6 THEN totalNWT ELSE 0 END), 2) as wh06,
+                    ROUND(SUM(CASE WHEN bulan = 6 THEN totalOT ELSE 0 END), 2) as ot06,
+                    ROUND(SUM(CASE WHEN bulan = 6 THEN machine_use ELSE 0 END), 2) as eff06,
+                    ROUND(SUM(CASE WHEN bulan = 6 THEN totalLT ELSE 0 END), 2) as lt06,
+                    ROUND(SUM(CASE WHEN bulan = 7 THEN totalNWT ELSE 0 END), 2) as wh07,
+                    ROUND(SUM(CASE WHEN bulan = 7 THEN totalOT ELSE 0 END), 2) as ot07,
+                    ROUND(SUM(CASE WHEN bulan = 7 THEN machine_use ELSE 0 END), 2) as eff07,
+                    ROUND(SUM(CASE WHEN bulan = 7 THEN totalLT ELSE 0 END), 2) as lt07,
+                    ROUND(SUM(CASE WHEN bulan = 8 THEN totalNWT ELSE 0 END), 2) as wh08,
+                    ROUND(SUM(CASE WHEN bulan = 8 THEN totalOT ELSE 0 END), 2) as ot08,
+                    ROUND(SUM(CASE WHEN bulan = 8 THEN machine_use ELSE 0 END), 2) as eff08,
+                    ROUND(SUM(CASE WHEN bulan = 8 THEN totalLT ELSE 0 END), 2) as lt08,
+                    ROUND(SUM(CASE WHEN bulan = 9 THEN totalNWT ELSE 0 END), 2) as wh09,
+                    ROUND(SUM(CASE WHEN bulan = 9 THEN totalOT ELSE 0 END), 2) as ot09,
+                    ROUND(SUM(CASE WHEN bulan = 9 THEN machine_use ELSE 0 END), 2) as eff09,
+                    ROUND(SUM(CASE WHEN bulan = 9 THEN totalLT ELSE 0 END), 2) as lt09,
+                    ROUND(SUM(CASE WHEN bulan = 10 THEN totalNWT ELSE 0 END), 2) as wh10,
+                    ROUND(SUM(CASE WHEN bulan = 10 THEN totalOT ELSE 0 END), 2) as ot10,
+                    ROUND(SUM(CASE WHEN bulan = 10 THEN machine_use ELSE 0 END), 2) as eff10,
+                    ROUND(SUM(CASE WHEN bulan = 10 THEN totalLT ELSE 0 END), 2) as lt10,
+                    ROUND(SUM(CASE WHEN bulan = 11 THEN totalNWT ELSE 0 END), 2) as wh11,
+                    ROUND(SUM(CASE WHEN bulan = 11 THEN totalOT ELSE 0 END), 2) as ot11,
+                    ROUND(SUM(CASE WHEN bulan = 11 THEN machine_use ELSE 0 END), 2) as eff11,
+                    ROUND(SUM(CASE WHEN bulan = 11 THEN totalLT ELSE 0 END), 2) as lt11,
+                    ROUND(SUM(CASE WHEN bulan = 12 THEN totalNWT ELSE 0 END), 2) as wh12,
+                    ROUND(SUM(CASE WHEN bulan = 12 THEN totalOT ELSE 0 END), 2) as ot12,
+                    ROUND(SUM(CASE WHEN bulan = 12 THEN machine_use ELSE 0 END), 2) as eff12,
+                    ROUND(SUM(CASE WHEN bulan = 12 THEN totalLT ELSE 0 END), 2) as lt12,
+                    ROUND(SUM(CASE WHEN bulan = 1 THEN production_time ELSE 0 END), 2) as pt01,
+                    ROUND(SUM(CASE WHEN bulan = 2 THEN production_time ELSE 0 END), 2) as pt02,
+                    ROUND(SUM(CASE WHEN bulan = 3 THEN production_time ELSE 0 END), 2) as pt03,
+                    ROUND(SUM(CASE WHEN bulan = 4 THEN production_time ELSE 0 END), 2) as pt04,
+                    ROUND(SUM(CASE WHEN bulan = 5 THEN production_time ELSE 0 END), 2) as pt05,
+                    ROUND(SUM(CASE WHEN bulan = 6 THEN production_time ELSE 0 END), 2) as pt06,
+                    ROUND(SUM(CASE WHEN bulan = 7 THEN production_time ELSE 0 END), 2) as pt07,
+                    ROUND(SUM(CASE WHEN bulan = 8 THEN production_time ELSE 0 END), 2) as pt08,
+                    ROUND(SUM(CASE WHEN bulan = 9 THEN production_time ELSE 0 END), 2) as pt09,
+                    ROUND(SUM(CASE WHEN bulan = 10 THEN production_time ELSE 0 END), 2) as pt10,
+                    ROUND(SUM(CASE WHEN bulan = 11 THEN production_time ELSE 0 END), 2) as pt11,
+                    ROUND(SUM(CASE WHEN bulan = 12 THEN production_time ELSE 0 END), 2) as pt12
+                FROM eff_mesin_new_rev1
+                WHERE tahun = ?
+                GROUP BY mesin
+                ORDER BY mesin";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get machine capacity by tonnage per month (Machine Cap 2025 style)
+     */
+    public function get_machine_capacity_by_tonnage($year)
+    {
+        $sql = "SELECT
+                    m.tonnase,
+                    t.bulan,
+                    COUNT(DISTINCT m.no_mesin) as jumlah_mesin,
+                    COALESCE(y.total, 462) as std_hours_per_month,
+                    ROUND(COALESCE(SUM(e.production_time), 0), 2) as machine_use,
+                    ROUND(COUNT(DISTINCT m.no_mesin) * COALESCE(y.total, 462), 2) as available_capacity,
+                    ROUND(COUNT(DISTINCT m.no_mesin) * COALESCE(y.total, 462) - COALESCE(SUM(e.production_time), 0), 2) as balance_idle,
+                    ROUND(CASE WHEN COUNT(DISTINCT m.no_mesin) * COALESCE(y.total, 462) > 0
+                        THEN (COALESCE(SUM(e.production_time), 0) / (COUNT(DISTINCT m.no_mesin) * COALESCE(y.total, 462))) * 100 ELSE 0 END, 2) as pct_use
+                FROM t_no_mesin m
+                CROSS JOIN (
+                    SELECT 1 as bulan UNION SELECT 2 UNION SELECT 3 UNION SELECT 4
+                    UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8
+                    UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12
+                ) t
+                LEFT JOIN eff_mesin_new_rev1 e ON m.no_mesin = e.mesin
+                    AND e.tahun = ? AND e.bulan = t.bulan
+                LEFT JOIN year_day y ON y.bulan = t.bulan AND y.tahun = ?
+                WHERE m.aktif = 1 AND m.tonnase IS NOT NULL
+                GROUP BY m.tonnase, t.bulan, y.total
+                ORDER BY m.tonnase, t.bulan";
+        return $this->db->query($sql, array($year, $year));
+    }
+
+    /**
+     * Get machine use by customer per month (for Machine Use Chart report)
+     */
+    public function get_machine_use_by_customer_by_month($year)
+    {
+        $sql = "SELECT
+                    po.customer,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.production_time ELSE 0 END), 2) as hr01,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.production_time ELSE 0 END), 2) as hr02,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.production_time ELSE 0 END), 2) as hr03,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.production_time ELSE 0 END), 2) as hr04,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.production_time ELSE 0 END), 2) as hr05,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.production_time ELSE 0 END), 2) as hr06,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.production_time ELSE 0 END), 2) as hr07,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.production_time ELSE 0 END), 2) as hr08,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.production_time ELSE 0 END), 2) as hr09,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.production_time ELSE 0 END), 2) as hr10,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.production_time ELSE 0 END), 2) as hr11,
+                    ROUND(SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.production_time ELSE 0 END), 2) as hr12
+                FROM t_production_op po
+                WHERE YEAR(po.tanggal) = ? AND po.customer IS NOT NULL AND po.customer != ''
+                GROUP BY po.customer
+                ORDER BY po.customer";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get machine use by customer and tonnage per month
+     */
+    public function get_machine_use_by_customer_tonnage_by_month($year)
+    {
+        $sql = "SELECT
+                    po.customer,
+                    nm.tonnase,
+                    MONTH(po.tanggal) as bulan,
+                    ROUND(SUM(po.production_time), 2) as total_hours
+                FROM t_production_op po
+                LEFT JOIN t_no_mesin nm ON nm.no_mesin = po.mesin
+                WHERE YEAR(po.tanggal) = ? AND po.customer IS NOT NULL AND po.customer != ''
+                GROUP BY po.customer, nm.tonnase, MONTH(po.tanggal)
+                ORDER BY po.customer, nm.tonnase, MONTH(po.tanggal)";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get available capacity per month from year_day table
+     */
+    public function get_available_capacity_per_month($year)
+    {
+        $sql = "SELECT bulan, total as std_hours FROM year_day WHERE tahun = ? ORDER BY bulan";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get machine list with tonnage
+     */
+    public function get_active_machines()
+    {
+        $sql = "SELECT m.no_mesin, m.tonnase, m.line, nm.nama_mesin
+                FROM t_no_mesin m
+                LEFT JOIN t_nama_mesin nm ON nm.id_nama_mesin = m.id_nama_mesin
+                WHERE m.aktif = 1
+                ORDER BY m.no_mesin";
+        return $this->db->query($sql);
+    }
+
+    /**
+     * Get loss time per category per machine per month
+     * Used for ST1-ST19 columns in 7-Data sheet
+     */
+    public function get_loss_time_by_category_per_machine($year)
+    {
+        $sql = "SELECT 
+                    po.mesin,
+                    MONTH(po.tanggal) as bulan,
+                    dl.nama as category,
+                    ROUND(SUM(dl.qty), 2) as total_lt
+                FROM t_production_op_dl dl
+                JOIN t_production_op po ON dl.id_production = po.id_production
+                WHERE dl.type = 'LT' AND YEAR(po.tanggal) = ?
+                GROUP BY po.mesin, MONTH(po.tanggal), dl.nama
+                ORDER BY po.mesin, MONTH(po.tanggal), dl.nama";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get 10 lowest productivity products for a given month
+     * Used for 10LP sheets in Productivity Chart report
+     */
+    public function get_10_lowest_productivity($year, $month)
+    {
+        $sql = "SELECT
+                    CONCAT(RIGHT('$year',2), '-', LPAD($month, 2, '0')) as YYMM,
+                    $month as Mo,
+                    p.kode_product as Product_ID,
+                    p.nama_product as Product_Name,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0 AND SUM(po.production_time) > 0
+                        THEN (SUM(po.gross_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Ttl_Gros_Prod,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0 AND SUM(po.production_time) > 0
+                        THEN (SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Ttl_Net_Prod,
+                    ROUND(
+                        CASE WHEN SUM(po.production_time) > 0 AND SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN SUM(po.gross_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))
+                        ELSE 0 END, 2) as G_Prod,
+                    ROUND(
+                        CASE WHEN SUM(po.production_time) > 0 AND SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))
+                        ELSE 0 END, 2) as N_Prod,
+                    p.cyt_quo as Max_SPM_Std,
+                    p.cyt_mp as Min_SPM_Set,
+                    p.cyt_quo as Max_SPM_Set,
+                    ROUND(SUM(po.production_time + po.qty_lt), 2) as WH,
+                    ROUND(SUM(po.ot_mp), 2) as OT,
+                    SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) as Qty_Total,
+                    SUM(IFNULL(po.qty_ok,0)) as Qty_OK,
+                    SUM(IFNULL(po.qty_ng,0)) as Qty_Defect,
+                    MAX(po.cavity) as Cavity,
+                    MAX(po.customer) as Customer
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                    AND MONTH(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.SPMStd, p.cyt_mp, p.cyt_quo
+                HAVING Qty_Total > 0
+                ORDER BY Ttl_Net_Prod ASC
+                LIMIT 10";
+        return $this->db->query($sql, array($year, $month));
+    }
+
+    /**
+     * Get all products ranked by net productivity for a given month
+     * Used for monthly detail sheets (Jan26, Feb26, etc.)
+     * Also returns total net/gross productivity percentages for the month
+     */
+    public function get_monthly_productivity_ranked($year, $month)
+    {
+        $sql = "SELECT
+                    p.kode_product as Part_No,
+                    p.nama_product as Part_Name,
+                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN (SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Net_Productivity,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN (SUM(po.gross_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Gross_Productivity,
+                    SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) as Qty_Total,
+                    SUM(IFNULL(po.qty_ok,0)) as Qty_OK,
+                    SUM(IFNULL(po.qty_ng,0)) as Qty_NG
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                    AND MONTH(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mp, p.cyt_quo
+                HAVING Qty_Total > 0
+                ORDER BY Net_Productivity ASC";
+        return $this->db->query($sql, array($year, $month));
+    }
+
+    /**
+     * Get total net/gross productivity percentage for a month
+     */
+    public function get_monthly_productivity_totals($year, $month)
+    {
+        $sql = "SELECT
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN (SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Ttl_Net_Productivity,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN (SUM(po.gross_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Ttl_Gross_Productivity
+                FROM t_production_op po
+                WHERE YEAR(po.tanggal) = ? AND MONTH(po.tanggal) = ?";
+        return $this->db->query($sql, array($year, $month));
+    }
+
+    /**
+     * Bulk: get 10 lowest productivity for ALL months in one query
+     */
+    public function get_10_lowest_productivity_all($year)
+    {
+        $sql = "SELECT
+                    MONTH(po.tanggal) as bulan,
+                    CONCAT(RIGHT('$year',2), '-', LPAD(MONTH(po.tanggal), 2, '0')) as YYMM,
+                    MONTH(po.tanggal) as Mo,
+                    p.kode_product as Product_ID,
+                    p.nama_product as Product_Name,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0 AND SUM(po.production_time) > 0
+                        THEN (SUM(po.gross_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Ttl_Gros_Prod,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0 AND SUM(po.production_time) > 0
+                        THEN (SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Ttl_Net_Prod,
+                    ROUND(
+                        CASE WHEN SUM(po.production_time) > 0 AND SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN SUM(po.gross_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))
+                        ELSE 0 END, 2) as G_Prod,
+                    ROUND(
+                        CASE WHEN SUM(po.production_time) > 0 AND SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))
+                        ELSE 0 END, 2) as N_Prod,
+                    p.cyt_quo as Max_SPM_Std,
+                    p.cyt_mp as Min_SPM_Set,
+                    p.cyt_quo as Max_SPM_Set,
+                    ROUND(SUM(po.production_time + po.qty_lt), 2) as WH,
+                    ROUND(SUM(po.ot_mp), 2) as OT,
+                    SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) as Qty_Total,
+                    SUM(IFNULL(po.qty_ok,0)) as Qty_OK,
+                    SUM(IFNULL(po.qty_ng,0)) as Qty_Defect,
+                    MAX(po.cavity) as Cavity,
+                    MAX(po.customer) as Customer
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY MONTH(po.tanggal), p.kode_product, p.nama_product, p.SPMStd, p.cyt_mp, p.cyt_quo
+                HAVING Qty_Total > 0";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Bulk: get all products ranked by net productivity for ALL months in one query
+     */
+    public function get_monthly_productivity_ranked_all($year)
+    {
+        $sql = "SELECT
+                    MONTH(po.tanggal) as bulan,
+                    p.kode_product as Part_No,
+                    p.nama_product as Part_Name,
+                    CASE WHEN po.tooling IS NULL OR po.tooling = 0 THEN '-' ELSE po.tooling END as Tool,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN (SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Net_Productivity,
+                    ROUND(
+                        CASE WHEN SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) > 0
+                        THEN (SUM(po.gross_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))) * 100
+                        ELSE 0 END, 2) as Gross_Productivity,
+                    SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) as Qty_Total,
+                    SUM(IFNULL(po.qty_ok,0)) as Qty_OK,
+                    SUM(IFNULL(po.qty_ng,0)) as Qty_NG
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY MONTH(po.tanggal), p.kode_product, p.nama_product, po.tooling, p.cyt_mp, p.cyt_quo
+                HAVING Qty_Total > 0";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Bulk: get total net/gross productivity percentage for ALL months in one query
+     */
+    public function get_monthly_productivity_totals_all($year)
+    {
+        $sql = "SELECT
+                    w.bulan as bulan,
+                    ROUND(
+                        CASE WHEN AVG(w.nett) > 0
+                        THEN (AVG(w.cyt_quo) / AVG(w.nett)) * 100
+                        ELSE 0 END, 2) as Ttl_Net_Productivity,
+                    ROUND(
+                        CASE WHEN AVG(w.gross) > 0
+                        THEN (AVG(w.cyt_quo) / AVG(w.gross)) * 100
+                        ELSE 0 END, 2) as Ttl_Gross_Productivity
+                FROM v_productivity_q1 w
+                WHERE w.tahun = ?
+                GROUP BY w.bulan";
+        return $this->db->query($sql, array($year));
+    }
+
+    public function get_productivity_part_table_data($year)
+    {
+        $sql = "SELECT
+                    p.kode_product,
+                    p.nama_product,
+                    p.SPMStd,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 1  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_1,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 2  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_2,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 3  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_3,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 4  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_4,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 5  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_5,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 6  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_6,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 7  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_7,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 8  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_8,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 9  AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_9,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 10 AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_10,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 11 AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_11,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 12 AND po.nett_prod > 0 THEN po.nett_prod END), 0)  AS nett_12,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 1  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_1,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 2  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_2,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 3  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_3,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 4  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_4,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 5  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_5,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 6  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_6,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 7  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_7,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 8  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_8,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 9  AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_9,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 10 AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_10,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 11 AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_11,
+                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 12 AND po.gross_prod > 0 THEN po.gross_prod END), 0) AS gross_12
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.SPMStd
+                ORDER BY p.kode_product";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get 10worst defect data for a specific month and year.
+     * Returns all products with their Qty Total, Qty OK, Qty NG, PPM, and % NG,
+     * sorted by PPM descending (worst first).
+     */
+    public function get_10worst_data_by_month($year, $month)
+    {
+        $sql = "SELECT
+                    p.kode_product AS Product_ID,
+                    p.nama_product AS Product_Name,
+                    SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)) AS Qty_Total,
+                    SUM(IFNULL(po.qty_ok, 0)) AS Qty_OK,
+                    SUM(IFNULL(po.qty_ng, 0)) AS Qty_NG,
+                    ROUND(
+                        (SUM(IFNULL(po.qty_ng, 0)) / NULLIF(SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)), 0)) * 1000000
+                    ) AS PPM
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                    AND MONTH(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product
+                HAVING Qty_Total > 0
+                ORDER BY PPM DESC";
+        return $this->db->query($sql, array($year, $month));
+    }
+
+    /**
+     * Get total production qty and total NG for an entire month (across ALL products).
+     * Used for the monthly summary rows in Jan-Dec sheets.
+     */
+    public function get_monthly_total_production($year, $month)
+    {
+        $sql = "SELECT
+                    SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)) AS Total_Prod,
+                    SUM(IFNULL(po.qty_ng, 0)) AS Total_NG
+                FROM t_production_op po
+                WHERE YEAR(po.tanggal) = ?
+                  AND MONTH(po.tanggal) = ?";
+        return $this->db->query($sql, array($year, $month));
+    }
+
+    /**
+     * Get top 10 worst products by PPM for a specific month.
+     * PPM = (product NG / total ALL production that month) * 1,000,000
+     */
+    public function get_top10_worst_ppm_by_month($year, $month)
+    {
+        $sql = "SELECT
+                    p.kode_product AS Part_No,
+                    p.nama_product AS Part_Name,
+                    COALESCE(MAX(po.tooling), '-') AS Tool,
+                    SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)) AS Prod_Qty,
+                    SUM(IFNULL(po.qty_ng, 0)) AS NG
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                    AND MONTH(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product
+                HAVING Prod_Qty > 0 AND NG > 0
+                ORDER BY NG DESC
+                LIMIT 10";
+        return $this->db->query($sql, array($year, $month));
+    }
+
+    /**
+     * Get contoh report data for a specific year.
+     * Returns per-product per-month rows with defect type breakdowns.
+     * Used by the "contoh report" sheet in the Production Qty & PPM Excel export.
+     */
+    /**
+     * Get distinct loss time category names ordered by first appearance
+     * Used for ST1-ST19 column headers in 7-Data sheet
+     */
+    public function get_loss_time_category_list($year)
+    {
+        $sql = "SELECT DISTINCT dl.nama as category
+                FROM t_production_op_dl dl
+                JOIN t_production_op po ON dl.id_production = po.id_production
+                WHERE dl.type = 'LT' AND YEAR(po.tanggal) = ?
+                ORDER BY dl.nama";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get machine use by customer x tonnage x month (cross-tab for 8-Data)
+     * Returns rows per customer per month with hours per tonnage column
+     */
+    public function get_machine_use_cust_tonnage_by_month($year)
+    {
+        $yy = substr((string)$year, 2, 2);
+        $sql = "SELECT
+                    CONCAT('$yy-', LPAD(MONTH(po.tanggal), 2, '0')) as yy_mm,
+                    MONTH(po.tanggal) as bulan,
+                    po.customer,
+                    ROUND(SUM(po.production_time), 2) as total_eff_hr,
+                    nm.tonnase
+                FROM t_production_op po
+                LEFT JOIN t_no_mesin nm ON nm.no_mesin = po.mesin
+                WHERE YEAR(po.tanggal) = ? AND po.customer IS NOT NULL AND po.customer != ''
+                GROUP BY MONTH(po.tanggal), po.customer, nm.tonnase
+                ORDER BY MONTH(po.tanggal), po.customer, nm.tonnase";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * Get machine rate (cost) per tonnage from production data
+     * Joins t_production_op with t_no_mesin for tonnage, sums cost
+     */
+    public function get_machine_rate_by_tonnage($year, $fctVal = 0)
+    {
+        $sql = "SELECT
+                    nm.tonnase,
+                    ROUND(SUM(po.production_time) * ?, 2) as total_cost
+                FROM t_production_op po
+                LEFT JOIN t_no_mesin nm ON nm.no_mesin = po.mesin
+                WHERE YEAR(po.tanggal) = ? AND nm.tonnase IS NOT NULL
+                GROUP BY nm.tonnase
+                ORDER BY nm.tonnase";
+        return $this->db->query($sql, array($fctVal, $year));
+    }
+
+    /**
+     * Get total machine use hours per month (for capacity calculations)
+     */
+    public function get_total_machine_use_per_month($year)
+    {
+        $sql = "SELECT
+                    MONTH(po.tanggal) as bulan,
+                    ROUND(SUM(po.production_time), 2) as total_use
+                FROM t_production_op po
+                WHERE YEAR(po.tanggal) = ?
+                GROUP BY MONTH(po.tanggal)
+                ORDER BY MONTH(po.tanggal)";
+        return $this->db->query($sql, array($year));
+    }
+
+    public function get_contoh_report_data($year)
+    {
+        $sql = "SELECT
+                    ? AS YY,
+                    CONCAT(SUBSTRING(?, 3, 2), '-', LPAD(MONTH(po.tanggal), 2, '0')) AS YYMM,
+                    p.kode_product AS Product_ID,
+                    p.nama_product AS Product_Name,
+                    ROUND(
+                        (SUM(IFNULL(po.qty_ng, 0)) / NULLIF(SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)), 0)) * 1000000
+                    ) AS PPM,
+                    SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)) AS Qty_Produksi,
+                    SUM(IFNULL(po.qty_ng, 0)) AS Qty_NG,
+                    ROUND(
+                        (SUM(IFNULL(po.qty_ng, 0)) / NULLIF(SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)), 0))
+                    ) AS Pct_NG,
+                    MAX(po.customer) AS Customer,
+                    SUM(CASE WHEN dl.nama = 'SCRATCH' THEN dl.qty ELSE 0 END) AS Scratch_NG,
+                    SUM(CASE WHEN dl.nama = 'DENT' THEN dl.qty ELSE 0 END) AS Dent_NG,
+                    SUM(CASE WHEN dl.nama = 'SHORT SHOOT' THEN dl.qty ELSE 0 END) AS Short_NG,
+                    SUM(CASE WHEN dl.nama = 'SILVER' THEN dl.qty ELSE 0 END) AS Silver_NG,
+                    SUM(CASE WHEN dl.nama = 'BLACKDOT' THEN dl.qty ELSE 0 END) AS Black_Dot_NG,
+                    SUM(CASE WHEN dl.nama = 'FLOW MARK' THEN dl.qty ELSE 0 END) AS Flow_Mark_NG,
+                    SUM(CASE WHEN dl.nama = 'UNDERCUT' THEN dl.qty ELSE 0 END) AS Undercut_NG,
+                    SUM(CASE WHEN dl.nama = 'WELD LINE' THEN dl.qty ELSE 0 END) AS Weld_Line_NG,
+                    SUM(CASE WHEN dl.nama = 'CRACK' THEN dl.qty ELSE 0 END) AS Crack_NG,
+                    SUM(CASE WHEN dl.nama = 'WHITE DOT' THEN dl.qty ELSE 0 END) AS White_Dot_NG,
+                    SUM(CASE WHEN dl.type = 'NG' THEN dl.qty ELSE 0 END)
+                        - SUM(CASE WHEN dl.nama IN ('SCRATCH','DENT','SHORT SHOOT','SILVER','BLACKDOT',
+                            'FLOW MARK','UNDERCUT','WELD LINE','CRACK','WHITE DOT') THEN dl.qty ELSE 0 END)
+                    AS Dim_Others_NG
+                FROM t_product p
+                LEFT JOIN t_bom b ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
+                    AND YEAR(po.tanggal) = ?
+                LEFT JOIN t_production_op_dl dl ON dl.id_production = po.id_production
+                    AND dl.type = 'NG'
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, MONTH(po.tanggal)
+                HAVING SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)) > 0
+                ORDER BY MONTH(po.tanggal) ASC, p.kode_product ASC";
+        return $this->db->query($sql, array($year, $year, $year));
+    }
 }
