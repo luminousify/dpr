@@ -535,6 +535,16 @@
 							 <div class="row justify-content-center">
 							  	<div class="col">
 							  		<div class="form-group d-flex justify-content-center">
+											<label style="font-weight:normal;text-align:left;max-width:600px">
+												<input type="checkbox" name="confirm_duplicate" value="1">
+												Konfirmasi duplikat &mdash; centang hanya jika (tanggal, mesin, shift, produk) memang perlu diinput lebih dari sekali
+											</label>
+										</div>
+							  	</div>
+							</div>
+							 <div class="row justify-content-center">
+							  	<div class="col">
+							  		<div class="form-group d-flex justify-content-center">
 											  <div id="save"><input type="submit" id="submit" name="" class="btn btn-primary" value="Save"><span id="loading" class="ml-2" style="vertical-align: middle;margin-top:35px"></span></div>
 										</div>
 							  	</div>

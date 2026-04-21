@@ -118,6 +118,19 @@ class m_operator extends CI_Model
         }
 
 
+        public function find_duplicate_entry($tanggal, $mesin, $shift, $id_bom)
+        {
+                return $this->db->select('id_production_op, id_production, operator, qty_ok, tanggal_input')
+                        ->from('t_production_op')
+                        ->where('tanggal', $tanggal)
+                        ->where('mesin', $mesin)
+                        ->where('shift', $shift)
+                        ->where('id_bom', $id_bom)
+                        ->limit(1)
+                        ->get()
+                        ->row();
+        }
+
         function add()
         {
                 $id_production  = $this->input->post("id_production");
@@ -129,7 +142,25 @@ class m_operator extends CI_Model
                     $this->session->set_flashdata('gagal', 'Gagal menambahkan, data yang anda input sudah ada!');
                     redirect('login_op/input_dpr');
                 } else {
-                     foreach($_POST['user'] as $user)
+                     $users = isset($_POST['user']) && is_array($_POST['user']) ? $_POST['user'] : array();
+                     $confirm_duplicate = $this->input->post('confirm_duplicate') == '1';
+                     if (!$confirm_duplicate) {
+                         foreach ($users as $u) {
+                             $dup = $this->find_duplicate_entry($u['tanggal'], $u['mesin'], $u['shift'], $u['id_bom']);
+                             if ($dup) {
+                                 $msg = 'Duplikat terdeteksi: tanggal ' . $u['tanggal']
+                                      . ', mesin ' . $u['mesin'] . ', shift ' . $u['shift']
+                                      . ' sudah diinput (operator: ' . $dup->operator
+                                      . ', qty OK: ' . $dup->qty_ok
+                                      . ', jam input: ' . $dup->tanggal_input . ').'
+                                      . ' Jika benar-benar perlu menambah, kirim ulang dengan centang "Konfirmasi duplikat".';
+                                 $this->session->set_flashdata('gagal', $msg);
+                                 redirect('login_op/input_dpr');
+                                 return;
+                             }
+                         }
+                     }
+                     foreach($users as $user)
                         {
                             if (isset($user['qty_lt_minutes'])) {
                                 unset($user['qty_lt_minutes']);

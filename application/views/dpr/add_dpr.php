@@ -496,6 +496,12 @@ window.DPR_JQUERY_LOADED = true;
                <div class="row justify-content-center">
                   <div class="col-md-12 text-center">
                     <div class="form-group">
+                        <label style="font-weight:normal">
+                            <input type="checkbox" name="confirm_duplicate" value="1">
+                            Konfirmasi duplikat &mdash; centang hanya jika (tanggal, mesin, shift, produk) memang perlu diinput lebih dari sekali
+                        </label>
+                    </div>
+                    <div class="form-group">
                         <div id="save"><input type="submit" id="submit" name="" class="btn btn-primary btn-lg px-5" value="Save"><span id="loading" class="ml-2" style="vertical-align: middle;"></span></div>
                     </div>
                   </div>
