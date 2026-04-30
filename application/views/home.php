@@ -302,104 +302,17 @@
         border-radius: 8px;
     }
     
-    #container2, #container_productivity, #container_ppm {
+    #container2, #container_productivity, #container_ppm, #container_quality {
         width: 100% !important;
         height: 100% !important;
         min-height: 0;
         margin: 0 !important;
         padding: 0 !important;
     }
-    
-    /* Enhanced Highcharts Styling */
+
+    /* Minimal Highcharts overrides - let the API handle styling */
     .chart-card-grid .highcharts-container {
-        width: 100% !important;
-        height: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-    }
-    
-    .chart-card-grid .highcharts-container svg {
-        width: 100% !important;
-        height: 100% !important;
-    }
-    
-    .chart-card-grid .highcharts-root {
-        width: 100% !important;
-        height: 100% !important;
-    }
-    
-    /* Enhanced Chart Title */
-    .chart-card-grid .highcharts-title {
-        font-size: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* Enhanced Plot Area */
-    .chart-card-grid .highcharts-plot-box {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* Hide Legend */
-    .chart-card-grid .highcharts-legend {
-        display: none !important;
-    }
-    
-    /* Enhanced Axis Styling */
-    .chart-card-grid .highcharts-axis {
-        margin: 0 !important;
-    }
-    
-    .chart-card-grid .highcharts-axis-labels {
-        font-size: 10px !important;
-        font-weight: 400 !important;
-        fill: #a0aec0 !important;
-    }
-    
-    .chart-card-grid .highcharts-axis-line,
-    .chart-card-grid .highcharts-tick {
-        stroke: #e2e8f0 !important;
-        stroke-width: 1 !important;
-    }
-    
-    .chart-card-grid .highcharts-grid-line {
-        stroke: #f1f5f9 !important;
-        stroke-width: 1 !important;
-        stroke-dasharray: 2, 4;
-    }
-    
-    /* Enhanced Tooltip */
-    .chart-card-grid .highcharts-tooltip {
-        background: rgba(255, 255, 255, 0.98) !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-        padding: 10px !important;
-        font-size: 12px !important;
-    }
-    
-    .chart-card-grid .highcharts-tooltip-box {
-        fill: rgba(255, 255, 255, 0.98) !important;
-        stroke: #e2e8f0 !important;
-        stroke-width: 1 !important;
-    }
-    
-    /* Enhanced Data Labels */
-    .chart-card-grid .highcharts-data-label {
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
-    }
-    
-    /* Enhanced Export Button */
-    .chart-card-grid .highcharts-button {
-        fill: #667eea !important;
-    }
-    
-    .chart-card-grid .highcharts-button:hover {
-        fill: #5568d3 !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
     
     /* Improved Spacing */
@@ -435,7 +348,7 @@
         .chart-card-grid {
             min-height: 280px;
         }
-        #container2, #container_productivity, #container_ppm {
+        #container2, #container_productivity, #container_ppm, #container_quality {
             min-height: 250px;
         }
     }
@@ -464,7 +377,7 @@
         .chart-card-grid .chart-card-body .chart-container {
             min-height: 250px;
         }
-        #container2, #container_productivity, #container_ppm {
+        #container2, #container_productivity, #container_ppm, #container_quality {
             min-height: 250px;
         }
     }
@@ -690,15 +603,13 @@ if ($posisi == 'ppic' || $posisi == 'tm' || $posisi =='qa' || $posisi == 'mixerA
             </div>
             <?php } ?>
             
-            <!-- Chart 4: Placeholder for 2x2 grid -->
+            <!-- Chart 4: Quality Rate (OK vs NG) Donut -->
             <div class="chart-card chart-card-grid">
                 <div class="chart-card-header">
-                    <i class="fa fa-chart-line"></i> Chart 4
+                    <i class="fa fa-pie-chart"></i> Quality Rate
                 </div>
                 <div class="chart-card-body">
-                    <div class="chart-container" style="display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
-                        <p>Chart 4 - Ready for data</p>
-                    </div>
+                    <div id="container_quality" class="chart-container"></div>
                 </div>
             </div>
         </div>
@@ -1067,621 +978,403 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
     <figure class="highcharts-figure">
 
     <script type="text/javascript">
-        Highcharts.visualize = function(table, options) {
-   // the categories
-   options.xAxis.categories = [];
-   $('tbody th', table).each( function(i) {
-      options.xAxis.categories.push(this.innerHTML);
-   });
-   
-   // the data series
-   options.series = [];
-   $('tr', table).each( function(i) {
-      var tr = this;
-      $('th, td', tr).each( function(j) {
-         if (j > 0) { // skip first column
-            if (i == 0) { // get the name and init the series
-               options.series[j - 1] = { 
-                  name: this.innerHTML,
-                  type: j <= 6 ? 'column' : 'line',
-                  data: []
-               };
-            } else { // add values
-               options.series[j - 1].data.push(parseFloat(this.innerHTML));
-            }
-         }
-      });
-   });
-   
-   var chart = new Highcharts.Chart(options);
-}
-   
-// On document ready, call visualize on the datatable.
-$(document).ready(function() {         
-   var table = document.getElementById('datatable1'),
-   options = {
-         chart: {
-            renderTo: 'container2',
-            defaultSeriesType: 'column',
-            height: null,
-            reflow: true,
-            spacingTop: 10,
-            spacingRight: 15,
-            spacingBottom: 10,
-            spacingLeft: 15,
-            marginTop: 10,
-            marginRight: 15,
-            marginBottom: 50,
-            marginLeft: 60,
-            backgroundColor: 'transparent',
+    // ============================================================
+    // Global Highcharts Configuration (Best Practices)
+    // ============================================================
+    Highcharts.setOptions({
+        colors: ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fcb69f'],
+        credits: { enabled: false },
+        chart: {
             style: {
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
             },
-            animation: {
-                duration: 1000,
-                easing: 'easeOutCubic'
-            }
-         },
-         title: {
-            text: null
-         },
-         xAxis: {
+            animation: { duration: 800, easing: 'easeOutCubic' },
+            backgroundColor: 'transparent',
+            spacing: [10, 15, 10, 15]
+        },
+        title: { text: null },
+        xAxis: {
             lineColor: '#e2e8f0',
             lineWidth: 1,
             tickColor: 'transparent',
             labels: {
-                style: {
-                    color: '#a0aec0',
-                    fontSize: '10px',
-                    fontWeight: '400',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                }
+                style: { color: '#718096', fontSize: '10px', fontWeight: '400' }
             },
-            gridLineColor: 'transparent',
             gridLineWidth: 0
-         },
-         yAxis: {
-            title: {
-               text: null
-            },
-            lineColor: '#e2e8f0',
-            lineWidth: 1,
-            tickColor: 'transparent',
-            labels: {
-                style: {
-                    color: '#a0aec0',
-                    fontSize: '10px',
-                    fontWeight: '400',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                }
-            },
-            gridLineColor: '#f1f5f9',
-            gridLineWidth: 1,
-            gridLineDashStyle: 'Dash'
-         },
-         tooltip: {
+        },
+        tooltip: {
             backgroundColor: 'rgba(255, 255, 255, 0.98)',
             borderColor: '#e2e8f0',
-            borderRadius: 6,
+            borderRadius: 8,
             borderWidth: 1,
-            shadow: {
-                color: 'rgba(0, 0, 0, 0.1)',
-                offsetX: 0,
-                offsetY: 2,
-                opacity: 0.3,
-                width: 2
-            },
-            style: {
-                fontSize: '11px',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                color: '#2d3748'
-            },
-            formatter: function() {
-               return '<span style="color: ' + this.color + '; font-weight: 600;">' + this.series.name + '</span>: <b>' + this.y + '</b>';
-            },
+            shadow: true,
+            style: { fontSize: '11px', color: '#2d3748' },
             useHTML: true,
-            padding: 8
-         },
-         colors: ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a'],
-         plotOptions: {
+            padding: 10
+        },
+        plotOptions: {
             column: {
                 borderRadius: 4,
                 borderWidth: 0,
-                pointPadding: 0.2,
-                groupPadding: 0.15,
-                dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontSize: '9px',
-                        fontWeight: '600',
-                        textOutline: 'none',
-                        color: '#2d3748',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    },
-                    formatter: function() {
-                        return this.y;
-                    }
-                },
-                enableMouseTracking: true,
-                states: {
-                    hover: {
-                        brightness: -0.15,
-                        enabled: true
-                    }
-                },
-                animation: {
-                    duration: 800
-                }
+                pointPadding: 0.15,
+                groupPadding: 0.2,
+                states: { hover: { brightness: -0.1 } }
             },
             line: {
                 lineWidth: 2.5,
-                marker: {
-                    radius: 4,
-                    lineWidth: 2,
-                    lineColor: '#ffffff',
-                    fillColor: '#ffffff',
-                    enabled: false
-                },
-                dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontSize: '9px',
-                        fontWeight: '600',
-                        textOutline: 'none',
-                        color: '#2d3748',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    },
-                    formatter: function() {
-                        return this.y;
-                    }
-                },
-                enableMouseTracking: true,
-                states: {
-                    hover: {
-                        lineWidth: 3.5
-                    }
-                },
-                animation: {
-                    duration: 800
+                marker: { radius: 4, symbol: 'circle', lineWidth: 2, lineColor: '#fff', fillColor: '#fff' },
+                states: { hover: { lineWidth: 3.5 } }
+            }
+        },
+        exporting: {
+            enabled: true,
+            fallbackToExportServer: false,
+            buttons: {
+                contextButton: {
+                    menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
                 }
-            }
-        },
-        legend: {
-            enabled: false
-        },
-    exporting: {
-        enabled: true,
-        fallbackToExportServer: false,
-        buttons: {
-            contextButton: {
-                menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
-            }
-        },
-        sourceWidth: 800,
-        sourceHeight: 280,
-        scale: 2,
-        chartOptions: {
-            chart: {
-                width: 800,
-                height: 280
             }
         }
-    }
-      };
-   
-                     
-   Highcharts.visualize(table, options);
-   
-   // Reflow chart after a short delay to ensure proper sizing
-   setTimeout(function() {
-       var charts = Highcharts.charts;
-       if (charts && charts.length > 0) {
-           var chart = charts[charts.length - 1];
-           if (chart && chart.renderTo && chart.renderTo.id === 'container2') {
-               chart.reflow();
-           }
-       }
-   }, 200);
-});
+    });
 
+    // Helper: parse hidden table into Highcharts categories + series
+    Highcharts.visualize = function(table, options) {
+        options.xAxis.categories = [];
+        $('tbody th', table).each(function() {
+            options.xAxis.categories.push(this.innerHTML);
+        });
+        options.series = [];
+        $('tr', table).each(function(i) {
+            var tr = this;
+            $('th, td', tr).each(function(j) {
+                if (j > 0) {
+                    if (i === 0) {
+                        options.series[j - 1] = { name: this.innerHTML, data: [] };
+                    } else {
+                        options.series[j - 1].data.push(parseFloat(this.innerHTML));
+                    }
+                }
+            });
+        });
+        return new Highcharts.Chart(options);
+    };
 
-// Annual Productivity Chart
-$(document).ready(function() {         
-   var table = document.getElementById('datatable_productivity');
-   if (!table) return; // Exit if table doesn't exist
-   
-   var options = {
-         chart: {
-            renderTo: 'container_productivity',
-            defaultSeriesType: 'column',
-            height: null,
-            reflow: true,
-            spacingTop: 10,
-            spacingRight: 15,
-            spacingBottom: 10,
-            spacingLeft: 15,
-            marginTop: 10,
-            marginRight: 15,
-            marginBottom: 50,
-            marginLeft: 60,
-            backgroundColor: 'transparent',
-            style: {
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    // Common legend config
+    var bottomLegend = {
+        enabled: true,
+        align: 'center',
+        verticalAlign: 'bottom',
+        layout: 'horizontal',
+        itemStyle: { color: '#4a5568', fontWeight: '500', fontSize: '10px' },
+        itemHoverStyle: { color: '#2d3748' },
+        symbolRadius: 3
+    };
+
+    // Common export source sizing
+    var exportOpts = { sourceWidth: 800, sourceHeight: 400, scale: 2 };
+
+    // ============================================================
+    // Chart 1: Daftar Operasional Mesin
+    // ============================================================
+    $(document).ready(function() {
+        var table = document.getElementById('datatable1');
+        if (!table || $('tbody tr', table).length === 0) {
+            document.getElementById('container2').innerHTML =
+                '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a0aec0;font-size:13px;">No machine data for selected date</div>';
+            return;
+        }
+        Highcharts.visualize(table, {
+            chart: { renderTo: 'container2', reflow: true },
+            xAxis: { categories: [] },
+            yAxis: {
+                title: { text: 'Jumlah', style: { color: '#718096', fontSize: '10px' } },
+                gridLineColor: '#f1f5f9',
+                gridLineDashStyle: 'Dash'
             },
-            animation: {
-                duration: 1000,
-                easing: 'easeOutCubic'
-            }
-         },
-         title: {
-            text: null
-         },
-         xAxis: {
-            lineColor: '#e2e8f0',
-            lineWidth: 1,
-            tickColor: 'transparent',
-            labels: {
-                style: {
-                    color: '#a0aec0',
-                    fontSize: '10px',
-                    fontWeight: '400',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+            tooltip: {
+                shared: true,
+                crosshairs: true,
+                formatter: function() {
+                    var s = '<b>' + this.x + '</b>';
+                    this.points.forEach(function(p) {
+                        s += '<br/>' + p.series.name + ': <b>' + p.y + '</b>';
+                    });
+                    return s;
                 }
             },
-            gridLineColor: 'transparent',
-            gridLineWidth: 0
-         },
-         yAxis: {
-            title: {
-               text: null
+            plotOptions: {
+                column: { dataLabels: { enabled: false } }
             },
-            lineColor: '#e2e8f0',
-            lineWidth: 1,
-            tickColor: 'transparent',
-            labels: {
-                style: {
-                    color: '#a0aec0',
-                    fontSize: '10px',
-                    fontWeight: '400',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                },
-                format: '{value}%'
+            legend: bottomLegend,
+            exporting: exportOpts
+        });
+    });
+
+    // ============================================================
+    // Chart 2: Production Productivity (Grouped Bar + Target Lines)
+    // ============================================================
+    $(document).ready(function() {
+        var table = document.getElementById('datatable_productivity');
+        if (!table) return;
+
+        // Parse data directly for full control
+        var categories = [];
+        var nettData = [], grossData = [], nettTarget = null, grossTarget = null;
+
+        $('tbody tr', table).each(function() {
+            var $cells = $('td', this);
+            if ($cells.length < 4) return;
+            categories.push($('th', this).text());
+            nettData.push(parseFloat($cells.eq(0).text()) || 0);
+            grossData.push(parseFloat($cells.eq(1).text()) || 0);
+            nettTarget = parseFloat($cells.eq(2).text()) || 0;
+            grossTarget = parseFloat($cells.eq(3).text()) || 0;
+        });
+
+        // Build target line series (constant across all months)
+        var nettTargetLine = categories.map(function() { return nettTarget; });
+        var grossTargetLine = categories.map(function() { return grossTarget; });
+
+        new Highcharts.Chart({
+            chart: {
+                renderTo: 'container_productivity',
+                reflow: true,
+                zoomType: 'x'
             },
-            gridLineColor: '#f1f5f9',
-            gridLineWidth: 1,
-            gridLineDashStyle: 'Dash'
-         },
-         tooltip: {
-            backgroundColor: 'rgba(255, 255, 255, 0.98)',
-            borderColor: '#e2e8f0',
-            borderRadius: 6,
-            borderWidth: 1,
-            shadow: {
-                color: 'rgba(0, 0, 0, 0.1)',
-                offsetX: 0,
-                offsetY: 2,
-                opacity: 0.3,
-                width: 2
+            xAxis: {
+                categories: categories,
+                lineColor: '#e2e8f0',
+                lineWidth: 1,
+                tickColor: 'transparent'
             },
-            style: {
-                fontSize: '11px',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                color: '#2d3748'
+            yAxis: {
+                title: { text: 'Productivity (%)', style: { color: '#718096', fontSize: '10px' } },
+                max: 120,
+                min: 0,
+                gridLineColor: '#f1f5f9',
+                gridLineDashStyle: 'Dash',
+                labels: { format: '{value}%' }
             },
-            formatter: function() {
-               return '<span style="color: ' + this.color + '; font-weight: 600;">' + this.series.name + '</span>: <b>' + this.y + '%</b>';
+            tooltip: {
+                shared: true,
+                crosshairs: true,
+                formatter: function() {
+                    var s = '<b>' + this.x + '</b>';
+                    this.points.forEach(function(p) {
+                        s += '<br/><span style="color:' + p.color + '">\u25CF</span> ' +
+                             p.series.name + ': <b>' + Highcharts.numberFormat(p.y, 1) + '%</b>';
+                    });
+                    return s;
+                }
             },
-            useHTML: true,
-            padding: 8
-         },
-         colors: ['#667eea', '#f093fb', '#4facfe', '#43e97b'],
-         plotOptions: {
-            column: {
-                borderRadius: 4,
-                borderWidth: 0,
-                pointPadding: 0.2,
-                groupPadding: 0.15,
-                dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontSize: '9px',
-                        fontWeight: '600',
-                        textOutline: 'none',
-                        color: '#2d3748',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+            plotOptions: {
+                column: {
+                    borderRadius: 4,
+                    borderWidth: 0,
+                    pointPadding: 0.15,
+                    groupPadding: 0.25,
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function() {
+                            if (this.y === 0) return '';
+                            return Highcharts.numberFormat(this.y, 1) + '%';
+                        },
+                        style: { fontSize: '9px', fontWeight: '600', textOutline: 'none', color: '#2d3748' }
                     },
-                    formatter: function() {
-                        return this.y;
-                    }
+                    states: { hover: { brightness: -0.1 } }
                 },
-                enableMouseTracking: true,
-                states: {
-                    hover: {
-                        brightness: -0.15,
-                        enabled: true
-                    }
-                },
-                animation: {
-                    duration: 800
-                }
-            },
-            line: {
-                lineWidth: 3,
-                marker: {
-                    radius: 5,
+                line: {
+                    dashStyle: 'Dash',
                     lineWidth: 2,
-                    lineColor: '#ffffff',
-                    fillColor: '#ffffff'
+                    marker: { enabled: false },
+                    enableMouseTracking: true,
+                    states: { hover: { lineWidth: 3 } },
+                    dataLabels: { enabled: false }
+                }
+            },
+            legend: bottomLegend,
+            series: [
+                {
+                    name: 'Nett Actual',
+                    type: 'column',
+                    data: nettData,
+                    color: '#667eea',
+                    zIndex: 2
                 },
-                dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontSize: '10px',
-                        fontWeight: '600',
-                        textOutline: '1px contrast',
-                        color: '#2d3748',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    },
-                    formatter: function() {
-                        return this.y + '%';
-                    }
+                {
+                    name: 'Gross Actual',
+                    type: 'column',
+                    data: grossData,
+                    color: '#43e97b',
+                    zIndex: 2
                 },
-                enableMouseTracking: true,
-                states: {
-                    hover: {
-                        lineWidth: 4
-                    }
-                },
-                animation: {
-                    duration: 1000
-                }
-            }
-         },
-        legend: {
-            enabled: false
-        },
-         exporting: {
-            enabled: true,
-            fallbackToExportServer: false,
-            buttons: {
-                contextButton: {
-                    menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
-                }
-            },
-            sourceWidth: 600,
-            sourceHeight: 400,
-            scale: 2,
-            chartOptions: {
-                chart: {
-                    width: 600,
-                    height: 400
-                }
-            }
-         }
-   };
-   
-   Highcharts.visualize(table, options);
-   
-   // Reflow chart after a short delay to ensure proper sizing
-   setTimeout(function() {
-       var charts = Highcharts.charts;
-       if (charts && charts.length > 0) {
-           var chart = charts[charts.length - 1];
-           if (chart && chart.renderTo && chart.renderTo.id === 'container_productivity') {
-               chart.reflow();
-           }
-       }
-   }, 200);
-});
-
-// Annual PPM Chart
-$(document).ready(function() {         
-   var table = document.getElementById('datatable_ppm');
-   if (!table) return; // Exit if table doesn't exist
-   
-   var options = {
-         chart: {
-            renderTo: 'container_ppm',
-            defaultSeriesType: 'column',
-            height: null,
-            reflow: true,
-            spacingTop: 10,
-            spacingRight: 15,
-            spacingBottom: 10,
-            spacingLeft: 15,
-            marginTop: 10,
-            marginRight: 15,
-            marginBottom: 50,
-            marginLeft: 60,
-            backgroundColor: 'transparent',
-            style: {
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-            },
-            animation: {
-                duration: 1000,
-                easing: 'easeOutCubic'
-            }
-         },
-         title: {
-            text: null
-         },
-         xAxis: {
-            lineColor: '#e2e8f0',
-            lineWidth: 1,
-            tickColor: 'transparent',
-            labels: {
-                style: {
-                    color: '#a0aec0',
-                    fontSize: '10px',
-                    fontWeight: '400',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                }
-            },
-            gridLineColor: 'transparent',
-            gridLineWidth: 0
-         },
-         yAxis: [{
-            title: {
-               text: null
-            },
-            lineColor: '#e2e8f0',
-            lineWidth: 1,
-            tickColor: 'transparent',
-            labels: {
-                style: {
-                    color: '#a0aec0',
-                    fontSize: '10px',
-                    fontWeight: '400',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                }
-            },
-            gridLineColor: '#f1f5f9',
-            gridLineWidth: 1,
-            gridLineDashStyle: 'Dash'
-         }, {
-            title: {
-               text: null
-            },
-            opposite: true,
-            lineColor: '#e2e8f0',
-            lineWidth: 1,
-            tickColor: 'transparent',
-            labels: {
-                style: {
-                    color: '#a0aec0',
-                    fontSize: '10px',
-                    fontWeight: '400',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                }
-            },
-            gridLineColor: '#f1f5f9',
-            gridLineWidth: 1,
-            gridLineDashStyle: 'Dash'
-         }],
-         tooltip: {
-            backgroundColor: 'rgba(255, 255, 255, 0.98)',
-            borderColor: '#e2e8f0',
-            borderRadius: 6,
-            borderWidth: 1,
-            shadow: {
-                color: 'rgba(0, 0, 0, 0.1)',
-                offsetX: 0,
-                offsetY: 2,
-                opacity: 0.3,
-                width: 2
-            },
-            style: {
-                fontSize: '11px',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                color: '#2d3748'
-            },
-            formatter: function() {
-               return '<span style="color: ' + this.color + '; font-weight: 600;">' + this.series.name + '</span>: <b>' + this.y + '</b>';
-            },
-            useHTML: true,
-            padding: 8
-         },
-         colors: ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a'],
-         plotOptions: {
-            column: {
-                borderRadius: 4,
-                borderWidth: 0,
-                pointPadding: 0.2,
-                groupPadding: 0.15,
-                dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontSize: '9px',
-                        fontWeight: '600',
-                        textOutline: 'none',
-                        color: '#2d3748',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    },
-                    formatter: function() {
-                        return this.y;
-                    }
-                },
-                enableMouseTracking: true,
-                states: {
-                    hover: {
-                        brightness: -0.15,
-                        enabled: true
-                    }
-                },
-                animation: {
-                    duration: 800
-                }
-            },
-            line: {
-                lineWidth: 2.5,
-                marker: {
-                    radius: 4,
+                {
+                    name: 'Nett Target',
+                    type: 'line',
+                    data: nettTargetLine,
+                    color: '#667eea',
+                    dashStyle: 'LongDash',
                     lineWidth: 2,
-                    lineColor: '#ffffff',
-                    fillColor: '#ffffff',
-                    enabled: false
+                    marker: { enabled: false, symbol: 'diamond', radius: 5 },
+                    zIndex: 3
                 },
-                dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontSize: '9px',
-                        fontWeight: '600',
-                        textOutline: 'none',
-                        color: '#2d3748',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    },
-                    formatter: function() {
-                        return this.y;
-                    }
-                },
-                enableMouseTracking: true,
-                states: {
-                    hover: {
-                        lineWidth: 3.5
-                    }
-                },
-                animation: {
-                    duration: 800
+                {
+                    name: 'Gross Target',
+                    type: 'line',
+                    data: grossTargetLine,
+                    color: '#43e97b',
+                    dashStyle: 'LongDash',
+                    lineWidth: 2,
+                    marker: { enabled: false, symbol: 'diamond', radius: 5 },
+                    zIndex: 3
                 }
+            ],
+            exporting: exportOpts
+        });
+    });
+
+    // ============================================================
+    // Chart 3: Production Qty & PPM
+    // ============================================================
+    $(document).ready(function() {
+        var table = document.getElementById('datatable_ppm');
+        if (!table) return;
+
+        // Parse data manually for dual-axis control
+        var categories = [];
+        $('tbody th', table).each(function() { categories.push(this.innerHTML); });
+
+        var seriesData = [];
+        var seriesNames = [];
+        $('thead th', table).each(function(i) {
+            if (i > 0) seriesNames.push(this.innerHTML);
+        });
+        $('tr', table).each(function(rowIdx) {
+            if (rowIdx === 0) {
+                seriesNames.forEach(function() { seriesData.push([]); });
+            } else {
+                $('td', this).each(function(colIdx) {
+                    seriesData[colIdx].push(parseFloat(this.innerHTML));
+                });
             }
-         },
-        legend: {
-            enabled: false
-        },
-         exporting: {
-            enabled: true,
-            fallbackToExportServer: false,
-            buttons: {
-                contextButton: {
-                    menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
+        });
+
+        // Table columns: Total Production, OK, NG, PPM, Target PPM
+        // Columns 0-2 (Qty) -> left axis; Columns 3-4 (PPM/Target) -> right axis
+        var series = seriesNames.map(function(name, i) {
+            var isQty = (i < 3);
+            var isPPM = (i === 3);
+            var isTarget = (i === 4);
+            return {
+                name: name,
+                type: (isQty ? 'column' : 'line'),
+                data: seriesData[i],
+                yAxis: (isQty ? 0 : 1),
+                color: isTarget ? '#ed5565' : undefined,
+                dashStyle: isTarget ? 'Dash' : undefined,
+                lineWidth: isQty ? undefined : 2,
+                marker: { enabled: !isQty, radius: 4 }
+            };
+        });
+
+        new Highcharts.Chart({
+            chart: {
+                renderTo: 'container_ppm',
+                reflow: true
+            },
+            xAxis: { categories: categories },
+            yAxis: [{
+                title: { text: 'Production Qty', style: { color: '#718096', fontSize: '10px' } },
+                gridLineColor: '#f1f5f9',
+                gridLineDashStyle: 'Dash',
+                labels: {
+                    formatter: function() {
+                        var v = this.value;
+                        if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+                        if (v >= 1000) return (v / 1000).toFixed(0) + 'K';
+                        return v;
+                    }
+                }
+            }, {
+                title: { text: 'PPM', style: { color: '#718096', fontSize: '10px' } },
+                opposite: true,
+                gridLineWidth: 0
+            }],
+            tooltip: {
+                shared: true,
+                crosshairs: true,
+                formatter: function() {
+                    var s = '<b>' + this.x + '</b>';
+                    this.points.forEach(function(p) {
+                        var val = p.y;
+                        if (p.series.yAxis === 0 && val >= 1000000) val = (val / 1000000).toFixed(1) + 'M';
+                        else if (p.series.yAxis === 0 && val >= 1000) val = (val / 1000).toFixed(0) + 'K';
+                        s += '<br/>' + p.series.name + ': <b>' + val + '</b>';
+                    });
+                    return s;
                 }
             },
-            sourceWidth: 600,
-            sourceHeight: 400,
-            scale: 2,
-            chartOptions: {
-                chart: {
-                    width: 600,
-                    height: 400
-                }
-            }
-         }
-   };
-   
-   Highcharts.visualize(table, options);
-   
-   // Reflow chart after a short delay to ensure proper sizing
-   setTimeout(function() {
-       var charts = Highcharts.charts;
-       if (charts && charts.length > 0) {
-           var chart = charts[charts.length - 1];
-           if (chart && chart.renderTo && chart.renderTo.id === 'container_ppm') {
-               chart.reflow();
-           }
-       }
-   }, 200);
-});
+            plotOptions: {
+                column: { dataLabels: { enabled: false } },
+                line: { dataLabels: { enabled: false } }
+            },
+            legend: bottomLegend,
+            series: series,
+            exporting: exportOpts
+        });
+    });
 
+    // ============================================================
+    // Chart 4: Quality Rate (OK vs NG) - Donut Chart
+    // ============================================================
+    $(document).ready(function() {
+        var kpiSection = document.querySelector('.kpi-card.ok');
+        var ngSection = document.querySelector('.kpi-card.ng');
+        if (!kpiSection || !ngSection) return;
+
+        var okText = kpiSection.querySelector('.kpi-value').textContent.replace(/[^0-9.]/g, '');
+        var ngText = ngSection.querySelector('.kpi-value').textContent.replace(/[^0-9.]/g, '');
+        var okVal = parseFloat(okText) || 0;
+        var ngVal = parseFloat(ngText) || 0;
+
+        new Highcharts.Chart({
+            chart: {
+                renderTo: 'container_quality',
+                type: 'pie',
+                reflow: true,
+                options3d: { enabled: false }
+            },
+            title: { text: null },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.y:,.0f}</b> ({point.percentage:.2f}%)',
+                shared: false
+            },
+            plotOptions: {
+                pie: {
+                    innerSize: '65%',
+                    borderWidth: 0,
+                    dataLabels: {
+                        enabled: true,
+                        format: '<b>{point.name}</b><br/>{point.percentage:.2f}%',
+                        style: { fontSize: '11px', fontWeight: '600', color: '#2d3748', textOutline: 'none' },
+                        connectorColor: '#a0aec0'
+                    },
+                    center: ['50%', '50%'],
+                    states: { hover: { brightness: -0.08 } }
+                }
+            },
+            legend: bottomLegend,
+            series: [{
+                name: 'Production',
+                colorByPoint: true,
+                data: [
+                    { name: 'OK (Good)', y: okVal, color: '#43e97b' },
+                    { name: 'NG (Not Good)', y: ngVal, color: '#f5576c' }
+                ]
+            }],
+            exporting: exportOpts
+        });
+    });
 
     </script>
 

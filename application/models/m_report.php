@@ -3127,98 +3127,126 @@ public function tampil_grafikPPM_fixed($tahun)
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
-                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    COALESCE(ct.code, '') as Tool,
                     '-' as Mm_Chk,
-                    p.cyt_mp as Min_SPM_Set,
-                    p.cyt_quo as Max_SPM_Set,
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 1 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '01',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 2 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '02',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 3 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '03',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 4 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '04',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 5 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '05',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 6 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '06',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 7 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '07',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 8 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '08',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 9 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '09',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 10 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '10',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 11 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '11',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 12 AND po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as '12'
+                    ROUND(MIN(po.ct_mc_aktual), 0) as Min_SPM_Set,
+                    ROUND(MAX(po.ct_mc_aktual), 0) as Max_SPM_Set,
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 1  AND po.qty_ok > 0 THEN po.mesin END) as '01',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 2  AND po.qty_ok > 0 THEN po.mesin END) as '02',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 3  AND po.qty_ok > 0 THEN po.mesin END) as '03',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 4  AND po.qty_ok > 0 THEN po.mesin END) as '04',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 5  AND po.qty_ok > 0 THEN po.mesin END) as '05',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 6  AND po.qty_ok > 0 THEN po.mesin END) as '06',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 7  AND po.qty_ok > 0 THEN po.mesin END) as '07',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 8  AND po.qty_ok > 0 THEN po.mesin END) as '08',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 9  AND po.qty_ok > 0 THEN po.mesin END) as '09',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 10 AND po.qty_ok > 0 THEN po.mesin END) as '10',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 11 AND po.qty_ok > 0 THEN po.mesin END) as '11',
+                    p.cyt_quo * COUNT(DISTINCT CASE WHEN MONTH(po.tanggal) = 12 AND po.qty_ok > 0 THEN po.mesin END) as '12'
                 FROM t_product p
                 LEFT JOIN t_bom b ON p.id_product = b.id_product
                 LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
                     AND YEAR(po.tanggal) = ?
-                    AND po.ct_mc_aktual IS NOT NULL AND po.ct_mc_aktual > 0
+                LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
+                LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo
-                ORDER BY p.kode_product";
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, ct.code
+                ORDER BY p.kode_product, ct.code";
         return $this->db->query($sql, array($year));
     }
 
     public function get_productivity_nett_excel_data($year)
     {
+        // Access formula: per (Product, Tool, Month) = SUM of per-machine N-Prod
+        // Per-machine N-Prod = 3600 * SUM(production_time) / SUM(qty_ok / cavity)
+        // Then pivot TRANSFORM Sum([N-Prod]) GROUP BY Product/Tool PIVOT Mo
         $sql = "SELECT
                     '$year' as YY,
                     p.kode_product as Product_ID,
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
-                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    COALESCE(s.code, '') as Tool,
                     '-' as Mm_Chk,
-                    p.cyt_mp as Min_SPM_Set,
-                    p.cyt_quo as Max_SPM_Set,
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 1 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '01',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 2 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '02',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 3 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '03',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 4 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '04',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 5 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '05',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 6 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '06',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 7 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '07',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 8 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '08',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 9 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '09',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 10 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '10',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 11 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '11',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 12 AND po.nett_prod > 0 THEN po.nett_prod END), 0) as '12'
+                    ROUND(MIN(s.min_set), 0) as Min_SPM_Set,
+                    ROUND(MAX(s.max_set), 0) as Max_SPM_Set,
+                    SUM(CASE WHEN s.mo = 1  THEN s.nprod ELSE 0 END) as '01',
+                    SUM(CASE WHEN s.mo = 2  THEN s.nprod ELSE 0 END) as '02',
+                    SUM(CASE WHEN s.mo = 3  THEN s.nprod ELSE 0 END) as '03',
+                    SUM(CASE WHEN s.mo = 4  THEN s.nprod ELSE 0 END) as '04',
+                    SUM(CASE WHEN s.mo = 5  THEN s.nprod ELSE 0 END) as '05',
+                    SUM(CASE WHEN s.mo = 6  THEN s.nprod ELSE 0 END) as '06',
+                    SUM(CASE WHEN s.mo = 7  THEN s.nprod ELSE 0 END) as '07',
+                    SUM(CASE WHEN s.mo = 8  THEN s.nprod ELSE 0 END) as '08',
+                    SUM(CASE WHEN s.mo = 9  THEN s.nprod ELSE 0 END) as '09',
+                    SUM(CASE WHEN s.mo = 10 THEN s.nprod ELSE 0 END) as '10',
+                    SUM(CASE WHEN s.mo = 11 THEN s.nprod ELSE 0 END) as '11',
+                    SUM(CASE WHEN s.mo = 12 THEN s.nprod ELSE 0 END) as '12'
                 FROM t_product p
                 LEFT JOIN t_bom b ON p.id_product = b.id_product
-                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
-                    AND YEAR(po.tanggal) = ? AND po.nett_prod > 0
+                LEFT JOIN (
+                    SELECT po.id_bom, MONTH(po.tanggal) as mo, po.mesin, ct.code,
+                        ROUND(3600 * SUM(po.production_time)
+                              / NULLIF(SUM(po.qty_ok / NULLIF(po.cavity, 0)), 0), 0) as nprod,
+                        MIN(po.ct_mc_aktual) as min_set,
+                        MAX(po.ct_mc_aktual) as max_set
+                    FROM t_production_op po
+                    LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
+                    LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
+                    WHERE YEAR(po.tanggal) = ? AND po.qty_ok > 0 AND po.cavity > 0 AND po.production_time > 0
+                    GROUP BY po.id_bom, mo, po.mesin, ct.code
+                ) s ON s.id_bom = b.id_bom
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo
-                ORDER BY p.kode_product";
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, s.code
+                ORDER BY p.kode_product, s.code";
         return $this->db->query($sql, array($year));
     }
 
     public function get_productivity_gross_excel_data($year)
     {
+        // Access formula: per (Product, Tool, Month) = SUM of per-machine G-Prod
+        // Per-machine G-Prod = 3600 * SUM(WH + OT) / SUM(OK / cavity)
+        // MySQL: WH + OT = production_time + qty_lt/60  (qty_lt stored in minutes)
+        // Then pivot TRANSFORM Sum([G-Prod]) GROUP BY Product/Tool PIVOT Mo
         $sql = "SELECT
                     '$year' as YY,
                     p.kode_product as Product_ID,
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
-                    COALESCE(MAX(po.tooling), '-') as Tool,
+                    COALESCE(s.code, '') as Tool,
                     '-' as Mm_Chk,
-                    p.cyt_mp as Min_SPM_Set,
-                    p.cyt_quo as Max_SPM_Set,
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 1 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '01',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 2 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '02',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 3 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '03',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 4 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '04',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 5 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '05',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 6 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '06',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 7 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '07',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 8 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '08',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 9 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '09',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 10 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '10',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 11 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '11',
-                    ROUND(AVG(CASE WHEN MONTH(po.tanggal) = 12 AND po.gross_prod > 0 THEN po.gross_prod END), 0) as '12'
+                    ROUND(MIN(s.min_set), 0) as Min_SPM_Set,
+                    ROUND(MAX(s.max_set), 0) as Max_SPM_Set,
+                    SUM(CASE WHEN s.mo = 1  THEN s.gprod ELSE 0 END) as '01',
+                    SUM(CASE WHEN s.mo = 2  THEN s.gprod ELSE 0 END) as '02',
+                    SUM(CASE WHEN s.mo = 3  THEN s.gprod ELSE 0 END) as '03',
+                    SUM(CASE WHEN s.mo = 4  THEN s.gprod ELSE 0 END) as '04',
+                    SUM(CASE WHEN s.mo = 5  THEN s.gprod ELSE 0 END) as '05',
+                    SUM(CASE WHEN s.mo = 6  THEN s.gprod ELSE 0 END) as '06',
+                    SUM(CASE WHEN s.mo = 7  THEN s.gprod ELSE 0 END) as '07',
+                    SUM(CASE WHEN s.mo = 8  THEN s.gprod ELSE 0 END) as '08',
+                    SUM(CASE WHEN s.mo = 9  THEN s.gprod ELSE 0 END) as '09',
+                    SUM(CASE WHEN s.mo = 10 THEN s.gprod ELSE 0 END) as '10',
+                    SUM(CASE WHEN s.mo = 11 THEN s.gprod ELSE 0 END) as '11',
+                    SUM(CASE WHEN s.mo = 12 THEN s.gprod ELSE 0 END) as '12'
                 FROM t_product p
                 LEFT JOIN t_bom b ON p.id_product = b.id_product
-                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom
-                    AND YEAR(po.tanggal) = ? AND po.gross_prod > 0
+                LEFT JOIN (
+                    SELECT po.id_bom, MONTH(po.tanggal) as mo, po.mesin, ct.code,
+                        ROUND(3600 * SUM(po.production_time + COALESCE(po.qty_lt, 0) / 60.0)
+                              / NULLIF(SUM(po.qty_ok / NULLIF(po.cavity, 0)), 0), 0) as gprod,
+                        MIN(po.ct_mc_aktual) as min_set,
+                        MAX(po.ct_mc_aktual) as max_set
+                    FROM t_production_op po
+                    LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
+                    LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
+                    WHERE YEAR(po.tanggal) = ? AND po.qty_ok > 0 AND po.cavity > 0 AND po.production_time > 0
+                    GROUP BY po.id_bom, mo, po.mesin, ct.code
+                ) s ON s.id_bom = b.id_bom
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo
-                ORDER BY p.kode_product";
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, s.code
+                ORDER BY p.kode_product, s.code";
         return $this->db->query($sql, array($year));
     }
 
@@ -3229,33 +3257,34 @@ public function tampil_grafikPPM_fixed($tahun)
     {
         $sql = "SELECT
                     '$year' as YY,
+                    p.customer as Customer,
                     p.kode_product as Product_ID,
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
                     p.cost as Price,
-                    COALESCE(MAX(po.tooling), '-') as Tool,
-                    p.cyt_mp as Min_SPM_Set,
-                    p.cyt_quo as Max_SPM_Set,
-                    SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '01',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '02',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '03',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '04',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '05',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '06',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '07',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '08',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '09',
+                    COALESCE(ct.code, '') as Tool,
+                    SUM(CASE WHEN MONTH(po.tanggal) = 1  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '01',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 2  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '02',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 3  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '03',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 4  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '04',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 5  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '05',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 6  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '06',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 7  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '07',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 8  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '08',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 9  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '09',
                     SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '10',
                     SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '11',
                     SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '12'
                 FROM t_product p
                 LEFT JOIN t_bom b ON p.id_product = b.id_product
                 LEFT JOIN t_production_op po ON b.id_bom = po.id_bom AND YEAR(po.tanggal) = ?
+                LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
+                LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost
+                GROUP BY p.kode_product, p.nama_product, p.customer, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
                 HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
-                ORDER BY p.kode_product";
+                ORDER BY p.customer, p.kode_product, ct.code";
         return $this->db->query($sql, array($year));
     }
 
@@ -3263,33 +3292,34 @@ public function tampil_grafikPPM_fixed($tahun)
     {
         $sql = "SELECT
                     '$year' as YY,
+                    p.customer as Customer,
                     p.kode_product as Product_ID,
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
                     p.cost as Price,
-                    COALESCE(MAX(po.tooling), '-') as Tool,
-                    p.cyt_mp as Min_SPM_Set,
-                    p.cyt_quo as Max_SPM_Set,
-                    SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN po.qty_ok ELSE 0 END) as '01',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN po.qty_ok ELSE 0 END) as '02',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN po.qty_ok ELSE 0 END) as '03',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN po.qty_ok ELSE 0 END) as '04',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN po.qty_ok ELSE 0 END) as '05',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN po.qty_ok ELSE 0 END) as '06',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN po.qty_ok ELSE 0 END) as '07',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN po.qty_ok ELSE 0 END) as '08',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN po.qty_ok ELSE 0 END) as '09',
+                    COALESCE(ct.code, '') as Tool,
+                    SUM(CASE WHEN MONTH(po.tanggal) = 1  THEN po.qty_ok ELSE 0 END) as '01',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 2  THEN po.qty_ok ELSE 0 END) as '02',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 3  THEN po.qty_ok ELSE 0 END) as '03',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 4  THEN po.qty_ok ELSE 0 END) as '04',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 5  THEN po.qty_ok ELSE 0 END) as '05',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 6  THEN po.qty_ok ELSE 0 END) as '06',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 7  THEN po.qty_ok ELSE 0 END) as '07',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 8  THEN po.qty_ok ELSE 0 END) as '08',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 9  THEN po.qty_ok ELSE 0 END) as '09',
                     SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN po.qty_ok ELSE 0 END) as '10',
                     SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN po.qty_ok ELSE 0 END) as '11',
                     SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN po.qty_ok ELSE 0 END) as '12'
                 FROM t_product p
                 LEFT JOIN t_bom b ON p.id_product = b.id_product
                 LEFT JOIN t_production_op po ON b.id_bom = po.id_bom AND YEAR(po.tanggal) = ?
+                LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
+                LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost
+                GROUP BY p.kode_product, p.nama_product, p.customer, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
                 HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
-                ORDER BY p.kode_product";
+                ORDER BY p.customer, p.kode_product, ct.code";
         return $this->db->query($sql, array($year));
     }
 
@@ -3297,33 +3327,34 @@ public function tampil_grafikPPM_fixed($tahun)
     {
         $sql = "SELECT
                     '$year' as YY,
+                    p.customer as Customer,
                     p.kode_product as Product_ID,
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
                     p.cost as Price,
-                    COALESCE(MAX(po.tooling), '-') as Tool,
-                    p.cyt_mp as Min_SPM_Set,
-                    p.cyt_quo as Max_SPM_Set,
-                    SUM(CASE WHEN MONTH(po.tanggal) = 1 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '01',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 2 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '02',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 3 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '03',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 4 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '04',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 5 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '05',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 6 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '06',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 7 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '07',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 8 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '08',
-                    SUM(CASE WHEN MONTH(po.tanggal) = 9 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '09',
+                    COALESCE(ct.code, '') as Tool,
+                    SUM(CASE WHEN MONTH(po.tanggal) = 1  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '01',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 2  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '02',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 3  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '03',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 4  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '04',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 5  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '05',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 6  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '06',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 7  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '07',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 8  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '08',
+                    SUM(CASE WHEN MONTH(po.tanggal) = 9  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '09',
                     SUM(CASE WHEN MONTH(po.tanggal) = 10 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '10',
                     SUM(CASE WHEN MONTH(po.tanggal) = 11 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '11',
                     SUM(CASE WHEN MONTH(po.tanggal) = 12 THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '12'
                 FROM t_product p
                 LEFT JOIN t_bom b ON p.id_product = b.id_product
                 LEFT JOIN t_production_op po ON b.id_bom = po.id_bom AND YEAR(po.tanggal) = ?
+                LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
+                LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost
+                GROUP BY p.kode_product, p.nama_product, p.customer, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
                 HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
-                ORDER BY p.kode_product";
+                ORDER BY p.customer, p.kode_product, ct.code";
         return $this->db->query($sql, array($year));
     }
 
@@ -3571,8 +3602,8 @@ public function tampil_grafikPPM_fixed($tahun)
                         THEN SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))
                         ELSE 0 END, 2) as N_Prod,
                     p.cyt_quo as Max_SPM_Std,
-                    p.cyt_mp as Min_SPM_Set,
-                    p.cyt_quo as Max_SPM_Set,
+                    ROUND(MIN(CASE WHEN po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as Min_SPM_Set,
+                    ROUND(MAX(CASE WHEN po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as Max_SPM_Set,
                     ROUND(SUM(po.production_time + po.qty_lt), 2) as WH,
                     ROUND(SUM(po.ot_mp), 2) as OT,
                     SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) as Qty_Total,
@@ -3674,8 +3705,8 @@ public function tampil_grafikPPM_fixed($tahun)
                         THEN SUM(po.nett_prod) / SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0))
                         ELSE 0 END, 2) as N_Prod,
                     p.cyt_quo as Max_SPM_Std,
-                    p.cyt_mp as Min_SPM_Set,
-                    p.cyt_quo as Max_SPM_Set,
+                    ROUND(MIN(CASE WHEN po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as Min_SPM_Set,
+                    ROUND(MAX(CASE WHEN po.ct_mc_aktual > 0 THEN po.ct_mc_aktual END), 0) as Max_SPM_Set,
                     ROUND(SUM(po.production_time + po.qty_lt), 2) as WH,
                     ROUND(SUM(po.ot_mp), 2) as OT,
                     SUM(IFNULL(po.qty_ok,0) + IFNULL(po.qty_ng,0)) as Qty_Total,
@@ -3878,18 +3909,40 @@ public function tampil_grafikPPM_fixed($tahun)
      */
     public function get_machine_use_cust_tonnage_by_month($year)
     {
-        $yy = substr((string)$year, 2, 2);
         $sql = "SELECT
-                    CONCAT('$yy-', LPAD(MONTH(po.tanggal), 2, '0')) as yy_mm,
+                    CONCAT('$year-', LPAD(MONTH(po.tanggal), 2, '0')) as yy_mm,
                     MONTH(po.tanggal) as bulan,
                     po.customer,
-                    ROUND(SUM(po.production_time), 2) as total_eff_hr,
+                    ROUND(SUM(IFNULL(po.nwt_mp,0) + IFNULL(po.ot_mp,0)), 2) as total_eff_hr,
                     nm.tonnase
                 FROM t_production_op po
                 LEFT JOIN t_no_mesin nm ON nm.no_mesin = po.mesin
                 WHERE YEAR(po.tanggal) = ? AND po.customer IS NOT NULL AND po.customer != ''
                 GROUP BY MONTH(po.tanggal), po.customer, nm.tonnase
                 ORDER BY MONTH(po.tanggal), po.customer, nm.tonnase";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * 13-Rate: total injection cost (qty_ok × product cost) per tonnage per month.
+     * Mirrors Access "M/C Rate Cal_Crosstab": TRANSFORM SUM(Ttl Cost) PIVOT Mo.
+     */
+    public function get_machine_rate_by_tonnage_by_month($year)
+    {
+        $sql = "SELECT
+                    nm.tonnase,
+                    DATE_FORMAT(po.tanggal, '%Y-%m') AS yy_mm,
+                    MONTH(po.tanggal)                AS bulan,
+                    ROUND(SUM(po.qty_ok * p.cost), 0) AS ttl_cost
+                FROM t_production_op po
+                JOIN t_no_mesin nm ON nm.no_mesin = po.mesin
+                JOIN t_bom b       ON b.id_bom    = po.id_bom
+                JOIN t_product p   ON p.id_product = b.id_product
+                WHERE YEAR(po.tanggal) = ?
+                  AND nm.tonnase IS NOT NULL
+                  AND po.qty_ok > 0
+                GROUP BY nm.tonnase, yy_mm, bulan
+                ORDER BY nm.tonnase, bulan";
         return $this->db->query($sql, array($year));
     }
 
@@ -3966,5 +4019,105 @@ public function tampil_grafikPPM_fixed($tahun)
                 HAVING SUM(IFNULL(po.qty_ok, 0) + IFNULL(po.qty_ng, 0)) > 0
                 ORDER BY MONTH(po.tanggal) ASC, p.kode_product ASC";
         return $this->db->query($sql, array($year, $year, $year));
+    }
+
+    /**
+     * 12-Ttl Prod: product-level total quantity (OK+NG = Press Insp) pivoted by month.
+     * No Tool / Customer grouping — mirrors Access "Sum PR 3 by PROD by Mo**SB Part Ttl"
+     * with Tool dropped in the final export.
+     */
+    public function get_total_prod_excel_data($year)
+    {
+        $sql = "SELECT
+                    '$year'                                    AS YY,
+                    p.kode_product                             AS Product_ID,
+                    p.nama_product                             AS Product_Name,
+                    p.cyt_quo                                  AS Max_SPM_Std,
+                    p.cyt_mc                                   AS Max_SPM_Std2,
+                    p.cost                                     AS Price,
+                    ROUND(MIN(po.ct_mc_aktual), 0)             AS Min_SPM_Set,
+                    ROUND(MAX(po.ct_mc_aktual), 0)             AS Max_SPM_Set,
+                    SUM(IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0)) AS Tot_Prod,
+                    SUM(CASE WHEN MONTH(po.tanggal)=1  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '01',
+                    SUM(CASE WHEN MONTH(po.tanggal)=2  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '02',
+                    SUM(CASE WHEN MONTH(po.tanggal)=3  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '03',
+                    SUM(CASE WHEN MONTH(po.tanggal)=4  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '04',
+                    SUM(CASE WHEN MONTH(po.tanggal)=5  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '05',
+                    SUM(CASE WHEN MONTH(po.tanggal)=6  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '06',
+                    SUM(CASE WHEN MONTH(po.tanggal)=7  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '07',
+                    SUM(CASE WHEN MONTH(po.tanggal)=8  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '08',
+                    SUM(CASE WHEN MONTH(po.tanggal)=9  THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '09',
+                    SUM(CASE WHEN MONTH(po.tanggal)=10 THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '10',
+                    SUM(CASE WHEN MONTH(po.tanggal)=11 THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '11',
+                    SUM(CASE WHEN MONTH(po.tanggal)=12 THEN IFNULL(po.qty_ok,0)+IFNULL(po.qty_ng,0) ELSE 0 END) AS '12'
+                FROM t_product p
+                LEFT JOIN t_bom b            ON p.id_product = b.id_product
+                LEFT JOIN t_production_op po ON b.id_bom = po.id_bom AND YEAR(po.tanggal) = ?
+                WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
+                GROUP BY p.kode_product, p.nama_product, p.cyt_quo, p.cyt_mc, p.cost
+                HAVING Tot_Prod > 0
+                ORDER BY p.kode_product";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * 10-Data: Maintenance/mold stop-time breakdown per product+tool per month.
+     * Columns: Mo, product_id, product_name, tool,
+     *          overhoule, check_list, set_up_mold, ajust_cond, mold, sart_up
+     * (mirrors Access query "Sum PR 3 by PROD by Mo**SB Stop Time Maint")
+     */
+    public function get_stop_time_maint_by_product($year)
+    {
+        $sql = "SELECT
+                    DATE_FORMAT(po.tanggal, '%Y-%m') AS Mo,
+                    p.kode_product AS product_id,
+                    p.nama_product AS product_name,
+                    COALESCE(ct.code, '') AS tool,
+                    ROUND(SUM(CASE WHEN dl.kategori='LT TM'       AND dl.nama='OVERHOULE MOLD'        THEN dl.qty ELSE 0 END)/60, 2) AS overhoule,
+                    ROUND(SUM(CASE WHEN dl.kategori='LT PRODUKSI' AND dl.nama LIKE 'CHECK LIST%'       THEN dl.qty ELSE 0 END)/60, 2) AS check_list,
+                    ROUND(SUM(CASE WHEN dl.kategori='LT PRODUKSI' AND dl.nama='SET UP MOLD'            THEN dl.qty ELSE 0 END)/60, 2) AS set_up_mold,
+                    ROUND(SUM(CASE WHEN dl.kategori='LT PRODUKSI' AND dl.nama LIKE 'ADJUST KONDISI%'   THEN dl.qty ELSE 0 END)/60, 2) AS ajust_cond,
+                    ROUND(SUM(CASE WHEN dl.kategori='LT TM'       AND dl.nama='MOLD PROBLEM'           THEN dl.qty ELSE 0 END)/60, 2) AS mold,
+                    ROUND(SUM(CASE WHEN dl.kategori='LT PRODUKSI' AND dl.nama='SET UP AWAL PRODUKSI'   THEN dl.qty ELSE 0 END)/60, 2) AS sart_up
+                FROM t_production_op po
+                JOIN t_production_op_dl dl ON dl.id_production = po.id_production AND dl.type = 'LT'
+                JOIN t_bom b               ON b.id_bom = po.id_bom
+                JOIN t_product p           ON p.id_product = b.id_product
+                LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
+                LEFT JOIN cutting_tools ct                        ON ct.id = ctu.cutting_tools_id
+                WHERE YEAR(po.tanggal) = ?
+                GROUP BY Mo, p.kode_product, p.nama_product, COALESCE(ct.code, '')
+                ORDER BY Mo ASC,
+                         (SUM(CASE WHEN dl.kategori='LT TM'       AND dl.nama='OVERHOULE MOLD'      THEN dl.qty ELSE 0 END)
+                         +SUM(CASE WHEN dl.kategori='LT PRODUKSI' AND dl.nama LIKE 'CHECK LIST%'     THEN dl.qty ELSE 0 END)
+                         +SUM(CASE WHEN dl.kategori='LT PRODUKSI' AND dl.nama='SET UP MOLD'          THEN dl.qty ELSE 0 END)
+                         +SUM(CASE WHEN dl.kategori='LT PRODUKSI' AND dl.nama LIKE 'ADJUST KONDISI%' THEN dl.qty ELSE 0 END)
+                         +SUM(CASE WHEN dl.kategori='LT TM'       AND dl.nama='MOLD PROBLEM'         THEN dl.qty ELSE 0 END)) DESC";
+        return $this->db->query($sql, array($year));
+    }
+
+    /**
+     * 11-Data: PPIC stop-time breakdown per product per month.
+     * Columns: Mo, product_id, product_name, no_material, no_packing
+     * (mirrors Access query "Sum PR 3 by PROD by Mo**SB Stop Time PPIC")
+     */
+    public function get_stop_time_ppic_by_product($year)
+    {
+        $sql = "SELECT
+                    DATE_FORMAT(po.tanggal, '%Y-%m') AS Mo,
+                    p.kode_product AS product_id,
+                    p.nama_product AS product_name,
+                    ROUND(SUM(CASE WHEN dl.kategori='LT PPIC' AND dl.nama='NO MATERIAL' THEN dl.qty ELSE 0 END)/60, 2) AS no_material,
+                    ROUND(SUM(CASE WHEN dl.kategori='LT PPIC' AND dl.nama='NO PACKING'  THEN dl.qty ELSE 0 END)/60, 2) AS no_packing
+                FROM t_production_op po
+                JOIN t_production_op_dl dl ON dl.id_production = po.id_production AND dl.type = 'LT'
+                JOIN t_bom b               ON b.id_bom = po.id_bom
+                JOIN t_product p           ON p.id_product = b.id_product
+                WHERE YEAR(po.tanggal) = ?
+                GROUP BY Mo, p.kode_product, p.nama_product
+                ORDER BY Mo ASC,
+                         (SUM(CASE WHEN dl.kategori='LT PPIC' AND dl.nama='NO MATERIAL' THEN dl.qty ELSE 0 END)
+                         +SUM(CASE WHEN dl.kategori='LT PPIC' AND dl.nama='NO PACKING'  THEN dl.qty ELSE 0 END)) DESC";
+        return $this->db->query($sql, array($year));
     }
 }
