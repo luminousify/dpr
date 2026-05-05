@@ -3257,13 +3257,14 @@ public function tampil_grafikPPM_fixed($tahun)
     {
         $sql = "SELECT
                     '$year' as YY,
-                    p.customer as Customer,
                     p.kode_product as Product_ID,
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
                     p.cost as Price,
                     COALESCE(ct.code, '') as Tool,
+                    ROUND(MIN(po.ct_mc_aktual), 0) as Min_SPM_Set,
+                    ROUND(MAX(po.ct_mc_aktual), 0) as Max_SPM_Set,
                     SUM(CASE WHEN MONTH(po.tanggal) = 1  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '01',
                     SUM(CASE WHEN MONTH(po.tanggal) = 2  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '02',
                     SUM(CASE WHEN MONTH(po.tanggal) = 3  THEN po.qty_ok + IFNULL(po.qty_ng, 0) ELSE 0 END) as '03',
@@ -3282,9 +3283,9 @@ public function tampil_grafikPPM_fixed($tahun)
                 LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
                 LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.customer, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
                 HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
-                ORDER BY p.customer, p.kode_product, ct.code";
+                ORDER BY p.kode_product, ct.code";
         return $this->db->query($sql, array($year));
     }
 
@@ -3292,13 +3293,14 @@ public function tampil_grafikPPM_fixed($tahun)
     {
         $sql = "SELECT
                     '$year' as YY,
-                    p.customer as Customer,
                     p.kode_product as Product_ID,
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
                     p.cost as Price,
                     COALESCE(ct.code, '') as Tool,
+                    ROUND(MIN(po.ct_mc_aktual), 0) as Min_SPM_Set,
+                    ROUND(MAX(po.ct_mc_aktual), 0) as Max_SPM_Set,
                     SUM(CASE WHEN MONTH(po.tanggal) = 1  THEN po.qty_ok ELSE 0 END) as '01',
                     SUM(CASE WHEN MONTH(po.tanggal) = 2  THEN po.qty_ok ELSE 0 END) as '02',
                     SUM(CASE WHEN MONTH(po.tanggal) = 3  THEN po.qty_ok ELSE 0 END) as '03',
@@ -3317,9 +3319,9 @@ public function tampil_grafikPPM_fixed($tahun)
                 LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
                 LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.customer, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
                 HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
-                ORDER BY p.customer, p.kode_product, ct.code";
+                ORDER BY p.kode_product, ct.code";
         return $this->db->query($sql, array($year));
     }
 
@@ -3327,13 +3329,14 @@ public function tampil_grafikPPM_fixed($tahun)
     {
         $sql = "SELECT
                     '$year' as YY,
-                    p.customer as Customer,
                     p.kode_product as Product_ID,
                     p.nama_product as Product_Name,
                     p.cyt_quo as Max_SPM_Std,
                     p.cyt_mc as Max_SPM_Std2,
                     p.cost as Price,
                     COALESCE(ct.code, '') as Tool,
+                    ROUND(MIN(po.ct_mc_aktual), 0) as Min_SPM_Set,
+                    ROUND(MAX(po.ct_mc_aktual), 0) as Max_SPM_Set,
                     SUM(CASE WHEN MONTH(po.tanggal) = 1  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '01',
                     SUM(CASE WHEN MONTH(po.tanggal) = 2  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '02',
                     SUM(CASE WHEN MONTH(po.tanggal) = 3  THEN IFNULL(po.qty_ng, 0) ELSE 0 END) as '03',
@@ -3352,9 +3355,9 @@ public function tampil_grafikPPM_fixed($tahun)
                 LEFT JOIN t_production_op_cutting_tools_usage ctu ON ctu.id_production = po.id_production
                 LEFT JOIN cutting_tools ct ON ct.id = ctu.cutting_tools_id
                 WHERE (p.discontinue = 0 OR p.discontinue IS NULL)
-                GROUP BY p.kode_product, p.nama_product, p.customer, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
+                GROUP BY p.kode_product, p.nama_product, p.cyt_mc, p.cyt_mp, p.cyt_quo, p.cost, ct.code
                 HAVING `01` + `02` + `03` + `04` + `05` + `06` + `07` + `08` + `09` + `10` + `11` + `12` > 0
-                ORDER BY p.customer, p.kode_product, ct.code";
+                ORDER BY p.kode_product, ct.code";
         return $this->db->query($sql, array($year));
     }
 

@@ -2339,9 +2339,11 @@ function regenerate_ppm_data($tahun = null)
         ];
 
         $makeSheet = function($sheet, $data, $hasPrice) use ($stStyle) {
-            $headers = ['YY', 'Customer', 'Product ID', 'Product Name', 'Max SPM-Std', 'Max SPM Std2'];
+            $headers = ['YY', 'Product ID', 'Product Name', 'Max SPM-Std', 'Max SPM Std2'];
             if ($hasPrice) $headers[] = 'Price';
             $headers[] = 'Tool';
+            $headers[] = 'Min SPM-Set';
+            $headers[] = 'Max SPM-Set';
             $headers[] = 'Tot';
             for ($m=1; $m<=12; $m++) { $headers[] = sprintf('%d.0', $m); }
 
@@ -2352,13 +2354,14 @@ function regenerate_ppm_data($tahun = null)
             foreach ($data->result_array() as $row) {
                 $col = 'A';
                 $sheet->setCellValue($col++ . $r, $row['YY']);
-                $sheet->setCellValue($col++ . $r, $row['Customer']);
                 $sheet->setCellValue($col++ . $r, $row['Product_ID']);
                 $sheet->setCellValue($col++ . $r, $row['Product_Name']);
                 $sheet->setCellValue($col++ . $r, $row['Max_SPM_Std']);
                 $sheet->setCellValue($col++ . $r, $row['Max_SPM_Std2']);
                 if ($hasPrice) $sheet->setCellValue($col++ . $r, $row['Price']);
                 $sheet->setCellValue($col++ . $r, $row['Tool']);
+                $sheet->setCellValue($col++ . $r, $row['Min_SPM_Set'] !== null ? intval($row['Min_SPM_Set']) : '');
+                $sheet->setCellValue($col++ . $r, $row['Max_SPM_Set'] !== null ? intval($row['Max_SPM_Set']) : '');
 
                 $monthTotal = 0;
                 for ($m=1; $m<=12; $m++) {
@@ -2722,7 +2725,7 @@ function regenerate_ppm_data($tahun = null)
     {
         $this->load->library('Excel');
 
-        $tonnages = [40, 55, 60, 80, 90, 120, 125, 160, 200];
+        $tonnages = [40, 55, 60, 80, 90, 120, 160, 200];
         $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
         // === Fetch data ===
