@@ -890,6 +890,53 @@ class c_new extends CI_Controller
   }
 
 
+  public function check_master_completeness()
+  {
+    $year   = (int)($this->input->get('year') ?: date('Y'));
+    $upToMo = ((int)date('Y') === $year) ? (int)date('n') : 12;
+    $issues = [];
+
+    // 1. year_day — must have a row for every month 1..upToMo
+    $rows    = $this->db->select('bulan')->where('tahun', $year)->get('year_day')->result_array();
+    $haveMo  = array_map(function($r){ return (int)$r['bulan']; }, $rows);
+    $missing = array_values(array_diff(range(1, $upToMo), $haveMo));
+    if ($missing) {
+      $monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      $labels = array_map(function($m) use ($monthNames){ return $monthNames[$m-1]; }, $missing);
+      $issues[] = [
+        'label'  => 'Master Hari Kerja',
+        'url'    => base_url('c_new/master_work_days'),
+        'detail' => 'belum diisi: ' . implode(', ', $labels),
+      ];
+    }
+
+    // 2–4. Yearly tables — need exactly one row for $year
+    $yearly = [
+      ['target_produksi', 'Master Target Produksi', 'c_new/master_target_produksi'],
+      ['ppm_target',      'Master Target PPM',      'c_new/master_target_ppm'],
+      ['f_cost_target',   'Master F-Cost Target',   'c_new/master_f_cost'],
+    ];
+    foreach ($yearly as $item) {
+      list($tbl, $label, $url) = $item;
+      $cnt = $this->db->where('tahun', $year)->count_all_results($tbl);
+      if ($cnt === 0) {
+        $issues[] = [
+          'label'  => $label,
+          'url'    => base_url($url),
+          'detail' => "belum ada data untuk tahun $year",
+        ];
+      }
+    }
+
+    $this->output
+      ->set_content_type('application/json')
+      ->set_output(json_encode([
+        'year'   => $year,
+        'ok'     => empty($issues),
+        'issues' => $issues,
+      ]));
+  }
+
   function view_production_reporting_op($id_production)
   {
     // Load m_dpr model for cutting tools usage

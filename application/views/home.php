@@ -816,27 +816,70 @@ if ($posisi == 'ppic' || $posisi == 'tm' || $posisi =='qa' || $posisi == 'mixerA
         setTimeout(() => form.remove(), 1500);
     }
 
-    // Download all required Excel reports sequentially
-    // Single ZIP download to avoid popups
+    // Download all required Excel reports — with master-data completeness precheck
+    var _pendingIssueUrls = [];
+
     function downloadAllReportsZip() {
-        const $btn = $('#downloadAllReports');
-        const originalText = $btn.html();
-        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Preparing...');
+        var $btn = $('#downloadAllReports');
+        var orig = $btn.html();
+        var year = (new Date()).getFullYear();
 
-        const year = (new Date()).getFullYear();
-        const form = $('<form>', {
-            method: 'POST',
-            action: '<?= base_url('c_report/export_all_reports_zip'); ?>',
-            target: '_blank'
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Memeriksa data master...');
+
+        function submitDownload() {
+            var form = $('<form>', {
+                method: 'POST',
+                action: '<?= base_url('c_report/export_all_reports_zip'); ?>',
+                target: '_blank'
+            }).append($('<input>', { type: 'hidden', name: 'year', value: year }));
+            $('body').append(form);
+            form.submit();
+            setTimeout(function() { form.remove(); $btn.prop('disabled', false).html(orig); }, 4000);
+        }
+
+        // Wire modal buttons (once)
+        $('#masterCheckDownload').off('click').on('click', function() {
+            $('#masterCheckModal').modal('hide');
+            submitDownload();
         });
-        form.append($('<input>', { type: 'hidden', name: 'year', value: year }));
-        $('body').append(form);
-        form.submit();
+        $('#masterCheckOpenPages').off('click').on('click', function() {
+            _pendingIssueUrls.forEach(function(u) { window.open(u, '_blank'); });
+            $('#masterCheckModal').modal('hide');
+            $btn.prop('disabled', false).html(orig);
+        });
+        $('#masterCheckCancel').off('click').on('click', function() {
+            $btn.prop('disabled', false).html(orig);
+        });
+        $('#masterCheckModal').off('hidden.bs.modal').on('hidden.bs.modal', function() {
+            $btn.prop('disabled', false).html(orig);
+        });
 
-        setTimeout(() => {
-            form.remove();
-            $btn.prop('disabled', false).html(originalText);
-        }, 4000);
+        $.getJSON('<?= base_url('c_new/check_master_completeness'); ?>', { year: year })
+        .done(function(res) {
+            if (res.ok) {
+                submitDownload();
+                return;
+            }
+
+            _pendingIssueUrls = res.issues.map(function(i) { return i.url; });
+
+            var items = res.issues.map(function(i) {
+                return '<li style="margin-bottom:8px"><strong>' + i.label + '</strong> &mdash; ' + i.detail +
+                       '<br><a href="' + i.url + '" target="_blank">' + i.url + '</a></li>';
+            }).join('');
+
+            $('#masterCheckModalLabel').html('<i class="fa fa-exclamation-triangle"></i> Data master belum lengkap untuk tahun ' + year);
+            $('#masterCheckModalBody').html(
+                '<p>Halaman master berikut belum diisi sampai bulan saat ini.<br>' +
+                'Mengunduh sekarang akan menghasilkan <strong>nilai yang tidak akurat</strong> di laporan.</p>' +
+                '<ul style="padding-left:18px">' + items + '</ul>'
+            );
+            $('#masterCheckModal').modal({ backdrop: 'static', keyboard: false });
+        })
+        .fail(function() {
+            // On network error don't block — proceed with export
+            submitDownload();
+        });
     }
 </script>
 
@@ -1442,5 +1485,24 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
 
 
+<!-- Master Completeness Warning Modal -->
+<div class="modal fade" id="masterCheckModal" tabindex="-1" role="dialog" aria-labelledby="masterCheckModalLabel">
+  <div class="modal-dialog" role="document" style="max-width:540px">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#fcf8e3;border-bottom:1px solid #faebcc">
+        <h4 class="modal-title" id="masterCheckModalLabel" style="color:#8a6d3b">
+          <i class="fa fa-exclamation-triangle"></i> Data master belum lengkap
+        </h4>
+      </div>
+      <div class="modal-body" id="masterCheckModalBody" style="font-size:14px">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal" id="masterCheckCancel">Batal</button>
+        <button type="button" class="btn btn-warning" id="masterCheckOpenPages"><i class="fa fa-external-link"></i> Buka Halaman Master</button>
+        <button type="button" class="btn btn-primary" id="masterCheckDownload"><i class="fa fa-download"></i> Tetap Unduh</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
