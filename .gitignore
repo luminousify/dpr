@@ -39,3 +39,6 @@ backup_before_*.sql
 check_*.sql
 check_*.php
 t_data.php
+
+# PHPUnit cache
+.phpunit.result.cache
