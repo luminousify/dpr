@@ -41,6 +41,24 @@ class m_operator extends CI_Model
         }
 
         /**
+         * Ticket 7 (Phase 5.2): full BOM list for the PWA offline reference
+         * cache. Joins t_bom + t_product directly (rather than the `adabom`
+         * VIEW search_bomOp uses) so the cache works on both local dev (no
+         * adabom view) and production (where the view exists). Ordered by
+         * id_bom to match the autocomplete's ordering. Returns result_array()
+         * so Pwa_reference_normalizer::normalize_bom_list can consume it
+         * without re-casting.
+         */
+        function get_all_bom_for_cache(){
+                $this->db->select('t_bom.id_bom, t_bom.nama_bom, t_bom.cyt_mp_bom, t_bom.cyt_mc_bom, t_bom.id_product, t_product.kode_product, t_product.nama_product, t_product.nama_proses, t_product.cyt_quo, t_product.target_shift, t_product.customer, t_product.kode_proses, t_product.cavity');
+                $this->db->from('t_bom');
+                $this->db->join('t_product', 't_bom.id_product = t_product.id_product', 'left');
+                $this->db->order_by('t_bom.id_bom', 'ASC');
+                $query = $this->db->get();
+                return $query->result_array();
+        }
+
+        /**
          * Autocomplete helper: search operator names from t_operator (all jabatan)
          * @param string $term
          * @param int $limit

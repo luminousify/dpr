@@ -127,6 +127,64 @@
     $this->load->view('online/input_dpr_pwa',$data);
   }
 
+  /**
+   * Ticket 7 (Phase 5.2): AJAX endpoint that returns the full reference
+   * data set (kanit + BOM + cutting tools) as JSON for the PWA offline
+   * cache. Called by reference-data.js on app open (when online) to
+   * populate IndexedDB. Requires an active operator session; returns an
+   * empty payload (not a redirect) if unauthenticated so the JS layer
+   * can degrade gracefully.
+   *
+   * The kanit list reuses the same tampil_select_group query input_dpr_pwa
+   * uses. BOM uses get_all_bom_for_cache (full list, no limit). Cutting
+   * tools reuses m_dpr::get_cutting_tools_autocomplete(null). All three
+   * pass through Pwa_reference_normalizer so the JSON shape matches what
+   * the JS autocomplete widgets expect.
+   */
+  public function pwa_reference_data()
+  {
+    $this->output->set_content_type('application/json');
+    if (empty($this->session->userdata('nama_operator'))) {
+      $this->output->set_output(json_encode(array('kanit' => array(), 'bom' => array(), 'cutting_tools' => array())));
+      return;
+    }
+
+    $this->load->model('m_dpr');
+
+    $kanit_raw      = $this->mm->tampil_select_group('t_operator','jabatan','kanit','nama_operator');
+    $bom_raw        = $this->mm->get_all_bom_for_cache();
+    $cutting_raw    = $this->m_dpr->get_cutting_tools_autocomplete(null);
+
+    $this->load->library('Pwa_reference_normalizer');
+    $data = array(
+      'kanit'         => Pwa_reference_normalizer::normalize_kanit_list($kanit_raw ? $kanit_raw : array()),
+      'bom'           => Pwa_reference_normalizer::normalize_bom_list($bom_raw ? $bom_raw : array()),
+      'cutting_tools' => Pwa_reference_normalizer::normalize_cutting_tools($cutting_raw ? $cutting_raw : array()),
+    );
+    $this->output->set_output(json_encode($data));
+  }
+
+  /**
+   * Ticket 7 (Phase 5.1): lightweight session-validation ping. Called by
+   * auth.js on pageshow/online when the network is up to silently confirm
+   * the CI3 session cookie is still live and to refresh the cached
+   * identity (in case name/divisi/kanit changed server-side). Does NOT
+   * redirect on failure - returns {valid:false} so the JS layer keeps the
+   * offline form usable from the IndexedDB cache and surfaces a re-login
+   * prompt via the sync badge (Ticket 6's 401 handling).
+   */
+  public function pwa_session_ping()
+  {
+    $this->output->set_content_type('application/json');
+    if (empty($this->session->userdata('nama_operator'))) {
+      $this->output->set_output(json_encode(array('valid' => false)));
+      return;
+    }
+    $this->load->library('Pwa_reference_normalizer');
+    $identity = Pwa_reference_normalizer::normalize_session_identity($this->session->userdata());
+    $this->output->set_output(json_encode(array('valid' => true, 'identity' => $identity)));
+  }
+
   public function change_password()
   {
     $id_operator = $this->session->userdata('id_operator');

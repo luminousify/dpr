@@ -599,6 +599,18 @@
 	?>
 	<script src="<?php echo base_url($db_js_path) . '?v=' . $db_js_version; ?>" type="text/javascript"></script>
 
+	<!-- Ticket 7: session cache (DPRAuth) + reference-data cache (DPRRef).
+	     Loaded AFTER db.js (both depend on DPRDb) and BEFORE sync.js.
+	     auth.js exposes DPRAuth; reference-data.js exposes DPRRef. -->
+	<?php
+		$auth_js_path = 'assets/scripts/auth.js';
+		$auth_js_version = @filemtime(FCPATH . $auth_js_path) ?: time();
+		$ref_js_path = 'assets/scripts/reference-data.js';
+		$ref_js_version = @filemtime(FCPATH . $ref_js_path) ?: time();
+	?>
+	<script src="<?php echo base_url($auth_js_path) . '?v=' . $auth_js_version; ?>" type="text/javascript"></script>
+	<script src="<?php echo base_url($ref_js_path) . '?v=' . $ref_js_version; ?>" type="text/javascript"></script>
+
 	<!-- Ticket 6: sync engine. Loaded AFTER db.js (depends on DPRDb) and
 	     BEFORE the submit-intercept (which calls DPRSync.syncOne on save)
 	     and the SW registration. Exposes the DPRSync global. -->
@@ -863,6 +875,36 @@
 			// handlers in bind order; this one always preventDefault()s so the
 			// legacy POST to c_operator/add never fires on the PWA page.
 			$(document).ready(function () {
+				// Ticket 7: cache operator identity (from the server-rendered
+				// session) to IndexedDB so the form works offline. The identity
+				// is whitelisted here (no password_op) - mirrors the server-side
+				// Pwa_reference_normalizer::normalize_session_identity.
+				// Only cache when ONLINE so a stale SW-cached HTML shell does
+				// not overwrite IndexedDB with a previous render's identity.
+				if (typeof DPRAuth !== 'undefined' && typeof DPRDb !== 'undefined' && navigator.onLine) {
+					var pwaIdentity = <?php echo json_encode(array(
+						'id_operator'   => isset($id_operator) ? $id_operator : '',
+						'nik'           => isset($nik) ? $nik : '',
+						'nama_operator' => isset($nama) ? $nama : '',
+						'jabatan'       => isset($jabatan) ? $jabatan : '',
+						'divisi'        => isset($divisi) ? $divisi : '',
+						'nama_kanit'    => isset($nama_kanit) ? $nama_kanit : '',
+						'status'        => $this->session->userdata('status') ? $this->session->userdata('status') : '',
+					)); ?>;
+					DPRAuth.cacheSession(pwaIdentity).catch(function (e) {
+						console.warn('[PWA] cacheSession failed', e);
+					});
+				}
+				if (typeof DPRAuth !== 'undefined' && typeof DPRDb !== 'undefined') {
+					DPRAuth.init();
+				}
+
+				// Ticket 7: populate form dropdowns from IndexedDB cache
+				// (instant, works offline), then refresh from server if online.
+				if (typeof DPRRef !== 'undefined' && typeof DPRDb !== 'undefined') {
+					DPRRef.init();
+				}
+
 				// Ticket 6 owns badge refresh + pageshow/online sync triggers.
 				// init() also paints the initial badge. Guarded so a missing
 				// sync.js falls back to T5's local refreshBadge() above.

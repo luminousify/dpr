@@ -203,6 +203,57 @@ var DPRDb = (function () {
     });
   }
 
+  // ---- Ticket 7: generic helpers for reference_data + session stores ----
+  // These two stores use a synthetic `key` keyPath (e.g. {key:'kanit', ...}),
+  // so the pending_records-specific helpers above don't apply. The four
+  // helpers below are store-agnostic and use the same _store() internal.
+
+  // Upsert one keyed record into any store. Resolves to the key on success.
+  function putKey(storeName, record) {
+    return _store(storeName, 'readwrite').then(function (store) {
+      return new Promise(function (resolve, reject) {
+        var req = store.put(record);
+        req.onsuccess = function () {
+          resolve(req.result);
+        };
+        req.onerror = function () {
+          reject(req.error);
+        };
+      });
+    });
+  }
+
+  // Read one keyed record from any store by its key. Resolves to the record
+  // or undefined if not present.
+  function getKey(storeName, key) {
+    return _store(storeName, 'readonly').then(function (store) {
+      return new Promise(function (resolve, reject) {
+        var req = store.get(key);
+        req.onsuccess = function () {
+          resolve(req.result);
+        };
+        req.onerror = function () {
+          reject(req.error);
+        };
+      });
+    });
+  }
+
+  // Delete one keyed record from any store by its key. Resolves to true.
+  function deleteKey(storeName, key) {
+    return _store(storeName, 'readwrite').then(function (store) {
+      return new Promise(function (resolve, reject) {
+        var req = store.delete(key);
+        req.onsuccess = function () {
+          resolve(true);
+        };
+        req.onerror = function () {
+          reject(req.error);
+        };
+      });
+    });
+  }
+
   return {
     open: open,
     putPending: putPending,
@@ -211,6 +262,10 @@ var DPRDb = (function () {
     countPending: countPending,
     updatePendingStatus: updatePendingStatus,
     deletePending: deletePending,
+    // Ticket 7 generic keyed-store helpers.
+    putKey: putKey,
+    getKey: getKey,
+    deleteKey: deleteKey,
     STORE_PENDING: STORE_PENDING,
     STORE_REFERENCE: STORE_REFERENCE,
     STORE_SESSION: STORE_SESSION
