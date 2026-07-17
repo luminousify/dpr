@@ -599,6 +599,15 @@
 	?>
 	<script src="<?php echo base_url($db_js_path) . '?v=' . $db_js_version; ?>" type="text/javascript"></script>
 
+	<!-- Ticket 6: sync engine. Loaded AFTER db.js (depends on DPRDb) and
+	     BEFORE the submit-intercept (which calls DPRSync.syncOne on save)
+	     and the SW registration. Exposes the DPRSync global. -->
+	<?php
+		$sync_js_path = 'assets/scripts/sync.js';
+		$sync_js_version = @filemtime(FCPATH . $sync_js_path) ?: time();
+	?>
+	<script src="<?php echo base_url($sync_js_path) . '?v=' . $sync_js_version; ?>" type="text/javascript"></script>
+
 	<!-- PWA Service Worker registration (Ticket 4). Scope defaults to /dpr/. -->
 	<script type="text/javascript">
 		if ('serviceWorker' in navigator) {
@@ -632,7 +641,17 @@
 			var $badgeCount = $('#pwa-pending-count');
 
 			// ---- Pending badge -------------------------------------------------
+			// Note: Ticket 6 (DPRSync) now owns badge refresh + the pageshow /
+			// online sync triggers. This file's submit-intercept calls
+			// DPRSync.refreshBadge() after local saves, and DPRSync.init()
+			// wires the cross-event sync triggers (see sync.js).
 			function refreshBadge() {
+				// Thin delegate so older references inside this IIFE keep working.
+				if (typeof DPRSync !== 'undefined' && DPRSync.refreshBadge) {
+					DPRSync.refreshBadge();
+					return;
+				}
+				// Fallback if sync.js failed to load: keep T5's original behavior.
 				DPRDb.countPending().then(function (n) {
 					if (n > 0) {
 						$badgeCount.text(n);
@@ -844,7 +863,15 @@
 			// handlers in bind order; this one always preventDefault()s so the
 			// legacy POST to c_operator/add never fires on the PWA page.
 			$(document).ready(function () {
-				refreshBadge();
+				// Ticket 6 owns badge refresh + pageshow/online sync triggers.
+				// init() also paints the initial badge. Guarded so a missing
+				// sync.js falls back to T5's local refreshBadge() above.
+				if (typeof DPRSync !== 'undefined' && DPRSync.init) {
+					DPRSync.init();
+				} else {
+					refreshBadge();
+					console.warn('[PWA] DPRSync unavailable - sync disabled, offline save still works');
+				}
 
 				$('#my-form').on('submit', function (e) {
 					// Always intercept on the PWA page: save locally, never POST.
@@ -886,6 +913,27 @@
 						$('#loading').html('');
 						showReceipt(record);
 						refreshBadge();
+
+						// Ticket 6: best-effort immediate sync. Fire-and-forget -
+						// if the network is down this rejects transient and the
+						// pageshow/online triggers will retry later. Auth (401)
+						// and permanent (400/422) resolve (not reject), so the
+						// errback here only fires on 5xx/network/timeout, which
+						// is exactly what we want to swallow + retry later.
+						if (typeof DPRSync !== 'undefined' && DPRSync.syncOne) {
+							DPRSync.syncOne(record).then(function (res) {
+								if (res && res.reason === 'auth') {
+									console.warn('[PWA] session expired - re-login to sync', record.id_production);
+								}
+							}, function (err) {
+								console.warn('[PWA] immediate syncOne transient-failed; will retry', record.id_production, err);
+								if (typeof DPRSync.scheduleRetry === 'function') {
+									DPRSync.scheduleRetry(record, 1);
+								}
+							}).catch(function (e) {
+								console.warn('[PWA] immediate syncOne threw', e);
+							});
+						}
 					}).catch(function (err) {
 						console.error('[PWA] IndexedDB save failed', err);
 						$submit.prop('disabled', false).val('Save');
@@ -901,8 +949,10 @@
 				});
 
 				// If the operator returns to the page (e.g. app foregrounded on
-				// iOS), refresh the badge so a sync that happened elsewhere is
-				// reflected. Ticket 6 will own actual sync triggering.
+				// iOS), refresh the badge. DPRSync.init() also binds a pageshow
+				// listener that triggers syncAll(); keep this T5 listener as a
+				// belt-and-braces badge refresh (it is idempotent and cheap),
+				// and so the badge still updates if sync.js failed to load.
 				window.addEventListener('pageshow', refreshBadge);
 			});
 		})();
