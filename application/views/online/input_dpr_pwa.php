@@ -77,7 +77,12 @@
 <body>
 	<nav class="navbar fixed-top navbar-expand-lg navbar-light p-3" style="background-color:#5bc0de">
         <div class="container">
-            <a class="navbar-brand text-white" href="<?php echo base_url('login_op/input_dpr_pwa') ?>" style="font-size:20px;font-weight:600">DPR ONLINE</a>
+            <a class="navbar-brand text-white" href="<?php echo base_url('login_op/input_dpr_pwa') ?>" style="font-size:20px;font-weight:600">DPR ONLINE
+              <!-- Ticket 5: offline pending badge. Hidden until countPending() returns > 0. -->
+              <span id="pwa-pending-badge" class="badge badge-warning ml-2" style="display:none; font-size:12px;" title="Record tersimpan lokal, belum tersinkron ke server">
+                Pending: <span id="pwa-pending-count">0</span>
+              </span>
+            </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
@@ -586,6 +591,14 @@
 	?>
 	<script src="<?php echo base_url($input_dpr_js_path) . '?v=' . $input_dpr_js_version; ?>" type="text/javascript"></script>
 
+	<!-- Ticket 5: IndexedDB wrapper. Loaded before the SW registration and
+	     before the submit-intercept so DPRDb is defined when the intercept binds. -->
+	<?php
+		$db_js_path = 'assets/scripts/db.js';
+		$db_js_version = @filemtime(FCPATH . $db_js_path) ?: time();
+	?>
+	<script src="<?php echo base_url($db_js_path) . '?v=' . $db_js_version; ?>" type="text/javascript"></script>
+
 	<!-- PWA Service Worker registration (Ticket 4). Scope defaults to /dpr/. -->
 	<script type="text/javascript">
 		if ('serviceWorker' in navigator) {
@@ -601,6 +614,321 @@
 		}
 	</script>
 
+	<!-- Ticket 5: offline form save. Intercepts submit, saves the full form to
+	     IndexedDB (no server call), shows a local receipt, and keeps the
+	     "Pending: N" badge in sync. Layered ON TOP of input_dpr.js; the shared
+	     file is not modified (legacy form at login_op/input_dpr stays intact). -->
+	<script type="text/javascript">
+		(function () {
+			// If db.js failed to load (e.g. blocked), do not wire the intercept -
+			// the form would fall through to the legacy server POST instead of
+			// silently losing data.
+			if (typeof DPRDb === 'undefined') {
+				console.error('[PWA] DPRDb unavailable - offline save disabled');
+				return;
+			}
+
+			var $badge = $('#pwa-pending-badge');
+			var $badgeCount = $('#pwa-pending-count');
+
+			// ---- Pending badge -------------------------------------------------
+			function refreshBadge() {
+				DPRDb.countPending().then(function (n) {
+					if (n > 0) {
+						$badgeCount.text(n);
+						$badge.show();
+					} else {
+						$badge.hide();
+					}
+				}).catch(function (err) {
+					console.warn('[PWA] countPending failed', err);
+				});
+			}
+
+			// ---- Offline-safe id_production -----------------------------------
+			// input_dpr.js lot() already builds id_production as
+			//   YY + DD + MM + HHMMSS(#waktu) + id_bom
+			// but #waktu is server-seeded with NO uniqueness counter. Two saves
+			// within the same wall-clock second collide on the keyPath. Here we
+			// insert a 3-digit per-second counter (mirroring the server's
+			// sprintf('%03d', $i) fallback in c_operator::add), kept in
+			// localStorage so it is monotonic across saves. The prefix shape
+			// (YY DD MM ...) is unchanged, so server-side reporting still works.
+			// input_dpr.js and the legacy form are NOT touched.
+			function uniqueIdProduction() {
+				var tanggal = $('#tanggal').val() || '';
+				var YY = tanggal.substr(2, 2);
+				var MM = tanggal.substr(8, 2);
+				var DD = tanggal.substr(5, 2);
+				var waktu = $('#waktu').val() || '';
+				var id_bomS = $('#id_bomS').val() || '';
+
+				var seqState;
+				try {
+					seqState = JSON.parse(localStorage.getItem('dpr_id_seq') || '{}');
+				} catch (e) {
+					seqState = {};
+				}
+				if (typeof seqState !== 'object' || seqState === null || seqState.waktu !== waktu) {
+					seqState = { waktu: waktu, seq: 0 };
+				}
+				var counter = ('00' + seqState.seq).slice(-3);
+				seqState.seq += 1;
+				try {
+					localStorage.setItem('dpr_id_seq', JSON.stringify(seqState));
+				} catch (e) {
+					// localStorage quota / disabled: proceed anyway - the counter
+					// is best-effort; HHMMSS still changes once per second.
+				}
+
+				return YY + DD + MM + waktu + counter + id_bomS;
+			}
+
+			// ---- Form serialization to nested object --------------------------
+			// Convert serializeArray() output ([{name,value},...]) into the nested
+			// object shape the legacy POST would produce:
+			//   user[0][tanggal]      -> form.user["0"].tanggal
+			//   detail[1][nama]       -> form.detail["1"].nama
+			//   cutting_tools_ids[]   -> form.cutting_tools_ids = [...]
+			//   runner                 -> form.runner
+			// Ticket 6 will JSON.stringify(record.form) and POST to api/Sync/submit,
+			// whose drain worker (Ticket 3) consumes the same structure. Storing
+			// the nested object (not raw pairs) keeps Ticket 3 a trivial parse.
+			function formToObject(pairs) {
+				var root = {};
+				for (var i = 0; i < pairs.length; i++) {
+					var name = pairs[i].name;
+					if (!name) {
+						continue;
+					}
+					insertNested(root, splitName(name), pairs[i].value);
+				}
+				return root;
+			}
+
+			// "user[0][tanggal]" -> ["user", "0", "tanggal"]
+			// "cutting_tools_ids[]" -> ["cutting_tools_ids", ""]
+			// "runner" -> ["runner"]
+			function splitName(name) {
+				var out = [];
+				var open = name.indexOf('[');
+				if (open === -1) {
+					return [name];
+				}
+				out.push(name.slice(0, open));
+				var body = name.slice(open);
+				var re = /\[([^\]]*)\]/g;
+				var m;
+				while ((m = re.exec(body)) !== null) {
+					out.push(m[1]);
+				}
+				return out;
+			}
+
+			function isNumericKey(k) {
+				return k !== '' && /^\d+$/.test(k);
+			}
+
+			function insertNested(root, segments, value) {
+				var cur = root;
+				for (var i = 0; i < segments.length; i++) {
+					var seg = segments[i];
+					var isLeaf = (i === segments.length - 1);
+					var nextSeg = segments[i + 1];
+
+					// Empty bracket "[]" -> append to an array.
+					if (seg === '') {
+						if (!Array.isArray(cur)) {
+							return; // malformed for this form; skip
+						}
+						if (isLeaf) {
+							cur.push(value);
+						} else {
+							// No observed field appends then nests further; guard anyway.
+							var child = (nextSeg === '' || isNumericKey(nextSeg)) ? [] : {};
+							cur.push(child);
+							cur = child;
+						}
+						continue;
+					}
+
+					if (isLeaf) {
+						cur[seg] = value;
+					} else {
+						if (cur[seg] === undefined || cur[seg] === null) {
+							cur[seg] = (nextSeg === '' || isNumericKey(nextSeg)) ? [] : {};
+						}
+						cur = cur[seg];
+					}
+				}
+			}
+
+			// ---- HTML escape for the receipt ----------------------------------
+			function esc(s) {
+				if (s === null || s === undefined) {
+					return '';
+				}
+				return String(s).replace(/[&<>"']/g, function (c) {
+					return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+				});
+			}
+
+			// ---- Receipt rendering --------------------------------------------
+			function firstUser(formObj) {
+				if (!formObj || !formObj.user) {
+					return {};
+				}
+				// formToObject stores numeric keys as strings ("0").
+				return formObj.user[0] || formObj.user['0'] || {};
+			}
+
+			function showReceipt(record) {
+				var u = firstUser(record.form) || {};
+				var html = '';
+				html += '<div class="alert alert-success"><b>Record tersimpan di perangkat ini.</b><br>';
+				html += '<span class="badge badge-warning">Pending sync</span> ';
+				html += 'Akan terkirim otomatis ke server saat perangkat online.</div>';
+				html += '<table class="table table-sm table-bordered mb-0">';
+				html += '<tr><th style="width:40%">ID Produksi</th><td><b>' + esc(record.id_production) + '</b></td></tr>';
+				html += '<tr><th>Tanggal</th><td>' + esc(u.tanggal) + '</td></tr>';
+				html += '<tr><th>Shift</th><td>' + esc(u.shift) + '</td></tr>';
+				html += '<tr><th>Mesin</th><td>' + esc(u.mesin) + '</td></tr>';
+				html += '<tr><th>Operator</th><td>' + esc(u.operator) + '</td></tr>';
+				html += '<tr><th>Qty OK</th><td>' + esc(u.qty_ok) + '</td></tr>';
+				html += '<tr><th>Qty NG</th><td>' + esc(u.qty_ng) + '</td></tr>';
+				html += '<tr><th>Nett Produksi</th><td>' + esc(u.nett_prod) + '</td></tr>';
+				html += '<tr><th>Gross Produksi</th><td>' + esc(u.gross_prod) + '</td></tr>';
+				html += '</table>';
+				$('#pwaReceiptBody').html(html);
+				$('#pwaReceiptModal').modal('show');
+			}
+
+			// ---- Reset the form for the next entry ----------------------------
+			// Clears dynamic rows (NG/LT/cutting tools/release) which .reset()
+			// cannot reach, then resets static fields to server-rendered
+			// defaults and re-runs the shared calc/total initializers.
+			function resetFormForNextEntry() {
+				$('#tableNG').empty();
+				$('#tableLT').empty();
+				$('#cuttingToolsTable tbody').empty();
+				$('#release').empty();
+				try {
+					$('#my-form')[0].reset();
+				} catch (e) {
+					// Older browsers: ignore reset failure, manual clears above stand.
+				}
+				if (typeof initializeCalculationFields === 'function') {
+					initializeCalculationFields();
+				}
+				if (typeof total === 'function') {
+					total();
+				}
+				if (typeof totalLT === 'function') {
+					totalLT();
+				}
+				$('#id_production').val('');
+				$('#lotGlobal').html('');
+				$('#lotGlobalSave').val('');
+				var tanggalEl = document.getElementById('tanggal');
+				if (tanggalEl) {
+					tanggalEl.valueAsDate = new Date();
+				}
+				// Hide any inline validation errors left over from the previous entry.
+				$('.field-error').remove();
+				$('.is-invalid').removeClass('is-invalid');
+			}
+
+			// ---- Submit intercept ---------------------------------------------
+			// Bind AFTER input_dpr.js so its validation handler runs first and
+			// has already recalculated nett/gross. jQuery fires same-element
+			// handlers in bind order; this one always preventDefault()s so the
+			// legacy POST to c_operator/add never fires on the PWA page.
+			$(document).ready(function () {
+				refreshBadge();
+
+				$('#my-form').on('submit', function (e) {
+					// Always intercept on the PWA page: save locally, never POST.
+					e.preventDefault();
+
+					// Re-validate; the shared handler ran first but may have bailed
+					// (return false does not stop later same-element handlers).
+					if (typeof validateForm === 'function' && !validateForm()) {
+						$('#submit').prop('disabled', false).val('Save');
+						$('#loading').html('');
+						return;
+					}
+					var baseId = ($('#id_production').val() || '').toString().trim();
+					if (!baseId) {
+						alert('ID Produksi tidak tergenerate. Silakan pilih BOM kembali atau refresh halaman.');
+						$('#submit').prop('disabled', false).val('Save');
+						$('#loading').html('');
+						return;
+					}
+
+					// Generate the offline-unique id and reflect it back into the
+					// field so the receipt, the form, and the stored record agree.
+					var uniqueId = uniqueIdProduction();
+					$('#id_production').val(uniqueId);
+
+					var record = {
+						id_production: uniqueId,
+						status: 'pending',
+						created_at: new Date().toISOString(),
+						form: formToObject($('#my-form').serializeArray())
+					};
+
+					var $submit = $('#submit');
+					$submit.prop('disabled', true).val('Saving...');
+					$('#loading').html('Menyimpan ke perangkat...').css('color', 'blue');
+
+					DPRDb.putPending(record).then(function () {
+						$submit.prop('disabled', false).val('Save');
+						$('#loading').html('');
+						showReceipt(record);
+						refreshBadge();
+					}).catch(function (err) {
+						console.error('[PWA] IndexedDB save failed', err);
+						$submit.prop('disabled', false).val('Save');
+						$('#loading').html('');
+						alert('Gagal menyimpan record secara lokal. Silakan coba lagi.');
+					});
+				});
+
+				// "Input Baru" on the receipt: close modal + reset for next record.
+				$(document).on('click', '#pwaReceiptNew', function () {
+					$('#pwaReceiptModal').modal('hide');
+					resetFormForNextEntry();
+				});
+
+				// If the operator returns to the page (e.g. app foregrounded on
+				// iOS), refresh the badge so a sync that happened elsewhere is
+				// reflected. Ticket 6 will own actual sync triggering.
+				window.addEventListener('pageshow', refreshBadge);
+			});
+		})();
+	</script>
+
 		</form>
+
+	<!-- Ticket 5: local receipt modal. Populated from the IndexedDB record on
+	     successful offline save. Deliberately a lightweight confirmation, not
+	     a full clone of views/online/input_hasil_dpr.php (per handoff). -->
+	<div class="modal fade" id="pwaReceiptModal" tabindex="-1" role="dialog" aria-labelledby="pwaReceiptTitle" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header bg-success text-white">
+					<h5 class="modal-title" id="pwaReceiptTitle">Tersimpan di Perangkat</h5>
+					<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body" id="pwaReceiptBody"></div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="button" class="btn btn-primary" id="pwaReceiptNew">Input Baru</button>
+				</div>
+			</div>
+		</div>
+	</div>
   </body>
 </html>

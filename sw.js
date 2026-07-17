@@ -14,7 +14,7 @@
  * triggered from the page (pageshow / form submit), not by this worker.
  */
 
-const CACHE_VERSION = 'dpr-pwa-v2';
+const CACHE_VERSION = 'dpr-pwa-v3';
 
 // Static assets guaranteed to be served 200 from /dpr/. Paths are relative to
 // sw.js (i.e. relative to /dpr/). The dynamic PWA page and precache-unfriendly
@@ -31,6 +31,7 @@ const APP_SHELL = [
   './assets/js/jquery-ui.js',
   './assets/scripts/select2.min.js',
   './assets/scripts/input_dpr.js',
+  './assets/scripts/db.js',
   './assets/images/icons/icon-192.png',
   './assets/images/icons/icon-512.png',
   './manifest.json',
