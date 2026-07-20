@@ -67,6 +67,84 @@ class m_sync_queue extends CI_Model
     // --------------------------------------------------------------------
 
     /**
+     * Select queue rows currently flagged for supervisor review
+     * (Ticket 8 / Phase 4.3), newest-first so the freshest duplicate
+     * appears at the top of the admin list.
+     *
+     * Returns the full row (id, id_production, payload, status,
+     * error_message, created_at, processed_at) - the admin view needs the
+     * payload to display tanggal/mesin/shift/id_bom/operator/qty_ok +
+     * the JSON for context, and the timestamps so the supervisor can see
+     * how long a row has been waiting.
+     *
+     * @param int $limit  Max rows to return (1..500, clamped).
+     * @return array      List of associative row arrays.
+     */
+    public function fetch_duplicate_review($limit = 500)
+    {
+        $limit = max(1, min(500, (int) $limit));
+
+        return $this->db->select('id, id_production, payload, status, error_message, created_at, processed_at')
+            ->from(self::TABLE)
+            ->where('status', 'duplicate_review')
+            ->order_by('id', 'desc')
+            ->limit($limit)
+            ->get()
+            ->result_array();
+    }
+
+    /**
+     * Fetch a single queue row by id.
+     *
+     * Used by the Ticket 8 approve/reject actions to look up the row the
+     * supervisor clicked on. Returns null when the row is missing (e.g.
+     * another supervisor already actioned it).
+     *
+     * @param int $id  Queue row primary key.
+     * @return array|null
+     */
+    public function get_by_id($id)
+    {
+        $id = (int) $id;
+        if ($id <= 0) {
+            return null;
+        }
+        $row = $this->db->select('id, id_production, payload, status, error_message, created_at, processed_at')
+            ->from(self::TABLE)
+            ->where('id', $id)
+            ->limit(1)
+            ->get()
+            ->row_array();
+        return $row ? $row : null;
+    }
+
+    /**
+     * Delete a single queue row by primary key (Ticket 8 reject action).
+     *
+     * Used when a supervisor rejects a flagged duplicate: SPEC 4.3 says
+     * "reject (delete queue entry)". The rejected payload's id_production
+     * is never written to t_production_op, so deleting the queue row is
+     * safe - there are no child-table orphans to clean up.
+     *
+     * @param int $id  Queue row primary key.
+     * @return bool    True if a row was deleted, false otherwise.
+     */
+    public function delete_by_id($id)
+    {
+        $id = (int) $id;
+        if ($id <= 0) {
+            return false;
+        }
+        $saved_debug = $this->db->db_debug;
+        $this->db->db_debug = FALSE;
+        $this->db->where('id', $id);
+        $this->db->delete(self::TABLE);
+        $affected = $this->db->affected_rows();
+        $this->db->db_debug = $saved_debug;
+        return $affected > 0;
+    }
+
+    /**
      * Select up to $limit pending queue rows, oldest first.
      *
      * Returns the raw row arrays WITHOUT claiming them; the controller must

@@ -125,6 +125,93 @@ class Sync_drain_helper
         return 'done';
     }
 
+    /**
+     * Build the ordered insert plan for a normalized payload: a list of
+     * (table, rows) groups ready for the controller to apply via
+     * insert_batch() inside a transaction.
+     *
+     * This is the pure seam shared by:
+     *   - the drain worker (Ticket 3, c_sync::process_one), after the
+     *     duplicate gate passes; and
+     *   - the supervisor approve action (Ticket 8, c_sync::approve_duplicate),
+     *     which force-inserts a duplicate_review row.
+     *
+     * Pure (no CI3, no DB, no I/O) so it can be unit-tested in isolation.
+     * The actual transaction + insert_batch lives in
+     * c_sync::execute_insert_plan(), which both callers feed this plan to.
+     *
+     * Group order is fixed (parent first, then child tables) so a partial
+     * failure rolls back cleanly:
+     *   0. t_production_op                    parent: tanggal_input/runner/id_production merged
+     *   1. t_production_op_dl   (detail)      NG rows; id_production merged
+     *   2. t_production_op_dl   (detailLT)    LT rows; same table, SEPARATE group
+     *                                          (caller applies via two insert_batch calls)
+     *   3. t_production_op_release            id_production + runner merged
+     *   4. t_production_op_cutting_tools_usage
+     *
+     * Row-building is delegated to Dpr_batch_builder (the existing Ticket 1
+     * pure seam) so qty_lt_minutes stripping, qty_lt float coercion, and
+     * defensive filtering remain in one place - both call sites inherit
+     * identical row shapes.
+     *
+     * Empty sections emit empty groups (not skipped) so the plan shape is
+     * stable across payloads; the controller skips empty groups via a
+     * !empty() check before insert_batch().
+     *
+     * @param array  $norm          Output of normalize_payload().
+     * @param string $id_production The production id (also in $norm, but
+     *                              passed explicitly to make the contract
+     *                              obvious at the call site).
+     * @param string $input_ts      'YYYY-MM-DD HH:MM:SS' timestamp to stamp
+     *                              on parent rows; caller supplies so the
+     *                              whole insert shares ONE timestamp.
+     * @return array Ordered list of ['table' => string, 'rows' => array].
+     */
+    public static function build_insert_plan(array $norm, $id_production, $input_ts)
+    {
+        $id_production = (string) $id_production;
+        $runner        = isset($norm['runner']) ? $norm['runner'] : '';
+
+        $user_rows = Dpr_batch_builder::build_production_op_rows(
+            isset($norm['users']) ? $norm['users'] : array(),
+            array(
+                'tanggal_input' => $input_ts,
+                'runner'        => $runner,
+                'id_production' => $id_production,
+            )
+        );
+
+        $child_extra = array('id_production' => $id_production);
+
+        $detail_rows = Dpr_batch_builder::build_child_rows(
+            isset($norm['detail']) ? $norm['detail'] : array(),
+            $child_extra
+        );
+
+        $detaillt_rows = Dpr_batch_builder::build_child_rows(
+            isset($norm['detailLT']) ? $norm['detailLT'] : array(),
+            $child_extra
+        );
+
+        $ress_rows = Dpr_batch_builder::build_child_rows(
+            isset($norm['ress']) ? $norm['ress'] : array(),
+            array('id_production' => $id_production, 'runner' => $runner)
+        );
+
+        $ct_rows = Dpr_batch_builder::build_cutting_tools_rows(
+            isset($norm['cutting_tools_ids']) ? $norm['cutting_tools_ids'] : array(),
+            $id_production
+        );
+
+        return array(
+            array('table' => 't_production_op',                     'rows' => $user_rows),
+            array('table' => 't_production_op_dl',                  'rows' => $detail_rows),
+            array('table' => 't_production_op_dl',                  'rows' => $detaillt_rows),
+            array('table' => 't_production_op_release',             'rows' => $ress_rows),
+            array('table' => 't_production_op_cutting_tools_usage', 'rows' => $ct_rows),
+        );
+    }
+
     // --------------------------------------------------------------------
     // Internal extractors (private)
     // --------------------------------------------------------------------

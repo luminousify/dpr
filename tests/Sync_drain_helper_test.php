@@ -293,4 +293,162 @@ class Sync_drain_helper_test extends TestCase
         // time and wants it force-inserted (matches m_operator::add()).
         $this->assertSame('done', Sync_drain_helper::decide_status(true, true));
     }
+
+    // --------------------------------------------------------------------
+    // build_insert_plan - the pure row-building seam shared by the Ticket 3
+    // drain worker (c_sync::process_one) and the Ticket 8 supervisor approve
+    // action (c_sync::approve_duplicate). Both callers feed the returned
+    // plan to c_sync::execute_insert_plan(), which wraps it in a transaction
+    // and applies insert_batch() per group.
+    //
+    // Naming note: the T8 handoff suggested "force_insert_payload"; this
+    // helper is named build_insert_plan instead because Sync_drain_helper
+    // is the project's pure-PHP / no-CI3 / no-DB / no-I/O seam (see class
+    // header). A method that actually inserted would break that contract
+    // and the unit suite that depends on it. The impure half of the
+    // extraction (the transaction wrapper) lives on the c_sync controller
+    // as execute_insert_plan(), tested via browser e2e.
+    // --------------------------------------------------------------------
+
+    public function test_build_insert_plan_returns_five_groups_in_canonical_order()
+    {
+        // Group order is fixed: parent first, then the two dl groups
+        // (NG rows, then LT rows - both go to t_production_op_dl but must
+        // stay separate so the controller applies them deterministically),
+        // then releases, then cutting tools.
+        $norm = Sync_drain_helper::normalize_payload($this->sample_payload());
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+
+        $this->assertCount(5, $plan);
+        $this->assertSame('t_production_op',                     $plan[0]['table']);
+        $this->assertSame('t_production_op_dl',                  $plan[1]['table']);
+        $this->assertSame('t_production_op_dl',                  $plan[2]['table']);
+        $this->assertSame('t_production_op_release',             $plan[3]['table']);
+        $this->assertSame('t_production_op_cutting_tools_usage', $plan[4]['table']);
+    }
+
+    public function test_build_insert_plan_merges_tanggal_input_runner_id_production_into_user_rows()
+    {
+        // Parent rows get the three shared fields merged in - matches the
+        // original drain worker block exactly.
+        $norm = Sync_drain_helper::normalize_payload($this->sample_payload());
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+
+        $user_rows = $plan[0]['rows'];
+        $this->assertCount(1, $user_rows);
+        $this->assertSame('ID-1', $user_rows[0]['id_production']);
+        $this->assertSame('5', $user_rows[0]['runner']);
+        $this->assertSame('2026-07-20 10:00:00', $user_rows[0]['tanggal_input']);
+        // Original user fields survive the merge.
+        $this->assertSame('Budi', $user_rows[0]['operator']);
+        $this->assertSame('100',  $user_rows[0]['qty_ok']);
+    }
+
+    public function test_build_insert_plan_strips_transient_qty_lt_minutes_via_batch_builder()
+    {
+        // build_insert_plan delegates to Dpr_batch_builder, which strips the
+        // client-only qty_lt_minutes field. The supervisor approve path must
+        // not regress this - t_production_op has no such column.
+        $norm = Sync_drain_helper::normalize_payload($this->sample_payload());
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+        $this->assertArrayNotHasKey('qty_lt_minutes', $plan[0]['rows'][0]);
+    }
+
+    public function test_build_insert_plan_coerces_qty_lt_to_float_via_batch_builder()
+    {
+        // Same delegation: Dpr_batch_builder coerces qty_lt to float. The
+        // supervisor path inherits this so a force-inserted row matches the
+        // shape a drain-inserted row would have.
+        $payload = $this->sample_payload();
+        $payload['user']['0']['qty_lt'] = '12.5';
+        $norm = Sync_drain_helper::normalize_payload($payload);
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+        $this->assertSame(12.5, $plan[0]['rows'][0]['qty_lt']);
+    }
+
+    public function test_build_insert_plan_emits_detail_and_detaillt_as_separate_dl_groups()
+    {
+        // Both detail (NG) and detailLT (LT) rows land in t_production_op_dl
+        // but as TWO separate groups - matches the drain worker's two
+        // sequential insert_batch('t_production_op_dl', ...) calls.
+        // id_production is merged into every child row.
+        $norm = Sync_drain_helper::normalize_payload($this->sample_payload());
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+
+        $this->assertSame('t_production_op_dl', $plan[1]['table']);
+        $this->assertSame('t_production_op_dl', $plan[2]['table']);
+        $this->assertCount(2, $plan[1]['rows']);           // detail (NG) rows
+        $this->assertSame('Scratch', $plan[1]['rows'][0]['nama']);
+        $this->assertSame('Short',   $plan[1]['rows'][1]['nama']);
+        $this->assertCount(1, $plan[2]['rows']);           // detailLT (LT) rows
+        $this->assertSame('Setup',   $plan[2]['rows'][0]['nama']);
+        // id_production merged into every child row.
+        $this->assertSame('ID-1', $plan[1]['rows'][0]['id_production']);
+        $this->assertSame('ID-1', $plan[2]['rows'][0]['id_production']);
+    }
+
+    public function test_build_insert_plan_release_rows_get_id_production_and_runner_merged()
+    {
+        // Release rows are child rows but get runner merged too (matches
+        // the drain worker's $ress_extra).
+        $norm = Sync_drain_helper::normalize_payload($this->sample_payload());
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+
+        $release_group = $plan[3];
+        $this->assertSame('t_production_op_release', $release_group['table']);
+        $this->assertCount(1, $release_group['rows']);
+        $this->assertSame('ID-1', $release_group['rows'][0]['id_production']);
+        $this->assertSame('5',    $release_group['rows'][0]['runner']);
+        $this->assertSame('P001', $release_group['rows'][0]['id_product']);
+    }
+
+    public function test_build_insert_plan_cutting_tools_rows_are_flat_id_production_tool_id_pairs()
+    {
+        // The PWA payload's flat cutting_tools_ids list becomes one row per
+        // tool, each stamped with id_production.
+        $norm = Sync_drain_helper::normalize_payload($this->sample_payload());
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+
+        $ct_group = $plan[4];
+        $this->assertSame('t_production_op_cutting_tools_usage', $ct_group['table']);
+        $this->assertCount(2, $ct_group['rows']);
+        $this->assertSame(
+            array('id_production' => 'ID-1', 'cutting_tools_id' => 'CT-100'),
+            $ct_group['rows'][0]
+        );
+        $this->assertSame(
+            array('id_production' => 'ID-1', 'cutting_tools_id' => 'CT-200'),
+            $ct_group['rows'][1]
+        );
+    }
+
+    public function test_build_insert_plan_tolerates_missing_sections_with_empty_row_arrays()
+    {
+        // An operator may legitimately save with no NG / no LT / no release
+        // / no cutting tools (and, defensively, no users). The plan must
+        // still emit five groups with empty rows arrays - the controller
+        // skips empties via a !empty() check before insert_batch, and the
+        // stable shape keeps both call sites iteration-simple.
+        $minimal = array('id_production' => 'ID-1');
+        $norm = Sync_drain_helper::normalize_payload($minimal);
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+
+        $this->assertCount(5, $plan);
+        foreach ($plan as $group) {
+            $this->assertArrayHasKey('table', $group);
+            $this->assertArrayHasKey('rows', $group);
+            $this->assertSame(array(), $group['rows']);
+        }
+    }
+
+    public function test_build_insert_plan_uses_supplied_input_timestamp_verbatim()
+    {
+        // Both drain and approve must stamp ONE timestamp for the whole
+        // insert (not regenerate per call) so a re-insert after a crash
+        // doesn't smear tanggal_input. Caller supplies; build_insert_plan
+        // passes through.
+        $norm = Sync_drain_helper::normalize_payload($this->sample_payload());
+        $plan = Sync_drain_helper::build_insert_plan($norm, 'ID-1', '2026-07-20 10:00:00');
+        $this->assertSame('2026-07-20 10:00:00', $plan[0]['rows'][0]['tanggal_input']);
+    }
 }

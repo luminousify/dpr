@@ -79,6 +79,21 @@ class c_sync extends CI_Controller
         $this->load->model('m_operator', 'op');
         $this->load->library('dpr_batch_builder');
         $this->load->library('sync_drain_helper');
+
+        // Supervisor auth (Ticket 8): all admin-side actions
+        // (duplicate_review, approve_duplicate, reject_duplicate) require
+        // a logged-in supervisor session, same $_SESSION['user_name'] check
+        // that c_dpr applies via m_dpr::cek_login() (see c_dpr::__construct).
+        // queue_drain is exempt - it has its own local-invocation guard
+        // (is_locally_invoked: CLI or 127.0.0.1) so the Windows Task
+        // Scheduler's curl can hit it from localhost without a session.
+        $current_method = $this->router->fetch_method();
+        if ($current_method !== 'queue_drain') {
+            if (empty($_SESSION['user_name'])) {
+                redirect('login_control/index');
+                return;
+            }
+        }
     }
 
     /**
@@ -213,72 +228,18 @@ class c_sync extends CI_Controller
         //    orphans in the child tables. db_debug toggled off so a failed
         //    insert becomes a trans_status()=FALSE we can report, not a
         //    rendered error page that aborts the batch.
-        $saved_debug = $this->db->db_debug;
-        $this->db->db_debug = FALSE;
-        try {
-            $this->db->trans_start();
+        //
+        //    Row-building is delegated to the pure seam
+        //    Sync_drain_helper::build_insert_plan(); the transaction wrapper
+        //    lives in execute_insert_plan(). The Ticket 8 supervisor
+        //    approve action (approve_duplicate) feeds the same two helpers
+        //    so the drain and the approve path share ONE insert code path.
+        $input_ts = date('Y-m-d H:i:s');
+        $plan     = Sync_drain_helper::build_insert_plan($norm, $id_production, $input_ts);
+        $applied  = $this->execute_insert_plan($plan);
 
-            $input_ts = date('Y-m-d H:i:s');
-
-            $user_rows = Dpr_batch_builder::build_production_op_rows(
-                $norm['users'],
-                array(
-                    'tanggal_input' => $input_ts,
-                    'runner'        => $norm['runner'],
-                    'id_production' => $id_production,
-                )
-            );
-            if (!empty($user_rows)) {
-                $this->db->insert_batch('t_production_op', $user_rows);
-            }
-
-            $child_extra = array('id_production' => $id_production);
-
-            $detail_rows = Dpr_batch_builder::build_child_rows($norm['detail'], $child_extra);
-            if (!empty($detail_rows)) {
-                $this->db->insert_batch('t_production_op_dl', $detail_rows);
-            }
-
-            $detaillt_rows = Dpr_batch_builder::build_child_rows($norm['detailLT'], $child_extra);
-            if (!empty($detaillt_rows)) {
-                $this->db->insert_batch('t_production_op_dl', $detaillt_rows);
-            }
-
-            $ress_extra = array('id_production' => $id_production, 'runner' => $norm['runner']);
-            $ress_rows = Dpr_batch_builder::build_child_rows($norm['ress'], $ress_extra);
-            if (!empty($ress_rows)) {
-                $this->db->insert_batch('t_production_op_release', $ress_rows);
-            }
-
-            $ct_rows = Dpr_batch_builder::build_cutting_tools_rows(
-                $norm['cutting_tools_ids'],
-                $id_production
-            );
-            if (!empty($ct_rows)) {
-                $this->db->insert_batch('t_production_op_cutting_tools_usage', $ct_rows);
-            }
-
-            $this->db->trans_complete();
-            $trans_ok = $this->db->trans_status();
-        } catch (Exception $e) {
-            $this->db->trans_rollback();
-            $trans_ok = false;
-            $caught_msg = $e->getMessage();
-        } finally {
-            $this->db->db_debug = $saved_debug;
-        }
-
-        if (!$trans_ok) {
-            $msg = 'Insert transaction failed';
-            if (isset($caught_msg)) {
-                $msg .= ': ' . $caught_msg;
-            } else {
-                $dberr = $this->db->error();
-                if (!empty($dberr['message'])) {
-                    $msg .= ': ' . $dberr['message'];
-                }
-            }
-            return $this->error_outcome($msg);
+        if (!$applied['ok']) {
+            return $this->error_outcome($applied['error']);
         }
 
         // Clear the DB result cache so the new record shows up immediately
@@ -289,6 +250,261 @@ class c_sync extends CI_Controller
             'status'      => Sync_drain_helper::decide_status(false, $norm['confirm_duplicate']),
             'counter_key' => 'done',
         );
+    }
+
+    /**
+     * Apply an insert plan (from Sync_drain_helper::build_insert_plan) to
+     * the database inside a single transaction.
+     *
+     * Shared by:
+     *   - process_one() (drain worker, after the duplicate gate passes); and
+     *   - approve_duplicate() (Ticket 8 supervisor action, force-insert).
+     *
+     * The pure row-building lives in the helper; this method owns the impure
+     * half: transaction boundaries, insert_batch per group, db_debug toggle
+     * so a failed insert becomes trans_status()=FALSE we can report (not a
+     * rendered error page that aborts the batch), and error capture.
+     *
+     * Empty groups (operator saved with no NG rows etc.) are skipped - a
+     * CI3 insert_batch on an empty array generates a malformed query.
+     *
+     * @param array $plan Output of Sync_drain_helper::build_insert_plan().
+     * @return array ['ok' => bool, 'error' => string (when !ok)].
+     */
+    private function execute_insert_plan(array $plan)
+    {
+        $saved_debug = $this->db->db_debug;
+        $this->db->db_debug = FALSE;
+        $caught_msg = null;
+        $trans_ok   = true;
+        try {
+            $this->db->trans_start();
+
+            foreach ($plan as $group) {
+                if (empty($group['rows'])) {
+                    continue;
+                }
+                $this->db->insert_batch($group['table'], $group['rows']);
+            }
+
+            $this->db->trans_complete();
+            $trans_ok = $this->db->trans_status();
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+            $trans_ok   = false;
+            $caught_msg = $e->getMessage();
+        } finally {
+            $this->db->db_debug = $saved_debug;
+        }
+
+        if ($trans_ok) {
+            return array('ok' => true);
+        }
+
+        $msg = 'Insert transaction failed';
+        if ($caught_msg !== null) {
+            $msg .= ': ' . $caught_msg;
+        } else {
+            $dberr = $this->db->error();
+            if (!empty($dberr['message'])) {
+                $msg .= ': ' . $dberr['message'];
+            }
+        }
+        return array('ok' => false, 'error' => $msg);
+    }
+
+    // --------------------------------------------------------------------
+    // Ticket 8 / Phase 4.3: supervisor duplicate-review admin actions.
+    //
+    // All three enforce the supervisor `user_name` session check via the
+    // constructor (mirror of c_dpr::__construct -> m_dpr::cek_login).
+    // queue_drain is exempt because it has its own local-invocation guard.
+    // --------------------------------------------------------------------
+
+    /**
+     * Render the duplicate-review admin list.
+     *
+     * Pulls every queue row with status='duplicate_review' (newest first)
+     * and decodes each payload's first user row via the existing
+     * Sync_drain_helper::normalize_payload() seam so the view can show
+     * tanggal / mesin / shift / id_bom / operator / qty_ok without making
+     * the supervisor open raw JSON. The raw payload stays available for
+     * the "show full JSON" tooltip.
+     *
+     * URL: GET /dpr/c_sync/duplicate_review
+     *
+     * @return void Loads the 'online/duplicate_review' view.
+     */
+    public function duplicate_review()
+    {
+        $rows = $this->m_sync_queue->fetch_duplicate_review();
+
+        // Pre-decode a summary for each row so the view doesn't have to.
+        // Defensive: a malformed payload still shows up (with empty
+        // summary fields) so the supervisor can see something is wrong and
+        // reject it. normalize_payload already tolerates any garbage.
+        $decorated = array();
+        foreach ($rows as $row) {
+            $decoded = json_decode($row['payload'], true);
+            $norm    = Sync_drain_helper::normalize_payload(is_array($decoded) ? $decoded : array());
+
+            $u = ($norm['ok'] && !empty($norm['users'])) ? $norm['users'][0] : array();
+            $row['summary'] = array(
+                'tanggal'  => isset($u['tanggal'])  ? $u['tanggal']  : '',
+                'mesin'    => isset($u['mesin'])    ? $u['mesin']    : '',
+                'shift'    => isset($u['shift'])    ? $u['shift']    : '',
+                'id_bom'   => isset($u['id_bom'])   ? $u['id_bom']   : '',
+                'operator' => isset($u['operator']) ? $u['operator'] : '',
+                'qty_ok'   => isset($u['qty_ok'])   ? $u['qty_ok']   : '',
+                'qty_ng'   => isset($u['qty_ng'])   ? $u['qty_ng']   : '',
+            );
+            $decorated[] = $row;
+        }
+
+        // sidebar.php expects $data['user_name'] / $data['bagian'] for the
+        // user-info block + $aktif for nav active-state (mirror of
+        // c_dpr::__construct + c_dpr::dpr's view-data shape).
+        $this->load->view('online/duplicate_review', array(
+            'rows'  => $decorated,
+            'aktif' => 'sync_duplicate_review',
+            'data'  => array(
+                'user_name' => isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '',
+                'bagian'    => isset($_SESSION['bagian'])    ? $_SESSION['bagian']    : '',
+                'posisi'    => isset($_SESSION['posisi'])    ? $_SESSION['posisi']    : '',
+            ),
+        ));
+    }
+
+    /**
+     * Approve a flagged duplicate: force-insert the payload into the real
+     * production tables (skipping the duplicate gate) and mark the queue
+     * row 'done'.
+     *
+     * Shares the insert path with the drain worker:
+     *   normalize_payload -> build_insert_plan -> execute_insert_plan
+     * so a force-inserted row is byte-identical to a drain-inserted one.
+     * The id_production existence check still applies - if the row already
+     * landed (race with another approver, or a prior drain crashed mid-way
+     * and reran), the approve is a no-op success rather than a UNIQUE
+     * violation.
+     *
+     * URL: POST /dpr/c_sync/approve_duplicate/<id>
+     *
+     * Always redirects back to duplicate_review with a flash status so the
+     * supervisor's workflow is click-then-see-the-list-shrink.
+     *
+     * @param int $id  Queue row primary key.
+     * @return void
+     */
+    public function approve_duplicate($id = null)
+    {
+        // load_reviewable_row_or_redirect terminates the request (via
+        // redirect) on any guard failure, so the return is always a valid
+        // reviewable row when control reaches the next line.
+        $row = $this->load_reviewable_row_or_redirect($id);
+
+        $decoded = json_decode($row['payload'], true);
+        $norm    = Sync_drain_helper::normalize_payload(is_array($decoded) ? $decoded : array());
+        if (!$norm['ok']) {
+            $this->m_sync_queue->update_status((int) $id, 'error', 'Approve failed - invalid payload: ' . $norm['error']);
+            $this->flash_and_redirect('error', 'Payload invalid: ' . $norm['error']);
+        }
+
+        // Idempotency layer 2 (mirror of process_one): if id_production
+        // already lives in t_production_op, the row is in its desired end
+        // state. Mark 'done' and move on - do NOT re-insert.
+        if ($this->op->id_production_exists($norm['id_production'])) {
+            $this->m_sync_queue->update_status((int) $id, 'done');
+            $this->flash_and_redirect('success', 'Row already in production table - marked done.');
+        }
+
+        $input_ts = date('Y-m-d H:i:s');
+        $plan     = Sync_drain_helper::build_insert_plan($norm, $norm['id_production'], $input_ts);
+        $applied  = $this->execute_insert_plan($plan);
+        if (!$applied['ok']) {
+            $this->m_sync_queue->update_status((int) $id, 'error', 'Approve insert failed: ' . $applied['error']);
+            $this->flash_and_redirect('error', 'Insert failed: ' . $applied['error']);
+        }
+
+        $this->db->cache_delete_all();
+        $this->m_sync_queue->update_status((int) $id, 'done');
+        $this->flash_and_redirect(
+            'success',
+            'Approved and inserted: id_production=' . htmlspecialchars($norm['id_production'])
+        );
+    }
+
+    /**
+     * Reject a flagged duplicate: delete the queue entry (SPEC 4.3 + TICKETS
+     * T8 both say "reject (delete queue entry)"). The rejected payload's
+     * id_production was never written to t_production_op, so deleting the
+     * queue row leaves no child-table orphans.
+     *
+     * URL: POST /dpr/c_sync/reject_duplicate/<id>
+     *
+     * @param int $id  Queue row primary key.
+     * @return void
+     */
+    public function reject_duplicate($id = null)
+    {
+        $row = $this->load_reviewable_row_or_redirect($id);
+
+        $supervisor = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '(unknown)';
+        log_message('info', 'c_sync::reject_duplicate: queue id=' . (int) $id
+            . ' id_production=' . $row['id_production']
+            . ' rejected by supervisor ' . $supervisor);
+
+        $this->m_sync_queue->delete_by_id((int) $id);
+        $this->flash_and_redirect('success', 'Rejected and removed from queue.');
+    }
+
+    /**
+     * Load a queue row for supervisor action, or terminate the request with
+     * a flash-redirect if $id is invalid, the row is missing, or the row is
+     * no longer in the 'duplicate_review' state.
+     *
+     * On success returns the row array. On any failure: sets a flash error
+     * and calls flash_and_redirect() which calls redirect() which exits the
+     * request, so callers can chain without a null check:
+     *
+     *   $row = $this->load_reviewable_row_or_redirect($id);
+     *   // ... $row is always a valid reviewable row here
+     *
+     * @param mixed $id  Queue row primary key (coerced to int).
+     * @return array     The queue row (always non-null; failures exit).
+     */
+    private function load_reviewable_row_or_redirect($id)
+    {
+        $id = (int) $id;
+        if ($id <= 0) {
+            $this->flash_and_redirect('error', 'Invalid queue id.');
+        }
+        $row = $this->m_sync_queue->get_by_id($id);
+        if ($row === null) {
+            $this->flash_and_redirect('error', 'Queue row not found (another supervisor may have already actioned it).');
+        }
+        if ($row['status'] !== 'duplicate_review') {
+            $this->flash_and_redirect('error', 'Row is no longer awaiting review (status: ' . htmlspecialchars($row['status']) . ').');
+        }
+        return $row;
+    }
+
+    /**
+     * Set a one-shot flash message and redirect back to the
+     * duplicate_review list. Wraps the boilerplate both approve and
+     * reject share so their happy/error paths read as one line each.
+     *
+     * NOTE: CI3's redirect() always calls exit, so this method never
+     * returns - callers should treat any line after a call here as
+     * unreachable (load_reviewable_row_or_redirect relies on that).
+     *
+     * @param string $type  'success' or 'error' (controls bootstrap alert class).
+     * @param string $msg   Message to display on the list page.
+     */
+    private function flash_and_redirect($type, $msg)
+    {
+        $this->session->set_flashdata($type, $msg);
+        redirect('c_sync/duplicate_review');
     }
 
     /**
