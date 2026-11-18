@@ -860,30 +860,37 @@ class m_dpr extends CI_Model
       $this->session->set_flashdata('gagal', 'Gagal menambahkan, data yang anda input sudah ada!');
       redirect('c_dpr/add_dpr');
     } else {
-      foreach ($_POST['user'] as $user) {
-        $this->db->set('lot_global', $this->input->post("lot_global"));
-        $this->db->set('tanggal_input', $input);
-        $this->db->set('runner', $this->input->post("runner"));
-        $this->db->set('id_production', $id_production);
-        $this->db->insert('t_production_op', $user);
+      $this->load->library('dpr_batch_builder');
+
+      $user_rows = Dpr_batch_builder::build_production_op_rows($_POST['user'] ?? array(), array(
+        'lot_global'    => $this->input->post('lot_global'),
+        'tanggal_input' => $input,
+        'runner'        => $this->input->post('runner'),
+        'id_production' => $id_production,
+      ));
+      if (! empty($user_rows)) {
+        $this->db->insert_batch('t_production_op', $user_rows);
       }
 
       $details = isset($_POST['detail']) && is_array($_POST['detail']) ? $_POST['detail'] : array();
-      foreach ($details as $detail) {
-        $this->db->set('id_production', $id_production);
-        $this->db->insert('t_production_op_dl', $detail);
+      $detail_rows = Dpr_batch_builder::build_child_rows($details, array('id_production' => $id_production));
+      if (! empty($detail_rows)) {
+        $this->db->insert_batch('t_production_op_dl', $detail_rows);
       }
 
       $detailsLT = isset($_POST['detailLT']) && is_array($_POST['detailLT']) ? $_POST['detailLT'] : array();
-      foreach ($detailsLT as $detailLT) {
-        $this->db->set('id_production', $id_production);
-        $this->db->insert('t_production_op_dl', $detailLT);
+      $detaillt_rows = Dpr_batch_builder::build_child_rows($detailsLT, array('id_production' => $id_production));
+      if (! empty($detaillt_rows)) {
+        $this->db->insert_batch('t_production_op_dl', $detaillt_rows);
       }
 
-      foreach ($_POST['ress'] as $ress) {
-        $this->db->set('runner', $this->input->post("runner"));
-        $this->db->set('id_production', $id_production);
-        $this->db->insert('t_production_op_release', $ress);
+      $ress_list = isset($_POST['ress']) && is_array($_POST['ress']) ? $_POST['ress'] : array();
+      $ress_rows = Dpr_batch_builder::build_child_rows($ress_list, array(
+        'runner'        => $this->input->post('runner'),
+        'id_production' => $id_production,
+      ));
+      if (! empty($ress_rows)) {
+        $this->db->insert_batch('t_production_op_release', $ress_rows);
       }
     }
   }
@@ -994,17 +1001,14 @@ SUM(qq.target_dpr) AS target_dpr
 
   // Sync cutting tool usages for a production record
   public function sync_cutting_tools_by_production($id_production, $cutting_tools) {
+    $this->load->library('dpr_batch_builder');
     // Remove all existing usages first
     $this->db->where('id_production', $id_production);
     $this->db->delete('t_production_op_cutting_tools_usage');
     // Insert new usages if any
-    if (!empty($cutting_tools) && is_array($cutting_tools)) {
-      foreach ($cutting_tools as $tool_id) {
-        $this->db->insert('t_production_op_cutting_tools_usage', [
-          'id_production' => $id_production,
-          'cutting_tools_id' => $tool_id
-        ]);
-      }
+    $tool_rows = Dpr_batch_builder::build_cutting_tools_rows(is_array($cutting_tools) ? $cutting_tools : array(), $id_production);
+    if (! empty($tool_rows)) {
+      $this->db->insert_batch('t_production_op_cutting_tools_usage', $tool_rows);
     }
   }
   
