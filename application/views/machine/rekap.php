@@ -1,5 +1,5 @@
             <div id="container2"></div>
-            <table class="table table-striped table-bordered table-hover dataTables-example" id="datatable1" style="width: 100%">
+            <table class="table table-striped table-bordered table-hover dataTables-example-rekap" id="datatableRekap" style="width: 100%">
                             <thead>
                                 <tr>
                                     <th>Tanggal</th>

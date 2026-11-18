@@ -369,8 +369,19 @@ class PHPExcel_Writer_Excel5 extends PHPExcel_Writer_Abstract implements PHPExce
                     $spContainer->setOPT(0x03BF, 0x000A0000); // Group Shape -> fPrint
 
                     // set coordinates and offsets, client anchor
-                    $endCoordinates = PHPExcel_Cell::stringFromColumnIndex(PHPExcel_Cell::stringFromColumnIndex($iInc - 1));
-                    $endCoordinates .= $rangeBounds[0][1] + 1;
+                    // Same column as $cDrawing, one row below (was: double stringFromColumnIndex — inner returns
+                    // letters A/B/… so outer call triggered "A non-numeric value encountered" in Cell.php).
+                    $colLetters = PHPExcel_Cell::stringFromColumnIndex($iInc - 1);
+                    if (defined('PHPExcel_DEBUG_AUTOFILTER_ANCHOR') && PHPExcel_DEBUG_AUTOFILTER_ANCHOR) {
+                        error_log(sprintf(
+                            '[PHPExcel Excel5] AutoFilter anchor iInc=%s colLetters=%s rowStart=%s rowEnd=%s',
+                            var_export($iInc, true),
+                            $colLetters,
+                            var_export($rangeBounds[0][1], true),
+                            var_export($rangeBounds[0][1] + 1, true)
+                        ));
+                    }
+                    $endCoordinates = $colLetters . ($rangeBounds[0][1] + 1);
 
                     $spContainer->setStartCoordinates($cDrawing);
                     $spContainer->setStartOffsetX(0);

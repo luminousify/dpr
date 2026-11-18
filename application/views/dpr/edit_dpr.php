@@ -9,15 +9,8 @@
 <link rel="stylesheet" href="<?php echo base_url().'assets/css/bootstrap-icons.css'?>">
 <script src="<?php echo base_url().'assets/js/jquery-3.3.1.js'?>" type="text/javascript"> 
 </script> 
-<!-- Popper.js must be loaded before Bootstrap and inspinia.js -->
-<script src="<?= base_url(); ?>template/js/popper.min.js"></script>
 <script src="<?php echo base_url().'assets/js/bootstrap.js'?>" type="text/javascript"></script>
 <script src="<?php echo base_url().'assets/js/jquery-ui.js'?>" type="text/javascript"></script>
-
-<!-- Essential sidebar JavaScript files -->
-<script src="<?= base_url(); ?>template/js/plugins/metisMenu/jquery.metisMenu.js"></script>
-<script src="<?= base_url(); ?>template/js/inspinia.js"></script>
-<script src="<?= base_url(); ?>template/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
 
 <style>
     th, td { white-space: nowrap; } 
@@ -28,6 +21,16 @@
         margin: 0 auto;
     }
     tr {background-color: white} 
+    input[readonly] {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+        border-color: #ced4da;
+    }
+    input[readonly]:focus {
+        background-color: #f8f9fa;
+        box-shadow: none;
+        border-color: #ced4da;
+    }
 }
 </style>
 <?php foreach($data_production->result() as $data) { ?> 
@@ -87,7 +90,7 @@
                                 <div class="col">
                                  <div class="form-group">
                                                 <label><b>NWT <font style="color: red">*</font></b></label>
-                                              <input type="text" name="user[0][nwt_mp]" id="nwt" class="form-control" required="" value="<?= $data->nwt_mp; ?>" pattern="[0-9]+(\.[0-9]+)?" title="Please enter a valid number (e.g., 8 or 8.5). Comma is not allowed." oninput="this.value = this.value.replace(/,/g, '')">
+                                              <input type="text" name="user[0][nwt_mp]" id="nwt" class="form-control" required="" value="<?= $data->nwt_mp; ?>">
                                         </div>
                                 </div>
                                 <div class="col">
@@ -108,27 +111,17 @@
                                 <div class="col">
                                  <div class="form-group">
                                                 <label><b>Kanit <font style="color: red">*</font></b></label>
-                                                <?php
-                                                  // Force re-select if the saved kanit is no longer in the canonical list (t_operator/jabatan='kanit')
-                                                  $kanit_found = false;
-                                                  if (!empty($data->kanit) && !empty($kanit) && is_array($kanit)) {
-                                                    foreach ($kanit as $k_check) {
-                                                      $name = isset($k_check['nama_operator']) ? $k_check['nama_operator'] : null;
-                                                      if ($name !== null && $data->kanit === $name) { $kanit_found = true; break; }
-                                                    }
-                                                  }
-                                                  $kanit_current = ($kanit_found ? $data->kanit : '');
-                                                ?>
-                                                <?php if (!empty($data->kanit) && !$kanit_found): ?>
-                                                  <div class="alert alert-warning" style="margin-bottom: 0.5rem;">
-                                                    Kanit tersimpan <b><?= htmlspecialchars($data->kanit, ENT_QUOTES, 'UTF-8') ?></b> tidak ada di daftar Kanit aktif. Silakan pilih ulang.
-                                                  </div>
-                                                <?php endif; ?>
                                                <select name="user[0][kanit]" class="form-control" id="kanit" required=""  >
                                                   <option value="">-Choose-</option>
-                                                  <?php foreach($kanit as $k): ?>
-                                                    <option <?php if($kanit_current == $k['nama_operator']){echo "selected";} ?> value='<?= $k['nama_operator'] ?>'><?= $k['nama_operator'] ?></option>
-                                                  <?php endforeach; ?>
+                                                  <option <?php if( $data->kanit =='ABDUL BASIR B W'){echo "selected"; } ?> value='ABDUL BASIR B W'>ABDUL BASIR B W</option>
+                                                  <option <?php if( $data->kanit =='AGUS MARTANTO'){echo "selected"; } ?> value='AGUS MARTANTO'>AGUS MARTANTO</option>
+                                                  <option <?php if( $data->kanit =='AGUS SALIM'){echo "selected"; } ?> value='AGUS SALIM'>AGUS SALIM</option>
+                                                  <option <?php if( $data->kanit =='ALBERTO HUTABARAT'){echo "selected"; } ?> value='ALBERTO HUTABARAT'>ALBERTO HUTABARAT</option>
+                                                  <option <?php if( $data->kanit =='ASROFI'){echo "selected"; } ?> value='ASROFI'>ASROFI</option>
+                                                  <option <?php if( $data->kanit =='MARIDIN'){echo "selected"; } ?> value='MARIDIN'>MARIDIN</option>
+                                                  <option <?php if( $data->kanit =='MITUHU'){echo "selected"; } ?> value='MITUHU'>MITUHU</option>
+                                                  <option <?php if( $data->kanit =='RIDWAN EFENDI'){echo "selected"; } ?> value='RIDWAN EFENDI'>RIDWAN EFENDI</option>
+                                                  <option <?php if( $data->kanit =='SUKIRMAN'){echo "selected"; } ?> value='SUKIRMAN'>SUKIRMAN</option>
                                                </select>
                                         </div>
                                 </div>
@@ -189,14 +182,12 @@
                                     <div class="form-group">
                                               <label><b>Cavity Actual</b></label>
                                                <input type="text" name="user[0][cavity]" id="cavity" class="form-control" value="<?= $data->cavity;?>">
-                                      </select>
                                         </div>
                                 </div>
                                 <div class="col">
                                     <div class="form-group">
                                               <label><b>Cavity Std</b></label>
-                                               <input type="text" name="user[0][cavity2]" id="cavity2" class="form-control" value="<?= $data->cavity2;?>" >
-                                      </select>
+                                               <input type="text" name="user[0][cavity2]" id="cavity2" class="form-control" value="<?= $data->cavity2;?>" readonly>
                                         </div>
                                 </div>
                                 <div class="col">
@@ -427,7 +418,7 @@
                               <div class="col">
                                  <div class="form-group">
                                                 <div class="input-group">
-                                               <input type="number" name="" id="qtyLT" class="form-control formLT"  aria-describedby="inputGroupPrepend2" step="0.01" placeholder="0.5">
+                                               <input type="number" name="" id="qtyLT" class="form-control formLT"  aria-describedby="inputGroupPrepend2" >
                                                <div class="input-group-prepend">
                                           <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
                                          </div>
@@ -439,7 +430,7 @@
                                         </div>
                                 </div>
                                 <div class="col">
-                                    <button type="button" class="btn btn-success" onclick="addLT(); return false;">( + )</button>
+                                    <button class="btn btn-success" class="form-control" onclick="addLT(); return false;">( + )</button>
                                     <!--<button class="btn btn-primary" id="tambahLT">Add</button>-->
                                 </div>
                                 <div class="col-sm-12">
@@ -467,24 +458,23 @@
                                                     <td><?= $no; ?></td>
                                                     <td><?= $lt->nama; ?></td>
                                                     <td><?= $lt->kategori; ?></td>
-                                                    <td><?= round($lt->qty / 60, 2); ?> <input type="hidden" value="<?= $lt->qty; ?>" class="nilai"></td>
-                                                    <td>Jam</td>
+                                                    <td><?= $lt->qty; ?> <input type="hidden" value="<?= $lt->qty; ?>" class="nilai"></td>
+                                                    <td><?= $lt->satuan; ?></td>
                                                 </tr>
                                             <?php } ?>
                                         </tbody>
                                     </table>
                                 </div>
                                 <div class="form-group">
-                                    <div class="input-group">
-                                               <div class="input-group-prepend">
+                                              <div class="input-group">
+                                                <div class="input-group-prepend">
                                           <span class="input-group-text" id="inputGroupPrepend2">Total LT</span>
                                          </div>
-                                               <input type="text" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" value="<?= round($data->qty_lt / 60, 2); ?>">
+                                               <input type="text" name="user[0][qty_lt]" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" >
                                                <div class="input-group-prepend">
                                           <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
                                          </div>
                                                 </div>
-                                                <input type="hidden" name="user[0][qty_lt]" id="qty_lt_minutes" value="<?= $data->qty_lt; ?>">
                                                 <input type="text" name="" id="cal_dt"  class="form-control" value="0" readonly>
                                         </div>
                                 </div>
@@ -661,7 +651,7 @@
 
                     var nwt = $('#nwt_mp').val();
                     var ot = $('#ot_mp').val();
-                    var target = (((parseFloat(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
+                    var target = (((parseInt(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
                     //var target = (nwt + ot)
                     $('#Target').val(parseInt(target));
 
@@ -724,7 +714,7 @@
         var cavity = $('#cavity').val();
         var nwt = $('#nwt').val();
         var ot = $('#ot_mp').val();
-        let nwt_plus_ot = parseFloat(nwt) + parseInt(ot);
+        let nwt_plus_ot = parseInt(nwt) + parseInt(ot);
         // alert(nwt_plus_ot);
         var hasil = ((3600/ct_aktual)*(cavity*nwt_plus_ot));
         $('#target_mc').val(hasil.toFixed(2));
@@ -850,112 +840,116 @@
 
     function GrossNett()
     {
-        // Helper function for safe division
-        function safeDivision(numerator, denominator) {
-            if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
-                return 0;
-            }
-            return numerator / denominator;
-        }
-
-        // Helper function to get numeric value safely
-        function getNumericValue(selector) {
-            var value = $(selector).val();
-            if (value === undefined || value === null || value === '') {
-                return 0;
-            }
-            var parsed = parseFloat(value);
-            return Number.isNaN(parsed) ? 0 : parsed;
-        }
-
-        var qty = getNumericValue('#qty');
-        var ct_std = getNumericValue('#ct_mc');
-        var cavity = getNumericValue('#cavity');
-        var cavity2 = getNumericValue('#cavity2');
-        var defect = getNumericValue('#amountNG');
+        var qty = parseFloat($('#qty').val());
+        var ct_aktual = $('#ct_mc_aktual').val();
+        var cavity = $('#cavity').val();
+        var cavity2 = $('#cavity2').val();
+        var defect = parseFloat($('#amountNG').val());
         var kalkulasi = qty + defect;
-        
-        // Set minimum values for cavities to prevent division by zero
-        if (cavity <= 0) cavity = 1;
-        if (cavity2 <= 0) cavity2 = cavity;
+        var hasil_time = (kalkulasi / cavity)*(ct_aktual/3600);
 
-        // Validate required inputs for calculation
-        if (qty <= 0 || kalkulasi <= 0 || ct_std <= 0 || cavity <= 0 || cavity2 <= 0) {
-            $('#production_time').val('0');
-            $('#gross_produksi').val('0.00');
-            $('#nett_produksi').val('0.00');
-            $('#cal_dt').val('0');
-            return;
-        }
-
-        // Calculate production time safely
-        var hasil_time = safeDivision(kalkulasi, cavity) * safeDivision(ct_std, 3600);
-        var hasil = Number.isFinite(hasil_time) ? hasil_time.toFixed(1) : '0';
-        $('#production_time').val(hasil);
-
-        // Handle loss time - zero loss time is valid
-        var LT = getNumericValue('#amountLT');
-        var calcDT = safeDivision(getNumericValue('#amountIdle'), 60);
-
-        var nwt = getNumericValue('#nwt');
-        var ot = getNumericValue('#ot_mp');
-        var nwt_new = nwt + ot;
-
-        var calDT_new = nwt_new - parseFloat(hasil);
-        var calDT_new_lagi = calDT_new - LT;
-        
-        // Set cal_dt with validation
-        if (calDT_new_lagi < 0 || !Number.isFinite(calDT_new_lagi)) {
-            $('#cal_dt').val('0');
-        } else {
-            $('#cal_dt').val(calDT_new_lagi.toFixed(1));
-        }
-
-        // Calculate gross production using the same logic as input_dpr.js for consistency
-        var workHour = parseFloat(hasil) + LT - ot;
-        var overtime = ot;
-        var totalStopTime = LT;
-        var availableHours = Math.max(workHour + overtime, 0);
-        var effectiveHours = Math.max(workHour + overtime - totalStopTime, 0);
-        var denominator = safeDivision(qty, cavity2);
-
-        var grossProduction = 0;
-        if (availableHours > 0 && denominator > 0) {
-            grossProduction = safeDivision(3600, safeDivision(denominator, availableHours));
-        }
-
-        var nettProduction = 0;
-        if (effectiveHours > 0 && denominator > 0) {
-            nettProduction = safeDivision(3600, safeDivision(denominator, effectiveHours));
-        }
-
-        // Ensure final values are finite and non-negative
-        if (!Number.isFinite(grossProduction) || grossProduction < 0) {
-            grossProduction = 0;
-        }
-        if (!Number.isFinite(nettProduction) || nettProduction < 0) {
-            nettProduction = 0;
-        }
-
-        // Apply custom rounding and set values
-        $('#gross_produksi').val(customRound(grossProduction).toFixed(2));
-        $('#nett_produksi').val(customRound(nettProduction).toFixed(2));
-
-        // Debug information (kept for troubleshooting)
         console.log("cavity1: " + cavity);
         console.log("cavity2: " + cavity2);
-        console.log("debug WorkHour: " + workHour);
+        //6000 / 11 = 545
+        //17 / 3600 = 0.0047 
+        //2.6
+
+
+
+        //var hasil_time = (kalkulasi / cavity * ct_aktual);
+        var hasil = hasil_time.toFixed(1);
+        $('#production_time').val(hasil);
+        //$('#nett_produksi').val(hasil);
+        var LT = $('#amountLT').val();
+        var LT_new = $('#amountLT').val()/60;
+        var calcDT = $('#amountIdle').val()/60;
+
+        var nwt = $('#nwt').val();
+        var ot = $('#ot_mp').val();
+        var nwt_new = parseInt(nwt) + parseInt(ot);
+
+        var calDT_new = nwt_new - hasil;
+        var calDT_new_lagi = calDT_new - LT;
+        //var cek = nwt - calDT_new;
+        var raw_nilaiGross = 3600*(nwt_new-calDT_new_lagi)/qty*cavity;
+        var raw_nilaiGross_2 = 3600*nwt_new/qty*cavity2;
+        var nilaiGross = Math.round(raw_nilaiGross);
+        var nilaiGross_2 = Math.round(raw_nilaiGross_2);
+        if(calDT_new_lagi < 0){
+          $('#cal_dt').val(0);
+        }
+        else{
+          $('#cal_dt').val(calDT_new_lagi.toFixed(1));
+        }
+        // $('#cal_dt').val(calDT_new_lagi.toFixed(1));
+
+        if(nwt_new == 8){
+          if(hasil > 8){
+            $('#gross_produksi').val(nilaiGross_2.toFixed(2));
+          } 
+          else
+          {
+            $('#gross_produksi').val(nilaiGross.toFixed(2));
+          }
+        }
+        else{
+          if (hasil > 5) {
+            $('#gross_produksi').val(nilaiGross_2.toFixed(2));
+          }
+          else
+          {
+            $('#gross_produksi').val(nilaiGross.toFixed(2));
+          }
+        }
+        // $('#cal_dt').val(calDT_new_lagi.toFixed(1));
+        // $('#gross_produksi').val(nilaiGross.toFixed(2));
+
+        //Nett
+        if(defect != 0){
+			var nilaiNett = nilaiGross;
+		}
+		else{
+			var nilaiNett = Math.round((hasil * 3600 / kalkulasi )* cavity2);
+		}
+        // var nilaiNett = (hasil * 3600 / kalkulasi )* cavity2;
+        $('#nett_produksi').val(nilaiNett.toFixed(2));
+        //alert(calDT_new);
+        if(LT == 0 ){LT = 0}
+        var WorkHour = (parseFloat(hasil) + parseFloat(LT)) - parseFloat(ot)
+        var Overtime = ot
+        var TotStopTime = LT
+        var OK = qty
+        var ProductCavity = cavity2
+        let grossProduction = 0;
+if ((WorkHour + Overtime - TotStopTime) !== 0) {
+    grossProduction = 3600 / ((parseFloat(OK) / parseFloat(ProductCavity)) / (parseFloat(WorkHour) + parseFloat(Overtime)));
+}
+
+let NProd = 0;
+if (WorkHour + Overtime - TotStopTime !== 0) {
+    NProd = 3600 / ((parseFloat(OK) / ProductCavity) / (parseFloat(WorkHour) + parseFloat(Overtime) - parseFloat(TotStopTime)));
+}
+
+var nilaiGross = customRound(raw_nilaiGross);
+
+$('#nett_produksi').val(customRound(NProd).toFixed(2));
+$('#gross_produksi').val(customRound(grossProduction).toFixed(2));
+
+
+        console.log("debug : "+ WorkHour, Overtime, TotStopTime, OK, ProductCavity);
+        console.log("debug WorkHour: " + WorkHour);
         console.log("debug hasil: " + hasil);
         console.log("debug LT: " + LT);
-        console.log("debug Kalkulasi: " + kalkulasi);
-        console.log("debug cavity: " + cavity);
-        console.log("debug ct_aktual: " + ct_aktual);
-        console.log("debug Overtime: " + overtime);
-        console.log("debug TotStopTime: " + totalStopTime);
-        console.log("debug OK: " + qty);
-        console.log("debug ProductCavity: " + cavity2);
-        console.log("result gross: " + grossProduction);
-        console.log("result nett: " + nettProduction);
+        // (kalkulasi / cavity)*(ct_aktual/3600)
+        console.log("debug Kalkulasi : "+kalkulasi)
+        console.log("debug cavity : "+cavity)
+        console.log("debug ct_aktual : "+ct_aktual)
+        console.log("debug Overtime: " + Overtime);
+        console.log("debug TotStopTime: " + TotStopTime);
+        console.log("debug OK: " + OK);
+        console.log("debug ProductCavity: " + ProductCavity);
+        console.log("result gross: "+grossProduction)
+        console.log("result nett: "+NProd)
     }
 
     function customRound(value) {
@@ -975,67 +969,6 @@
             document.getElementById("loading").style.color = "red"; 
             return true;
         });
-    });
-
-    // Auto-select Group based on Kanit selection (and lock it)
-    // Keep logic consistent with add_dpr.php (normalize + contains), so trailing spaces / full names work.
-    function getGroupFromKanit(kanit) {
-        var raw = (kanit || '').toString().trim();
-        if (!raw) return '';
-
-        // normalize: lowercase + remove non-letters to make matching resilient (spaces, dots, etc.)
-        var norm = raw.toLowerCase().replace(/[^a-z]/g, '');
-
-        // Seniors
-        if (norm.indexOf('matsohe') !== -1) return 'A';
-        if (norm.indexOf('marjoko') !== -1) return 'B';
-        if (norm.indexOf('suroto') !== -1) return 'C';
-
-        // Juniors
-        if (norm.indexOf('rinaldi') !== -1) return 'A';
-        if (norm.indexOf('alan') !== -1) return 'B';
-        if (norm.indexOf('ramadhan') !== -1) return 'C';
-
-        return '';
-    }
-
-    function bindAutoGroupByKanit() {
-        var $kanit = $('#kanit');
-        var $group = $('#group');
-        if (!$kanit.length || !$group.length) return;
-
-        function apply() {
-            var g = getGroupFromKanit($kanit.val());
-            var hiddenSelector = 'input[type="hidden"][name="user[0][group]"][data-auto-group="1"]';
-            var $hidden = $(hiddenSelector);
-
-            if (g) {
-                $group.val(g).trigger('change');
-                $group.prop('disabled', true);
-
-                if (!$hidden.length) {
-                    $('<input>', { type: 'hidden', name: 'user[0][group]', value: g })
-                        .attr('data-auto-group', '1')
-                        .insertAfter($group);
-                } else {
-                    $hidden.val(g);
-                }
-
-                if (window.DPR_DEBUG) {
-                    console.log('[DPR] auto group by kanit', { kanit: $kanit.val(), group: g });
-                }
-            } else {
-                $group.prop('disabled', false);
-                $hidden.remove();
-            }
-        }
-
-        $kanit.on('change', apply);
-        apply();
-    }
-
-    $(document).ready(function() {
-        bindAutoGroupByKanit();
     });
 </script>
 
@@ -1140,13 +1073,12 @@
         var kategori = $('#kategoriLT').val();
         var type     = $('#typeLT').val();
         var satuan   = $('#satuanLT').val();
-        var qty_hours = parseFloat($('#qtyLT').val()); // User inputs hours
-        var qty      = qty_hours * 60; // Convert to minutes for storage
+        var qty      = $('#qtyLT').val();
         var markup = "<tr><td><input type='button' value='X'></td><td>"+svLT+"</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][nama]' value='"+nama+"''>"+nama+"</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][kategori]' value='"+kategori+"'>"+kategori+"</td>"+
-        "<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+"</td>"+
-        "<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">Jam<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
+        "<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty+"</td>"+
+        "<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
         "</tr>";
         $("#tableLT").append(markup);
         
@@ -1209,18 +1141,14 @@ $(document).ready(function(){
 
             function totalLT()
             {
-                var sumMinutes = 0;
+                var sum = 0;
                 $('#tableLT > tr').each(function() {
+                      var nilai  = $('.nilai').val()
                     var price = parseFloat($(this).find('.nilai').val());
-                    if (!isNaN(price) && price > 0) {
-                        sumMinutes += price;
-                    }
+                    sum += price;
+                    $('#amountLT').val(sum);
                 });
-
-                var sumHours = sumMinutes / 60;
-                $('#amountLT').val(isFinite(sumHours) ? sumHours.toFixed(2) : '0.00');
-                $('#qty_lt_minutes').val(isFinite(sumMinutes) ? sumMinutes : 0);
-            }
+            } 
 
             function totalStartStop(qty)
             {
@@ -1233,6 +1161,7 @@ $(document).ready(function(){
 </script>
     </form>
 
+<?php $this->load->view('layout/footer'); ?>
   </body>
 </html>
 

@@ -34,56 +34,48 @@
                 </div>
                 <div class="ibox-content">
                     <div class="table-responsive">
-                        <?php echo form_open('c_new/' . $action . '/t_' . $identifikasi . '_mesin/master_mesin'); ?>
+                        <?php
+                        $form_table = ($action == 'Edit') ? $table : 't_' . $identifikasi . '_mesin';
+                        echo form_open('c_new/' . $action . '/' . $form_table . '/master_mesin');
+                        ?>
                         <!-- ke function add / nama_table / redirect kemana -->
                         <table class="table table-bordered stripe row-border order-column" rules="all" style="background:#fff;" id="customFields" style="width: 100%">
                             <tr style="background:#1ab394;color: white;text-align: center;">
-                                <td><?= $identifikasi; ?> mesin</td>
+                                <td><?= ($action == 'Edit') ? 'No' : $identifikasi; ?> mesin</td>
                                 <td>Tonnase</td>
                                 <td>Aktif</td>
                                 <td>Divisi</td>
                                 <td>Nama Mesin</td>
                                 <td><?= $action == "Add" ? '<span class="btn btn-warning" onclick="addMoreRows(this.form);"><i class="fa fa-plus-square-o"></i></span>' : ''; ?></td>
                             </tr>
-                            <?php if($action == 'Edit' && isset($data_tabel) && $data_tabel && $data_tabel->num_rows() > 0) {
-                                foreach($data_tabel->result() as $data): ?>
+                            <?php if ($action == 'Edit'): ?>
+                                <?php foreach ($data_tabel->result() as $row): ?>
                                 <tr>
-                                    <td><input type="text" name="user[0][<?= $identifikasi; ?>_mesin]" value="<?= isset($data->no_mesin) ? htmlspecialchars($data->no_mesin) : ''; ?>" class="form-control">
-                                        <input type="hidden" name="id" value="<?= isset($data->id_no_mesin) ? $data->id_no_mesin : ''; ?>">
+                                    <td>
+                                        <input type="text" name="user[0][no_mesin]" value="<?= $row->no_mesin; ?>" class="form-control">
+                                        <input type="hidden" name="id" value="<?= $row->id_no_mesin; ?>">
                                         <input type="hidden" name="where" value="id_no_mesin">
                                     </td>
-                                    <td><input type="text" name="user[0][tonnase]" value="<?= isset($data->tonnase) ? htmlspecialchars($data->tonnase) : ''; ?>" class="form-control"></td>
-                                    <td><select class="form-control" name="user[0][aktif]">
-                                        <option value="1" <?= (isset($data->aktif) && $data->aktif == 1) ? 'selected' : ''; ?>>Aktif</option>
-                                        <option value="0" <?= (isset($data->aktif) && $data->aktif == 0) ? 'selected' : ''; ?>>Tidak Aktif</option>
-                                    </select></td>
-                                    <td><input type="text" name="user[0][divisi]" value="<?= isset($data->divisi) ? htmlspecialchars($data->divisi) : ''; ?>" class="form-control" readonly></td>
+                                    <td><input type="text" name="user[0][tonnase]" value="<?= $row->tonnase; ?>" class="form-control"></td>
+                                    <td>
+                                        <select class="form-control" name="user[0][aktif]">
+                                            <option value="1" <?= $row->aktif == 1 ? 'selected' : ''; ?>>Aktif</option>
+                                            <option value="0" <?= $row->aktif == 0 ? 'selected' : ''; ?>>Tidak Aktif</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="user[0][divisi]" value="<?= $row->divisi; ?>" class="form-control" readonly></td>
                                     <td>
                                         <select class="form-control" name="user[0][id_nama_mesin]">
                                             <option value="">-- Select Machine Name --</option>
-                                            <?php if(isset($machine_names) && is_array($machine_names)) {
-                                                foreach($machine_names as $machine): 
-                                                    $machine_id = is_array($machine) ? $machine['id_nama_mesin'] : $machine->id_nama_mesin;
-                                                    $machine_name = is_array($machine) ? $machine['nama_mesin'] : $machine->nama_mesin;
-                                                    $selected = (isset($data->id_nama_mesin) && $data->id_nama_mesin == $machine_id) ? 'selected' : '';
-                                            ?>
-                                                <option value="<?= $machine_id; ?>" <?= $selected; ?>>
-                                                    <?= htmlspecialchars($machine_name); ?>
-                                                </option>
-                                            <?php endforeach; 
-                                            } ?>
+                                            <?php foreach ($machine_names as $mn): ?>
+                                                <option value="<?= $mn['id_nama_mesin']; ?>" <?= $row->id_nama_mesin == $mn['id_nama_mesin'] ? 'selected' : ''; ?>><?= $mn['nama_mesin']; ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </td>
                                     <td></td>
                                 </tr>
-                            <?php endforeach;
-                            } else if($action == 'Edit') {
-                                // Show message if no data found in Edit mode
-                                echo '<tr><td colspan="6" style="text-align: center; padding: 20px;">';
-                                echo '<strong>No data found for this record.</strong><br>';
-                                echo 'Record ID: ' . (isset($id) ? htmlspecialchars($id) : 'N/A');
-                                echo '</td></tr>';
-                            } ?>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </table>
 
                         <input type="submit" name="simpan" value="<?= $action; ?>" class="btn btn-success">

@@ -30,112 +30,10 @@ class m_new extends CI_Model
 
         function add_action($table)
         {
-                log_message('debug', 'add_action called for table: ' . $table);
-                log_message('debug', '_POST user data: ' . print_r($_POST['user'], true));
-                
-                if (!isset($_POST['user']) || empty($_POST['user'])) {
-                        log_message('error', 'No user data in _POST');
-                        throw new Exception('Data user tidak ditemukan');
+                foreach ($_POST['user'] as $user) {
+                        $user = $this->_sanitize_row($user, $table);
+                        $this->db->insert($table, $user);
                 }
-                
-                // Determine required field based on table
-                $required_field = null;
-                $required_field_label = '';
-                if ($table === 't_operator') {
-                        $required_field = 'nama_operator';
-                        $required_field_label = 'Nama Operator';
-                } elseif ($table === 't_product') {
-                        // For products, check if either nama_product or kode_product is filled
-                        $required_field = 'nama_product';
-                        $required_field_label = 'Nama Product atau Kode Product';
-                }
-                
-                $inserted_count = 0;
-                $errors = array();
-                
-                foreach ($_POST['user'] as $index => $user) {
-                        log_message('debug', 'Processing user index ' . $index . ': ' . print_r($user, true));
-                        
-                        // Validate required field based on table
-                        $is_valid = false;
-                        if ($table === 't_operator') {
-                                // For operator table, nama_operator is required
-                                $is_valid = !empty($user['nama_operator']) && trim($user['nama_operator']) !== '';
-                        } elseif ($table === 't_product') {
-                                // For product table, either nama_product or kode_product must be filled
-                                $is_valid = (!empty($user['nama_product']) && trim($user['nama_product']) !== '') ||
-                                           (!empty($user['kode_product']) && trim($user['kode_product']) !== '');
-                        } else {
-                                // For other tables, check if at least one field has a value
-                                $has_data = false;
-                                foreach ($user as $key => $value) {
-                                        if (!empty($value) && trim($value) !== '') {
-                                                $has_data = true;
-                                                break;
-                                        }
-                                }
-                                $is_valid = $has_data;
-                        }
-                        
-                        if (!$is_valid) {
-                                log_message('debug', 'Skipping index ' . $index . ' - required field(s) empty');
-                                continue;
-                        }
-                        
-                        // Check for duplicate kode_product for t_product table
-                        if ($table === 't_product' && !empty($user['kode_product']) && trim($user['kode_product']) !== '') {
-                                if ($this->check_duplicate_kode_product($user['kode_product'])) {
-                                        $errors[] = "Kode Product '" . trim($user['kode_product']) . "' sudah ada! Gunakan kode product lain.";
-                                        log_message('debug', 'Skipping index ' . $index . ' - duplicate kode_product');
-                                        continue;
-                                }
-                        }
-                        
-                        // Prepare data for insert - convert empty strings to NULL for optional fields
-                        $insert_data = array();
-                        foreach ($user as $key => $value) {
-                                if ($value === '' || $value === null) {
-                                        $insert_data[$key] = null;
-                                } else {
-                                        $insert_data[$key] = trim($value);
-                                }
-                        }
-                        
-                        log_message('debug', 'Insert data for index ' . $index . ': ' . print_r($insert_data, true));
-                        
-                        if (!$this->db->insert($table, $insert_data)) {
-                                $error = $this->db->error();
-                                log_message('error', 'Database insert failed for index ' . $index . ': ' . print_r($error, true));
-                                $errors[] = "Baris " . ($index + 1) . ": " . $error['message'];
-                        } else {
-                                $inserted_count++;
-                                log_message('debug', 'Successfully inserted row ' . $inserted_count);
-                        }
-                }
-                
-                // Return detailed results instead of throwing exception for partial successes
-                if ($inserted_count == 0) {
-                        // Generate table-specific error message
-                        $error_message = 'Tidak ada data valid yang dapat disimpan.';
-                        if ($table === 't_operator') {
-                                $error_message .= ' Pastikan field Nama Operator diisi.';
-                        } elseif ($table === 't_product') {
-                                $error_message .= ' Pastikan field Nama Product atau Kode Product diisi.';
-                        } else {
-                                $error_message .= ' Pastikan minimal satu field diisi.';
-                        }
-                        throw new Exception($error_message);
-                }
-                
-                log_message('debug', 'Total inserted: ' . $inserted_count);
-                
-                // Return detailed results for better user feedback
-                return [
-                        'success' => true,
-                        'inserted_count' => $inserted_count,
-                        'errors' => $errors,
-                        'skipped_count' => count($errors)
-                ];
         }
 
         function edit_tampil($table, $where, $id)
@@ -152,120 +50,57 @@ class m_new extends CI_Model
         function edit_action($table, $where, $id)
         {
                 foreach ($_POST['user'] as $user) {
+                        $user = $this->_sanitize_row($user, $table);
                         $this->db->where($where, $id);
                         $this->db->update($table, $user);
                 }
         }
 
-  
+        function cek_login()
+        {
+                if (empty($_SESSION['user_name'])) {
+                        redirect('login_control/index');
+                }
+        }
 
 
         function tampil_header($tanggal)
         {
                 $shift = $this->input->post('shift');
-                // Get NG and productivity data from v_productivity_q1
-                $query = $this->db->query("SELECT IFNULL(SUM(p.`total_ok`),0) AS ok , 
-                IFNULL(SUM(p.`total_ng`),0) AS ng , 0 AS lt,
-                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`gross`)) * 100,0) AS persen_Gross , 
-                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`nett`)) * 100,0) AS persen_Nett 
-                FROM `v_productivity_q1` AS p 
-                WHERE DATE(p.`tanggal`) = '$tanggal'
-                AND p.`cyt_quo` IS NOT NULL AND p.`gross` > 0 AND p.`nett` > 0");
-                
-                $result = $query->row();
-                
-                // Get LT data from v_production_op directly (convert from minutes to hours)
-                $lt_query = $this->db->query("SELECT IFNULL(SUM(qty_lt), 0) AS total_lt FROM v_production_op WHERE DATE(tanggal) = '$tanggal'");
-                $lt_result = $lt_query->row();
-                
-                // Update the LT value in the result (convert minutes to hours for display)
-                if ($result && $lt_result) {
-                    $result->lt = round($lt_result->total_lt / 60, 2); // Convert minutes to hours
-                }
-                
+                $query = $this->db->query("SELECT IFNULL(SUM(p.`qty_ok`),0) AS ok , 
+                IFNULL(SUM(p.`qty_ng`),0) AS ng , IFNULL(SUM(p.`qty_lt`),0) AS lt , 
+                IFNULL(SUM(p.`nett_prod`),0) AS nett_prod ,
+                IFNULL(SUM(p.`gross_prod`),0) AS gross_prod  , 
+                IFNULL(SUM(p.`ct_standar`),0) AS ct_standar ,
+                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`gross_prod`),0)*100) AS persen_Gross , 
+                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`nett_prod`),0)*100) AS persen_Nett FROM `productivity_by_day` AS p 
+                WHERE p.`tanggal` =  '$tanggal'");
                 return $query;
         }
 
         function tampil_header_byshift($tanggal, $shift)
         {
                 if ($shift == 'All') {
-                        // Get NG and productivity data from v_productivity_q1
-                        $query = $this->db->query("SELECT IFNULL(SUM(p.`total_ok`),0) AS ok , 
-                IFNULL(SUM(p.`total_ng`),0) AS ng , 0 AS lt,
-                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`gross`)) * 100,0) AS persen_Gross , 
-                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`nett`)) * 100,0) AS persen_Nett 
-                FROM `v_productivity_q1` AS p 
-                WHERE DATE(p.`tanggal`) = '$tanggal'
-                AND p.`cyt_quo` IS NOT NULL AND p.`gross` > 0 AND p.`nett` > 0");
-                        
-                        $result = $query->row();
-                        
-                        // Get LT data from v_production_op directly (convert from minutes to hours)
-                        $lt_query = $this->db->query("SELECT IFNULL(SUM(qty_lt), 0) AS total_lt FROM v_production_op WHERE DATE(tanggal) = '$tanggal'");
-                        $lt_result = $lt_query->row();
-                        
-                        // Update the LT value in the result (convert minutes to hours for display)
-                        if ($result && $lt_result) {
-                            $result->lt = round($lt_result->total_lt / 60, 2); // Convert minutes to hours
-                        }
-                        
+                        $query = $this->db->query("SELECT IFNULL(SUM(p.`qty_ok`),0) AS ok , 
+                IFNULL(SUM(p.`qty_ng`),0) AS ng , IFNULL(SUM(p.`qty_lt`),0) AS lt , 
+                IFNULL(SUM(p.`nett_prod`),0) AS nett_prod ,
+                IFNULL(SUM(p.`gross_prod`),0) AS gross_prod  , 
+                IFNULL(SUM(p.`ct_standar`),0) AS ct_standar ,
+                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`gross_prod`),0)*100) AS persen_Gross , 
+                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`nett_prod`),0)*100) AS persen_Nett FROM `productivity_by_day` AS p 
+                WHERE p.`tanggal` =  '$tanggal'");
                         return $query;
                 } else {
-                        // Get NG and productivity data from v_productivity_q1
-                        $query = $this->db->query("SELECT IFNULL(SUM(p.`total_ok`),0) AS ok , 
-                IFNULL(SUM(p.`total_ng`),0) AS ng , 0 AS lt,
-                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`gross`)) * 100,0) AS persen_Gross , 
-                IFNULL((AVG(p.`cyt_quo`) / AVG(p.`nett`)) * 100,0) AS persen_Nett 
-                FROM `v_productivity_q1` AS p 
-                LEFT JOIN (
-                    SELECT DISTINCT id_bom, shift FROM t_production_op WHERE DATE(tanggal) = '$tanggal' AND shift = '$shift'
-                ) s ON p.id_bom = s.id_bom
-                WHERE DATE(p.`tanggal`) = '$tanggal'
-                AND p.`cyt_quo` IS NOT NULL AND p.`gross` > 0 AND p.`nett` > 0");
-                        
-                        $result = $query->row();
-                        
-                        // Get LT data from v_production_op directly (convert from minutes to hours)
-                        $lt_query = $this->db->query("SELECT IFNULL(SUM(qty_lt), 0) AS total_lt FROM v_production_op WHERE DATE(tanggal) = '$tanggal' AND shift = '$shift'");
-                        $lt_result = $lt_query->row();
-                        
-                        // Update the LT value in the result (convert minutes to hours for display)
-                        if ($result && $lt_result) {
-                            $result->lt = round($lt_result->total_lt / 60, 2); // Convert minutes to hours
-                        }
-                        
+                        $query = $this->db->query("SELECT IFNULL(SUM(p.`qty_ok`),0) AS ok , 
+                IFNULL(SUM(p.`qty_ng`),0) AS ng , IFNULL(SUM(p.`qty_lt`),0) AS lt , 
+                IFNULL(SUM(p.`nett_prod`),0) AS nett_prod ,
+                IFNULL(SUM(p.`gross_prod`),0) AS gross_prod  , 
+                IFNULL(SUM(p.`ct_standar`),0) AS ct_standar ,
+                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`gross_prod`),0)*100) AS persen_Gross , 
+                (IFNULL(SUM(p.`ct_standar`) / SUM(p.`nett_prod`),0)*100) AS persen_Nett FROM `productivity_by_day` AS p 
+                WHERE p.`tanggal` =  '$tanggal' AND p.`shift` = '$shift'");
                         return $query;
                 }
-        }
-
-        function tampil_header_monthly()
-        {
-                $current_month = date('m');
-                $current_year = date('Y');
-                
-                // Get NG and productivity data from v_productivity_q1
-                $query = $this->db->query("SELECT 
-                IFNULL(SUM(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.total_ok END), 0) AS ok , 
-                IFNULL(SUM(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.total_ng END), 0) AS ng , 
-                0 AS lt, 
-                IFNULL((AVG(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.cyt_quo END) / AVG(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.gross END)) * 100, 0) AS persen_Gross , 
-                IFNULL((AVG(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.cyt_quo END) / AVG(CASE WHEN MONTH(p.tanggal) = '$current_month' THEN p.nett END)) * 100, 0) AS persen_Nett 
-                FROM `v_productivity_q1` AS p 
-                WHERE YEAR(p.tanggal) = '$current_year'
-                AND p.cyt_quo IS NOT NULL AND p.gross > 0 AND p.nett > 0");
-                
-                $result = $query->row();
-                
-                // Get LT data from v_production_op directly (convert from minutes to hours)
-                $lt_query = $this->db->query("SELECT IFNULL(SUM(qty_lt), 0) AS total_lt FROM v_production_op WHERE YEAR(tanggal) = '$current_year' AND MONTH(tanggal) = '$current_month'");
-                $lt_result = $lt_query->row();
-                
-                // Update the LT value in the result (convert minutes to hours for display)
-                if ($result && $lt_result) {
-                    $result->lt = round($lt_result->total_lt / 60, 2); // Convert minutes to hours
-                }
-                
-                return $query;
         }
 
         function tampil_rekap($tanggal)
@@ -312,15 +147,15 @@ class m_new extends CI_Model
         //Get autocomplete get_kodeProductRelease
         public function get_kodeProductRelease($searchTerm = "")
         {
-                $this->db->select('*');
+                $this->db->select('id_product, kode_product, nama_product, mp_standar');
                 $this->db->where("kode_product LIKE '%" . $searchTerm . "%' OR nama_product LIKE '%" . $searchTerm . "%'");
-                $this->db->group_by("kode_product");
+                $this->db->group_by("kode_product, nama_product, mp_standar");
                 $fetched_records = $this->db->get('t_product');
                 $users = $fetched_records->result_array();
                 // Initialize Array with fetched data
                 $data = array();
                 foreach ($users as $user) {
-                        $data[] = array("id" => $user['id_product'], "nama" => $user['nama_product'], "text" => $user['kode_product'] . ' (' . $user['nama_product'] . ')');
+                        $data[] = array("id" => $user['id_product'], "nama" => $user['nama_product'], "text" => $user['kode_product'] . ' (' . $user['nama_product'] . ')', "mp_standar" => $user['mp_standar']);
                 }
                 return $data;
         }
@@ -378,8 +213,18 @@ class m_new extends CI_Model
         //Edit master bom
         public function getDataBOM($id_bom)
         {
-                $query = "SELECT * FROM v_master_bom AS q
-                        WHERE q.`id_bom` = $id_bom";
+                $query = "SELECT q.id_bom, q.nama_bom, q.aktif_non_aktif,
+                                 r.id_product, r.kode_product, r.nama_product, r.nama_proses,
+                                 q.cyt_mc_bom,
+                                 w.id_product        AS id_productBOMDetail,
+                                 r_new.kode_product  AS kode_productBOMDetail,
+                                 r_new.nama_product  AS nama_productBOMDetail
+                          FROM t_bom q
+                          LEFT JOIN t_bom_detail w   ON q.id_bom = w.id_bom
+                          LEFT JOIN t_product r       ON q.id_product = r.id_product
+                          LEFT JOIN t_product r_new   ON w.id_product = r_new.id_product
+                          WHERE q.id_bom = $id_bom
+                          LIMIT 1";
                 $result = $this->db->query($query);
                 if ($result->num_rows() > 0) {
                         return $result;
@@ -396,7 +241,7 @@ class m_new extends CI_Model
         //Edit master Product
         public function getDataProduct($id_product)
         {
-                $query = "SELECT * FROM t_product AS q
+                $query = "SELECT id_product, kode_product, nama_product, MomID, MomProduct, kode_proses, nama_proses, `usage`, cavity, sp, type, cyt_mc, cyt_quo, customer, AccID, AccInv, divisi, cost, discontinue, mp_standar FROM t_product AS q
                         WHERE q.`id_product` = $id_product";
                 $result = $this->db->query($query);
                 if ($result->num_rows() > 0) {
@@ -454,12 +299,32 @@ class m_new extends CI_Model
                                 $this->db->update('t_production_op_release', $ress);
                         }
                 }
+                
+                // Refresh productivity aggregations for the affected month
+                $this->refresh_productivity_for_production_id($id_production);
+        }
+        
+        /**
+         * Refresh productivity data for a specific production record
+         */
+        private function refresh_productivity_for_production_id($id_production) {
+            // Get the production record to extract year and month
+            $query = $this->db->query("SELECT tanggal FROM t_production_op WHERE id_production = ?", array($id_production));
+            $result = $query->row_array();
+            
+            if ($result && !empty($result['tanggal'])) {
+                $year = date('Y', strtotime($result['tanggal']));
+                $month = date('m', strtotime($result['tanggal']));
+                
+                // Load the report model and call refresh function
+                $this->load->model('m_report', 'mr');
+                $this->mr->refresh_productivity_aggregates($year, $month);
+            }
         }
 
         public function tampil_product_bySearch($divisi, $keyword)
         {
-                // Properly group OR conditions with parentheses to ensure divisi filter applies to both conditions
-                $query = "SELECT * FROM t_product AS q
+                $query = "SELECT id_product, kode_product, nama_product, MomID, MomProduct, kode_proses, nama_proses, `usage`, cavity, sp, type, cyt_mc, cyt_quo, customer, AccID, AccInv, divisi, cost, discontinue, mp_standar FROM t_product AS q
                         WHERE q.`divisi` = '$divisi' AND (q.`kode_product` LIKE '%$keyword%' OR q.`nama_product` LIKE '%$keyword%')";
                 $result = $this->db->query($query);
                 if ($result->num_rows() > 0) {
@@ -471,7 +336,7 @@ class m_new extends CI_Model
 
         public function tampil_product_default()
         {
-                $query = "SELECT * FROM t_product AS q ORDER BY q.`id_product` DESC";
+                $query = "SELECT id_product, kode_product, nama_product, MomID, MomProduct, kode_proses, nama_proses, `usage`, cavity, sp, type, cyt_mc, cyt_quo, customer, AccID, AccInv, divisi, cost, discontinue, mp_standar FROM t_product AS q WHERE q.`cost` = '1' LIMIT 5";
                 $result = $this->db->query($query);
                 if ($result->num_rows() > 0) {
                         return $result;
@@ -483,68 +348,12 @@ class m_new extends CI_Model
         //add master bom
         public function simpanData()
         {
-                // Validate POST data exists
-                if (!isset($_POST['user']) || empty($_POST['user'])) {
-                        throw new Exception('Data BOM tidak ditemukan');
+                foreach ($_POST['user'] as $user) {
+                        $this->db->insert('t_bom', $user);
                 }
 
-                if (!isset($_POST['user_detail']) || empty($_POST['user_detail'])) {
-                        throw new Exception('Data Release tidak ditemukan');
-                }
-
-                $errors = array();
-                $inserted_bom = 0;
-                $inserted_detail = 0;
-
-                // Insert BOM data
-                foreach ($_POST['user'] as $index => $user) {
-                        // Validate required fields
-                        if (empty($user['id_product']) || empty($user['nama_bom'])) {
-                                $errors[] = "BOM baris " . ($index + 1) . ": id_product dan nama_bom harus diisi";
-                                continue;
-                        }
-
-                        // Check for duplicate BOM (same id_product)
-                        if ($this->check_duplicate_bom($user['id_product'])) {
-                                $errors[] = "BOM untuk product ini sudah ada!";
-                                log_message('debug', 'Skipping BOM index ' . $index . ' - duplicate BOM for id_product: ' . $user['id_product']);
-                                continue;
-                        }
-
-                        if (!$this->db->insert('t_bom', $user)) {
-                                $error = $this->db->error();
-                                $errors[] = "BOM baris " . ($index + 1) . ": " . $error['message'];
-                        } else {
-                                $inserted_bom++;
-                        }
-                }
-
-                // Insert BOM detail data
-                foreach ($_POST['user_detail'] as $index => $user) {
-                        // Validate required fields
-                        if (empty($user['id_bom']) || empty($user['id_product'])) {
-                                $errors[] = "Release baris " . ($index + 1) . ": id_bom dan id_product harus diisi";
-                                continue;
-                        }
-
-                        if (!$this->db->insert('t_bom_detail', $user)) {
-                                $error = $this->db->error();
-                                $errors[] = "Release baris " . ($index + 1) . ": " . $error['message'];
-                        } else {
-                                $inserted_detail++;
-                        }
-                }
-
-                if (!empty($errors)) {
-                        throw new Exception('Gagal menyimpan beberapa data: ' . implode(' | ', $errors));
-                }
-
-                if ($inserted_bom == 0) {
-                        throw new Exception('Tidak ada data BOM yang berhasil disimpan');
-                }
-
-                if ($inserted_detail == 0) {
-                        throw new Exception('Tidak ada data Release yang berhasil disimpan');
+                foreach ($_POST['user_detail'] as $user) {
+                        $this->db->insert('t_bom_detail', $user);
                 }
         }
         //delete master bom
@@ -572,6 +381,12 @@ class m_new extends CI_Model
                 return $this->db->update('t_bom_detail', $data_bom_detail, array('id_bom' => $id));
         }
 
+        public function update_bom_discontinue_status($id_bom, $status)
+        {
+                $this->db->where('id_bom', $id_bom);
+                return $this->db->update('t_bom', ['aktif_non_aktif' => $status]);
+        }
+
         //Tampil ng lt terbanyak by kanit
         function tampil_ng_lt_bykanit_default()
         {
@@ -597,17 +412,6 @@ class m_new extends CI_Model
                 return $this->db->get('master_kategori_defect')->result();
         }
 
-        public function get_all_type_defect()
-        {
-                $this->db->distinct();
-                $this->db->select('type');
-                $this->db->from('t_defectdanlosstime');
-                $this->db->where('type IS NOT NULL');
-                $this->db->where('type !=', '');
-                $query = $this->db->get();
-                return $query->result();
-        }
-
         public function add_kategori_defect($nama_kategori)
         {
                 return $this->db->insert('master_kategori_defect', ['nama_kategori' => $nama_kategori]);
@@ -623,6 +427,7 @@ class m_new extends CI_Model
                 $this->db->select('t_no_mesin.*, t_nama_mesin.nama_mesin'); // Select all columns from t_no_mesin and nama_mesin from t_nama_mesin
                 $this->db->from('t_no_mesin');
                 $this->db->join('t_nama_mesin', 't_no_mesin.id_nama_mesin = t_nama_mesin.id_nama_mesin', 'left'); // Join based on foreign key
+                $this->db->order_by('CAST(t_no_mesin.no_mesin AS UNSIGNED)', 'ASC', FALSE);
                 $query = $this->db->get();
                 return $query->result_array();
         }
@@ -661,58 +466,62 @@ class m_new extends CI_Model
                 $this->db->where('id', $id);
                 return $this->db->update('cutting_tools', $data);
         }
-        
-        /**
-         * Check if kode_product already exists in t_product table
-         * Returns true if duplicate exists, false otherwise
-         */
-        public function check_duplicate_kode_product($kode_product)
+
+        // --- SUPPLY MASTER DATA ---
+        public function getDataSupply($id)
         {
-                if (empty($kode_product) || trim($kode_product) === '') {
-                        return false;
+                $query = "SELECT id, kode_product, nama_product, atas, bawah FROM master_supply AS q
+                        WHERE q.`id` = ?";
+                $result = $this->db->query($query, array($id));
+                if ($result->num_rows() > 0) {
+                        return $result;
+                } else {
+                        return null;
                 }
-                
-                $this->db->from('t_product');
-                $this->db->where('kode_product', trim($kode_product));
-                $count = $this->db->count_all_results();
-                
-                return $count > 0;
         }
 
-        /**
-         * Check if BOM already exists for the same product
-         * Each product should only have one BOM
-         * Returns true if duplicate exists, false otherwise
-         */
-        public function check_duplicate_bom($id_product)
+        public function edit_master_supply($data, $id)
         {
-                if (empty($id_product)) {
-                        return false;
-                }
+                return $this->db->update('master_supply', $data, array('id' => $id));
+        }
 
-                $this->db->from('t_bom');
+        public function delete_master_supply($id)
+        {
+                $this->db->where('id', $id);
+                $this->db->delete('master_supply');
+        }
+
+        // Check duplicate kode_product (case-insensitive, with whitespace trimming)
+        public function check_duplicate_kode_product($kode_product, $exclude_id = null)
+        {
+                $trimmed_code = trim($kode_product);
+                $this->db->where('TRIM(kode_product)', $trimmed_code);
+                if ($exclude_id !== null) {
+                        $this->db->where('id_product !=', $exclude_id);
+                }
+                $query = $this->db->get('t_product');
+                return $query->num_rows() > 0;
+        }
+
+        // Check if BOM already exists for a product
+        public function check_duplicate_bom_by_product($id_product, $exclude_id = null)
+        {
                 $this->db->where('id_product', $id_product);
-                $count = $this->db->count_all_results();
-
-                return $count > 0;
-        }
-        
-        /**
-         * Check if user is logged in
-         * Redirects to login page if session is not valid
-         */
-        function cek_login()
-        {
-                // Check if user session exists
-                if (!isset($_SESSION['user_name']) || empty($_SESSION['user_name'])) {
-                        redirect('login_control/index');
-                        exit();
+                if ($exclude_id !== null) {
+                        $this->db->where('id_bom !=', $exclude_id);
                 }
-                
-                // Optional: You can add additional checks here
-                // For example, check if the user exists in the database
-                // or if the session has expired
-                
-                return true;
+                $query = $this->db->get('t_bom');
+                return $query->num_rows() > 0;
+        }
+
+        private function _sanitize_row($row, $table)
+        {
+                if (!is_array($row)) return $row;
+                foreach ($row as $key => $val) {
+                        if (is_string($val)) {
+                                $row[$key] = trim(preg_replace('/[\t\r\n\0\x0B]+/', '', $val));
+                        }
+                }
+                return $row;
         }
 }

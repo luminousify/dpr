@@ -809,19 +809,19 @@ class PHPExcel_Cell
 
         //    We also use the language construct isset() rather than the more costly strlen() function to match the length of $pString
         //        for improved performance
-        if (isset($pString{0})) {
-            if (!isset($pString{1})) {
+        if (isset($pString[0])) {
+            if (!isset($pString[1])) {
                 $_indexCache[$pString] = $_columnLookup[$pString];
                 return $_indexCache[$pString];
-            } elseif (!isset($pString{2})) {
-                $_indexCache[$pString] = $_columnLookup[$pString{0}] * 26 + $_columnLookup[$pString{1}];
+            } elseif (!isset($pString[2])) {
+                $_indexCache[$pString] = $_columnLookup[$pString[0]] * 26 + $_columnLookup[$pString[1]];
                 return $_indexCache[$pString];
-            } elseif (!isset($pString{3})) {
-                $_indexCache[$pString] = $_columnLookup[$pString{0}] * 676 + $_columnLookup[$pString{1}] * 26 + $_columnLookup[$pString{2}];
+            } elseif (!isset($pString[3])) {
+                $_indexCache[$pString] = $_columnLookup[$pString[0]] * 676 + $_columnLookup[$pString[1]] * 26 + $_columnLookup[$pString[2]];
                 return $_indexCache[$pString];
             }
         }
-        throw new PHPExcel_Exception("Column string index can not be " . ((isset($pString{0})) ? "longer than 3 characters" : "empty"));
+        throw new PHPExcel_Exception("Column string index can not be " . ((isset($pString[0])) ? "longer than 3 characters" : "empty"));
     }
 
     /**
@@ -832,6 +832,20 @@ class PHPExcel_Cell
      */
     public static function stringFromColumnIndex($pColumnIndex = 0)
     {
+        // Validation: PHP 7.1+ warns on non-numeric operands (e.g. nested stringFromColumnIndex in Excel5 writer).
+        if (!is_numeric($pColumnIndex)) {
+            $msg = sprintf(
+                '[PHPExcel] stringFromColumnIndex expected numeric index; got type=%s value=%s',
+                gettype($pColumnIndex),
+                is_scalar($pColumnIndex) ? var_export($pColumnIndex, true) : json_encode($pColumnIndex)
+            );
+            if (function_exists('log_message')) {
+                @log_message('error', $msg);
+            } else {
+                error_log($msg);
+            }
+        }
+
         //    Using a lookup cache adds a slight memory overhead, but boosts speed
         //    caching using a static within the method is faster than a class static,
         //        though it's additional memory overhead

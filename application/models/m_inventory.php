@@ -11,20 +11,40 @@ class m_inventory extends CI_Model
 
         function tampil_product()
         {
-                $query = $this->db->query("SELECT * from t_product as p order by p.kode_product ASC");
+                $query = $this->db->query("SELECT id_product, kode_product, nama_product, MomID, MomProduct, kode_proses, nama_proses, `usage`, cavity, sp, type, cyt_mc, cyt_quo, customer, AccID, AccInv, divisi, cost, discontinue, mp_standar from t_product as p order by p.kode_product ASC");
          return $query;
         }
 
         function getProduk($id_product)
         {
-                $query = $this->db->query("SELECT * FROM t_product AS p 
+                $query = $this->db->query("SELECT id_product, kode_product, nama_product, MomID, MomProduct, kode_proses, nama_proses, `usage`, cavity, sp, type, cyt_mc, cyt_quo, customer, AccID, AccInv, divisi, cost, discontinue, mp_standar FROM t_product AS p
                         WHERE p.id_product = $id_product");
          return $query;
-        }      
+        }
+
+        // New function to update mp_standar for a product
+        function update_mp_standar($id_product, $mp_standar)
+        {
+                $data = array(
+                        'mp_standar' => $mp_standar
+                );
+                $this->db->where('id_product', $id_product);
+                return $this->db->update('t_product', $data);
+        }
+
+        // Function to get products with mp_standar for reporting
+        function get_products_with_mp_standar()
+        {
+                $query = $this->db->query("SELECT id_product, kode_product, nama_product, mp_standar
+                        FROM t_product
+                        WHERE mp_standar IS NOT NULL
+                        ORDER BY kode_product ASC");
+                return $query;
+        }
 
         function tampil_production($id)
         {
-                $query = $this->db->query("SELECT * from v_production_op as p 
+                $query = $this->db->query("SELECT * from v_production_op as p
                         WHERE p.id_product = $id AND MONTH(p.tanggal) = MONTH(CURDATE()) AND YEAR(p.tanggal) = YEAR(CURDATE())
                         order by p.tanggal ASC");
          return $query;
@@ -32,7 +52,7 @@ class m_inventory extends CI_Model
 
         function tampil_production_byfilter($id,$tahun)
         {
-                $query = $this->db->query("SELECT * FROM v_production_op AS p 
+                $query = $this->db->query("SELECT * FROM v_production_op AS p
                         WHERE p.id_product = $id AND p.`tanggal` LIKE '%$tahun%'
                         ORDER BY p.tanggal ASC");
          return $query;
@@ -49,7 +69,7 @@ class m_inventory extends CI_Model
         function tampil_analisis($id_product)
         {
                 $query = $this->db->query("
-                SELECT q.`id_production`, q.`tanggal`, q.qty_ok,
+                SELECT q.`id_production`, q.`shift`, q.`tanggal`, q.qty_ok,
                        SUM(IFNULL(w.qty,0)) AS qty,
                        SUM(CASE WHEN w.`nama` = 'PIN SERET' THEN w.`qty` ELSE 0 END) AS pin_seret,
                        SUM(CASE WHEN w.`nama` = 'BLACKDOT' THEN w.`qty` ELSE 0 END) AS blackdot,
@@ -89,25 +109,26 @@ class m_inventory extends CI_Model
                 FROM v_production_op AS q
                 LEFT JOIN t_production_op_dl AS w ON w.`id_production` = q.`id_production` AND w.`type` = 'NG'
                 WHERE q.`id_product` = $id_product AND MONTH(q.tanggal) = MONTH(CURDATE()) AND YEAR(q.tanggal) = YEAR(CURDATE())
-                GROUP BY q.`id_production`, q.`tanggal`, q.qty_ok
-                ORDER BY q.tanggal, q.id_production
+                GROUP BY q.`id_production`, q.`shift`, q.`tanggal`, q.qty_ok
+                ORDER BY q.shift, q.tanggal, q.id_production
                 ");
                 return $query;
         }
 
        /**
- * DPR Inventory Model
- *
- * This method feeds $data_tabel (first grid in the view)
- * -------------------------------------------------------
- * @param  int    $id_product   product id (e.g. 818)
- * @param  string $periode      'YYYY-MM'  (e.g. '2025-01')
- * @return CI_DB_result         ->result_array() / ->result()
- */
+* DPR Inventory Model
+*
+* This method feeds $data_tabel (first grid in the view)
+* -------------------------------------------------------
+* @param  int    $id_product   product id (e.g. 818)
+* @param  string $periode      'YYYY-MM'  (e.g. '2025-01')
+* @return CI_DB_result         ->result_array() / ->result()
+*/
 public function tampil_analisis_byfilter($id_product, $periode)
 {
     $sql = "
     SELECT  p.id_production,          -- handy key, not displayed
+            p.shift                         AS shift,
             p.tanggal                      AS tanggal,
             p.qty_ok                       AS qty_ok,
             IFNULL(d.total_ng,0)           AS qty,
@@ -198,7 +219,7 @@ public function tampil_analisis_byfilter($id_product, $periode)
 
     WHERE   p.id_product = ?
       AND   p.tanggal LIKE CONCAT(?, '%')       /* yyyy-mm filter */
-    ORDER BY p.tanggal, p.id_production
+    ORDER BY p.shift, p.tanggal, p.id_production
     ";
 
     /* use query bindings to avoid SQL-injection */
@@ -207,7 +228,7 @@ public function tampil_analisis_byfilter($id_product, $periode)
 
 
         function tampil_total_analisis($id_product){
-                $query = $this->db->query("SELECT SUM(q.qty_ok) AS total_qty, SUM(w.qty) AS total_ng,
+                $query = $this->db->query("SELECT SUM(q.qty_ok) AS total_qty, SUM(q.qty_ok) AS total_ok, SUM(w.qty) AS total_ng,
                 SUM(CASE WHEN w.`nama` = 'PIN SERET' THEN w.`qty` ELSE 0 END) AS pin_seret,
                 SUM(CASE WHEN w.`nama` = 'BLACKDOT' THEN w.`qty` ELSE 0 END) AS blackdot,
                 SUM(CASE WHEN w.`nama` = 'HIKE' THEN w.`qty` ELSE 0 END) AS hike,
@@ -254,6 +275,7 @@ public function tampil_analisis_byfilter($id_product, $periode)
     $sql = "
     SELECT  /* ------------ overall quantity ------------- */
             SUM(p.qty_ok)                         AS total_qty,
+            SUM(p.qty_ok)                         AS total_ok,
             SUM(COALESCE(d.total_ng,0))           AS total_ng,
 
             /* ------------ one SUM() per defect ---------- */
@@ -356,9 +378,9 @@ public function tampil_analisis_byfilter($id_product, $periode)
                 SUM(p.`qty_ng` + p.`qty_ok`) AS tot_produksi_ok_ng,
                 ROUND(SUM(p.`production_time`),1) AS total_prod_time,
                 ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1) AS total_cdt,
-                ROUND(CASE WHEN SUM(p.`qty_ok`) > 0 THEN 3600 *  (SUM(p.`nwt_mp`) - ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1)) / SUM(p.`qty_ok`) * p.`cavity` ELSE 0 END) AS gross,
-                ROUND(CASE WHEN SUM(p.`qty_ng` + p.`qty_ok`) > 0 THEN ROUND(SUM(p.`production_time`),1) * 3600 / SUM(p.`qty_ng` + p.`qty_ok`) * p.`cavity` ELSE 0 END) AS nett
-                FROM v_production_op AS p 
+                ROUND(3600 *  (SUM(p.`nwt_mp`) - ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1)) / SUM(p.`qty_ok`) * p.`cavity`) AS gross,
+                ROUND(ROUND(SUM(p.`production_time`),1) * 3600 / SUM(p.`qty_ng` + p.`qty_ok`) * p.`cavity`) AS nett
+                FROM v_production_op AS p
                 WHERE p.id_product = '$id_product' AND p.`tanggal` LIKE '%$tahun%'
                 GROUP BY p.`kode_product`, p.`mesin`
                 ORDER BY p.tanggal ASC");
@@ -375,14 +397,14 @@ public function tampil_analisis_byfilter($id_product, $periode)
                 SUM(p.`qty_ng` + p.`qty_ok`) AS tot_produksi_ok_ng,
                 ROUND(SUM(p.`production_time`),1) AS total_prod_time,
                 ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1) AS total_cdt,
-                ROUND(CASE WHEN SUM(p.`qty_ok`) > 0 THEN 3600 *  (SUM(p.`nwt_mp`) - ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1)) / SUM(p.`qty_ok`) * p.`cavity` ELSE 0 END) AS gross,
-                ROUND(CASE WHEN SUM(p.`qty_ng` + p.`qty_ok`) > 0 THEN ROUND(SUM(p.`production_time`),1) * 3600 / SUM(p.`qty_ng` + p.`qty_ok`) * p.`cavity` ELSE 0 END) AS nett
-                FROM v_production_op AS p 
+                ROUND(3600 *  (SUM(p.`nwt_mp`) - ROUND(SUM(p.`nwt_mp` - p.`production_time` - p.`qty_lt`),1)) / SUM(p.`qty_ok`) * p.`cavity`) AS gross,
+                ROUND(ROUND(SUM(p.`production_time`),1) * 3600 / SUM(p.`qty_ng` + p.`qty_ok`) * p.`cavity`) AS nett
+                FROM v_production_op AS p
                 WHERE p.id_product = '$id_product' AND MONTH(p.`tanggal`) = MONTH(CURDATE()) AND YEAR(p.`tanggal`) = YEAR(CURDATE())
                 GROUP BY p.`kode_product`, p.`mesin`
                 ORDER BY p.tanggal ASC");
          return $query;
      }
-        
+
 
 }

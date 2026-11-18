@@ -1,29 +1,6 @@
-            <!-- Batch Delete Controls for Shift 2 -->
-<div class="row mb-2 batch-controls" id="batch-controls-shift2" style="display: none;">
-    <div class="col-md-6">
-        <div class="btn-group">
-            <button type="button" class="btn btn-warning" id="select-all-shift2">
-                <i class="fa fa-check-square-o"></i> Select All
-            </button>
-            <button type="button" class="btn btn-secondary" id="deselect-all-shift2">
-                <i class="fa fa-square-o"></i> Deselect All
-            </button>
-        </div>
-        <span class="ml-3" id="selected-count-shift2">
-            <strong>0</strong> rows selected
-        </span>
-    </div>
-    <div class="col-md-6 text-right">
-        <button type="button" class="btn btn-danger" id="delete-selected-shift2">
-            <i class="fa fa-trash"></i> Delete Selected
-        </button>
-    </div>
-</div>
-
-<table class="table table-striped table-bordered table-hover dataTables-example" id="shift2-table">
+            <table class="table table-striped table-bordered table-hover dataTables-example">
                             <thead>
                                 <tr>
-                                    <th><input type="checkbox" id="select-all-checkbox-shift2" class="select-all-checkbox"></th>
                                     <th>Run</th>
                                     <th>Line</th>
                                     <th>No. MC</th>
@@ -33,8 +10,10 @@
                                     <th>CT STD</th>
                                     <th>CT Run</th>
                                     <th>Cavity</th>
+                                    <th>Cavity Run</th>
                                     <th>Operator</th>
-                                    <th>Man Power</th>
+                                   <th>MP Std</th>
+                                   <th>MP Actual</th>
                                     <th>Auto / Semi</th>
                                     <th>Ket.</th>
                                     
@@ -57,10 +36,7 @@
                             <tbody>
                                 <?php $totalRun = 0; $totalMP = 0; $id = -1; $no = 0 ; foreach($data_tabel2->result_array() as $data)
                                 {  $no++; $id++; ?>
-                                <tr data-id="<?= $data['id_machine_use']; ?>">
-                                    <td>
-                                        <input type="checkbox" class="row-checkbox shift2-checkbox" value="<?= $data['id_machine_use']; ?>">
-                                    </td>
+                                <tr>
                                     <td>
                                         <center><?php if($data['running'] == 1) { ?><button class="btn btn-primary btn-circle" type="button"><i class="fa fa-check"></i></button><?php } else { echo '<button class="btn btn-danger btn-circle" type="button"><i class="fa fa-close"></i></button>';} ?></center>
                                     </td>
@@ -70,21 +46,26 @@
                                     <td><?= $data['kp_pr']; ?></td>
                                     <td><?= $data['np_pr']; ?></td>
                                     <td><?= $data['CTStd2']; ?></td>
-                                    <?php  
-                                    if ($data['CTStd2'] != 0 || null) {
-                                        if ($data['ct_running'] > $data['CTStd2']) {
-                                                echo "<td style='background:#df4759;color: white;'>".$data['ct_running'];"</td>";
+                                    <?php
+                                    $ctStd2 = isset($data['CTStd2']) ? $data['CTStd2'] : 0;
+                                    $ctRunning = isset($data['ct_running']) ? $data['ct_running'] : 0;
+                                    
+                                    if ($ctStd2 != 0 && $ctStd2 !== null) {
+                                        if ($ctRunning > $ctStd2) {
+                                                echo "<td style='background:#df4759;color: white;'>".$ctRunning."</td>";
                                         } else {
-                                                echo "<td>".$data['ct_running'];"</td>";
-                                            } 
+                                                echo "<td>".$ctRunning."</td>";
+                                            }
                                     } else {
-                                        echo "<td>".$data['ct_running'];"</td>";
+                                        echo "<td>".$ctRunning."</td>";
                                     }
                                     
                                     ?>
-                                    <td><?= $data['cavity']; ?></td>
-                                    <td><?= $data['operator']; ?></td>
-                                    <td><?= $data['man_power']; ?></td>
+                                   <td><?= $data['cavity']; ?></td>
+                                   <td><?= isset($data['cavity_run']) && $data['cavity_run'] !== null ? $data['cavity_run'] : ''; ?></td>
+                                   <td><?= $data['operator']; ?></td>
+                                   <td><?= isset($data['mp_std']) && $data['mp_std'] !== null ? $data['mp_std'] : ''; ?></td>
+                                   <td><?= isset($data['man_power']) && $data['man_power'] !== null ? $data['man_power'] : ''; ?></td>
                                     <td><?= $data['jenis_mesin']; ?></td>
                                     <td><?= $data['keterangan']; ?></td>
                                     
@@ -93,7 +74,7 @@
                                     <td><?= $data['shift']; ?></td>
                                     <td><?= $data['running']; ?></td>
                                     <td>
-                                        <a href="<?= base_url('c_machine/edit/'.$data['id_machine_use']); ?>"><button class="btn btn-success btn-circle" type="button"><i class="fa fa-pencil"></i></button></a>
+                                        <a href="<?= base_url('c_machine/edit/'.$data['id_machine_use']); ?>"><button class="btn btn-success btn-circle" type="button"><i class="fa fa-pencil"></i></button>
                                     </td>
                                     <?php
                                     $hapus = base_url('c_machine/delete_machine_use');
@@ -109,7 +90,6 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th></th>
                                     <th>Run</th>
                                     <th>Line</th>
                                     <th>No. MC</th>
@@ -119,8 +99,10 @@
                                     <th>CT STD</th>
                                     <th>CT Run</th>
                                     <th>Cavity</th>
+                                    <th>Cavity Run</th>
                                     <th>Operator</th>
-                                    <th>Man Power</th>
+                                   <th>MP Std</th>
+                                   <th>MP Actual</th>
                                     <th>Auto / Semi</th>
                                     <th>Ket.</th>
                                     

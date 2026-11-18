@@ -7,13 +7,10 @@
 <link href="<?php echo base_url(); ?>css/bootstrap-responsive.css" rel="stylesheet">
 <link rel="stylesheet" href="<?php echo base_url().'assets/css/jquery-ui.css'?>">
 <link rel="stylesheet" href="<?php echo base_url().'assets/css/bootstrap-icons.css'?>">
-<!-- jQuery needed early for inline scripts throughout the document -->
-<script src="<?php echo base_url().'assets/js/jquery-3.3.1.js'?>" type="text/javascript"></script>
-<script>
-// Set flag to prevent jQuery from being loaded again in footer
-window.DPR_JQUERY_LOADED = true;
-</script>
-<!-- Note: Additional scripts will be loaded in footer -->
+<script src="<?php echo base_url().'assets/js/jquery-3.3.1.js'?>" type="text/javascript"> 
+</script> 
+<script src="<?php echo base_url().'assets/js/bootstrap.js'?>" type="text/javascript"></script>
+<script src="<?php echo base_url().'assets/js/jquery-ui.js'?>" type="text/javascript"></script>
 
 <style>
     th, td { white-space: nowrap; } 
@@ -24,22 +21,6 @@ window.DPR_JQUERY_LOADED = true;
         margin: 0 auto;
     }
     tr {background-color: white} 
-
-    /* Compact form styles */
-    .card { margin-bottom: 0.5rem !important; }
-    .card-body { padding: 0.75rem !important; }
-    .card-header { padding: 0.5rem 0.75rem !important; }
-    .form-group { margin-bottom: 0.5rem !important; }
-    .form-control { padding: 0.375rem 0.75rem; }
-    .row { margin-bottom: 0.25rem !important; }
-    .container-fluid { padding: 0.5rem; }
-    hr { margin: 0.5rem 0; }
-    
-    /* Compact table styles */
-    .table td, .table th { padding: 0.25rem; }
-    
-    /* Reduce spacing in input groups */
-    .input-group-text { padding: 0.25rem 0.5rem; }
 }
 </style>
 
@@ -75,14 +56,17 @@ window.DPR_JQUERY_LOADED = true;
               </div>
             <!-- START ROW -->
               <div class="row">
-                <div class="col-md-3">
+                <div class="col">
                   <div class="form-group">
                     <label><b>Tanggal <font style="color: red">*</font></b></label>
-                      <input type="date" name="user[0][tanggal]" class="form-control" required="" id="tanggal" onchange="lot(this.value)" value="<?= date('Y-m-d') ?>">
+                      <input type="date" name="user[0][tanggal]" class="form-control" required="" id="tanggal" onchange="lot(this.value)">
                   </div>
                 </div>
-                <div class="col-md-3">
-                  <div class="form-group">
+                
+              </div>
+                <div class="row">
+                  <div class="col">
+                    <div class="form-group">
                         <label><b>Shift <font style="color: red">*</font></b></label>
                         <select name="user[0][shift]" class="form-control" required="" id="shift" onchange="lot(this.value)">
                           <option value="1">1</option>
@@ -91,22 +75,22 @@ window.DPR_JQUERY_LOADED = true;
                           </select>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col">
                    <div class="form-group">
-                        <label><b>WH <font style="color: red">*</font></b></label>
-                        <input type="text" name="user[0][nwt_mp]" id="nwt" class="form-control" value="8" required="" pattern="[0-9]+(\.[0-9]+)?" title="Please enter a valid number (e.g., 8 or 8.5). Comma is not allowed." oninput="this.value = this.value.replace(/,/g, '')">
+                        <label><b>NWT <font style="color: red">*</font></b></label>
+                        <input type="text" name="user[0][nwt_mp]" id="nwt" class="form-control" value="8" required="">
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col">
                     <div class="form-group">
                         <label><b>OT</b></label>
                         <input type="text" name="user[0][ot_mp]" id="ot_mp" class="form-control" value="0">
                     </div>
                   </div>
-              </div>
+                </div>
 
                 <div class="row">
-                  <div class="col-md-3">
+                  <div class="col">
                     <div class="form-group">
                         <label><b>Operator <font style="color: red">*</font></b></label>
                         <select name="user[0][operator]" class="form-control" id="operator" required=""  >
@@ -115,7 +99,7 @@ window.DPR_JQUERY_LOADED = true;
                         </select>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col">
                    <div class="form-group">
                         <label><b>Kanit <font style="color: red">*</font></b></label>
                          <select name="user[0][kanit]" class="form-control" id="kanit" required=""  >
@@ -124,10 +108,10 @@ window.DPR_JQUERY_LOADED = true;
                         </select>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col">
                     <div class="form-group">
                         <label><b>Group <font style="color: red">*</font></b></label>
-                        <select name="user[0][group]" class="form-control" id="group" required="">
+                        <select name="user[0][group]" class="form-control" required="">
                               <option value="">-Choose-</option>
                           <option value="A">A</option>
                           <option value="B">B</option>
@@ -135,16 +119,10 @@ window.DPR_JQUERY_LOADED = true;
                         </select>
                     </div>
                   </div>
-                  <div class="col-md-3">
-                    <div class="form-group">
-                        <label><b>Mesin <font style="color: red">*</font></b></label>
-                        <input type="text" name="user[0][mesin]" id="mesin" required x-moz-errormessage="Not Empty" class="form-control" onkeyup="lot(this.value)">
-                    </div>
-                  </div>
                 </div>
 
                 <div class="row">
-                  <div class="col-md-4">
+                  <div class="col-sm-4">
                     <div class="form-group">
                         <label><b>No. & Nama BOM <font style="color: red">*</font></b></label>
                         <input type="search form-control" name="" id="barcode_sparepart_code" class="autocompleteBom" style="width: 100%" required="" id="id_bom" onchange="cekNoNamaBOM()">
@@ -152,91 +130,123 @@ window.DPR_JQUERY_LOADED = true;
                         <input type="hidden" name="user[0][id_bom]" id="id_bomS" readonly="" class="form-control">
                     </div>
                   </div>
-                  <div class="col-md-2">
+                  <div class="col-sm-2">
+                    <div class="form-group">
+                        <label><b>Mesin <font style="color: red">*</font></b></label>
+<!--                         <select name="user[0][mesin]" id="mesin" style="width:100px;height: 100%" required x-moz-errormessage="Not Empty" class="form-control" onchange="lot(this.value)">
+                        </select> -->
+                        <input type="text" name="user[0][mesin]" id="mesin" required x-moz-errormessage="Not Empty" class="form-control" onkeyup="lot(this.value)">
+                    </div>
+                  </div>
+
+                  <div class="col-sm-2">
                     <div class="form-group">
                     <label><b>Proses</b></label>
                         <input type="text" name="user[0][proses]" id="proses" class="form-control" readonly="">
                     </div>
                   </div>
 
-                  <div class="col-md-2">
-                    <div class="form-group">
-                        <label><b>Cavity</b></label>
-                         <input type="text" name="user[0][cavity]" id="cavity" class="form-control" value="1">
-                         <input type="hidden" name="user[0][cavity2]" id="cavity2" class="form-control" >
-                    </div>
-                  </div>
-                  <div class="col-md-4">
+                  <div class="col-sm-4">
                     <div class="form-group">
                     <label><b>Customer</b></label>
                         <input type="text" name="user[0][customer]" id="customer" class="form-control" readonly="">
                     </div>
                   </div>
                 </div>
-
                 <div class="row">
-                  <div class="col-md-3">
+                  <div class="col">
                     <div class="form-group">
                         <label><b>Production Time </b></label>
                         <input type="text" name="user[0][production_time]" id="production_time" class="form-control" readonly>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col">
                     <div class="form-group">
+                        <label><b>Cavity</b></label>
+                         <input type="text" name="user[0][cavity]" id="cavity" class="form-control" value="1">
+                         <input type="hidden" name="user[0][cavity2]" id="cavity2" class="form-control" >
+                        </select>
+                    </div>
+                  </div>
+                  <div class="col">
+                    <div class="form-group">
+                        <label><b>Tooling</b></label>
+                        <input type="text" name="user[0][tooling]" class="form-control">
+                    </div>
+                  </div>
+                  <div class="col">
+                   <div class="form-group">
                         <label><b>Lot Global</b></label>
-                         <p id="lotGlobal" style="margin: 0; font-weight: bold;"></p>
+                         <p id="lotGlobal"></p>
                           <input type="hidden" name="user[0][lot_global]" id="lotGlobalSave" class="form-control">
                     </div>
                   </div>
                 </div>
 
                 <div class="row">
-                  <div class="col-md-3">
+                  <div class="col">
                     <div class="form-group">
-                        <label><b>CT MC STD</b></label>
+                        <label><b>CT MC</b></label>
                          <input type="text" name="user[0][ct_mc]" id="ct_mc" readonly="" class="form-control">
-                         <input type="hidden" id="ct_quo" value="">
                     </div>
                   </div>
-                  <div class="col-md-3">
-                    <div class="form-group">
-                        <input type="hidden" name="user[0][ct_mp]" id="ct_mp" readonly="" class="form-control">
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-group">
-                        <label><b>Target MC</b></label>
-                          <input type="text" name="user[0][target_mc]" id="target_mc" class="form-control" readonly="">
+                  <div class="col">
+                   <div class="form-group">
+                        <label><b>CT MP</b></label> 
+                         <input type="text" name="user[0][ct_mp]" id="ct_mp" readonly="" class="form-control">
                     </div>
                   </div>
                 </div>
 
                 <div class="row">
-                  <div class="col-md-12">
+                  <div class="col">
                     <div class="input-group">
-                         <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" placeholder="CT MC Aktual" >
+                         <input type="text" name="user[0][ct_mc_aktual]" id="ct_mc_aktual" class="form-control" aria-describedby="inputGroupPrepend2" onkeyup="setTarget(this.value)" >
+                         <div class="input-group-prepend">
+                          <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="col">
+                   <div class="input-group">
+                         <input type="text" name="user[0][ct_mp_aktual]" id="ct_mp_aktual" class="form-control" aria-describedby="inputGroupPrepend2" value="0" >
                          <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Sec</span>
                         </div>
                     </div>
                   </div>
                 </div>
-               <div class="row">
-                  <div class="col-md-6">
+
+                 <div class="row">
+                  <div class="col">
+                   <div class="form-group">
+                        <label><b>Target MC</b></label>
+                          <input type="text" name="user[0][target_mc]" id="target_mc" class="form-control" readonly="">
+                    </div>
+                  </div>
+                  <div class="col">
+                   <div class="form-group">
+                        <label><b>Target MP</b></label>
+                          <input type="text" name="user[0][target]" id="target_mp" class="form-control" readonly="">
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col">
                     <div class="form-group">
                         <label><b>Qty OK <font style="color: red">*</font></b></label>
                          <div class="input-group">
-                         <input type="text" name="user[0][qty_ok]" required="" class="form-control" onkeyup="lot(this.value)" aria-describedby="inputGroupPrepend2" id="qty" placeholder="Qty OK">
+                         <input type="text" name="user[0][qty_ok]" required="" class="form-control" onkeyup="lot(this.value)" aria-describedby="inputGroupPrepend2" id="qty" >
                          <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Pcs</span>
                          </div>
                         </div>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col">
                     <div class="form-group">
                         <label><b>Keterangan</b></label>
-                         <input type="text" name="user[0][keterangan]" class="form-control" placeholder="Keterangan">
+                         <input type="text" name="user[0][keterangan]" class="form-control">
                     </div>
                   </div>
                 </div>
@@ -244,7 +254,9 @@ window.DPR_JQUERY_LOADED = true;
                 <!-- end body -->
                 </div>
             </div>
+          
        <!-- START RELEASE -->
+       <hr>
        <div class="card rounded card border-success mb-3">
             <div class="card-body ">
               <div class="card-header bg-success">
@@ -259,7 +271,9 @@ window.DPR_JQUERY_LOADED = true;
             </div>
           </div>
        
+
       <!-- START DEFECT -->
+        <hr>
             <div class="card rounded card border-warning mb-3">
             <div class="card-body ">
               <div class="card-header bg-warning">
@@ -288,7 +302,7 @@ window.DPR_JQUERY_LOADED = true;
                     </div>
                   </div>
                   <div class="col">
-                    <button type="button" class="btn btn-success" class="form-control" onclick="addNG(); return false;">( + )</button>
+                    <button class="btn btn-success" class="form-control" onclick="addNG(); return false;">( + )</button>
                   </div>
               
                   <div class="col-sm-12">
@@ -343,7 +357,7 @@ window.DPR_JQUERY_LOADED = true;
                 <div class="col">
                    <div class="form-group">
                         <div class="input-group">
-                         <input type="number" name="" id="qtyLT" class="form-control formLT"  aria-describedby="inputGroupPrepend2" step="0.01" placeholder="0.5">
+                         <input type="number" name="" id="qtyLT" class="form-control formLT"  aria-describedby="inputGroupPrepend2" onkeypress="convertJam()">
                          <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
                          </div>
@@ -358,7 +372,7 @@ window.DPR_JQUERY_LOADED = true;
                     </div>
                   </div>
                   <div class="col">
-                    <button type="button" class="btn btn-success" class="form-control" onclick="addLT(); return false;">( + )</button>
+                    <button class="btn btn-success" class="form-control" onclick="addLT(); return false;">( + )</button>
                   </div>
                   <div class="col-sm-12">
                   <div class="table-responsive">
@@ -381,12 +395,11 @@ window.DPR_JQUERY_LOADED = true;
                           <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Total LT</span>
                          </div>
-                         <input type="text" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" value="0.00">
+                         <input type="text" name="user[0][qty_lt]" id="amountLT" readonly="" class="form-control"  aria-describedby="inputGroupPrepend2" >
                          <div class="input-group-prepend">
                           <span class="input-group-text" id="inputGroupPrepend2">Jam</span>
                          </div>
                         </div>
-                        <input type="hidden" name="user[0][qty_lt]" id="qty_lt_minutes" value="0">
                         <input type="hidden" name="" id="amountIdle"  class="form-control" value="0" readonly>
                         <input type="text" name="" id="cal_dt"  class="form-control" value="0" readonly>
                     </div>
@@ -396,16 +409,17 @@ window.DPR_JQUERY_LOADED = true;
           </div>
       
           <!-- end loss time -->
+          <hr>
           <div class="card rounded card border-primary mb-3">
             <div class="card-body ">
              
               <div class="card-header bg-primary">
-                <center> <b>TOOLING</b></center>
+                <center> <b>CUTTING TOOL</b></center>
               </div>
               <div class="row">
                   <div class="col">
                     <div class="form-group">
-                      <label><b>Tooling</b></label>
+                      <label><b>Cutting Tool</b></label>
                       <div class="input-group">
                         <input type="text" id="cutting_tools_code" class="autocompletecuttingtools form-control" placeholder="Input Cutting Tool Code">
                         <input type="hidden" id="cutting_tools_id">
@@ -432,6 +446,7 @@ window.DPR_JQUERY_LOADED = true;
           </div>
 
           <!-- end save -->
+          <hr>
           <div class="card rounded card border-success mb-3">
             <div class="card-body ">
               <div class="card-header bg-success">
@@ -451,20 +466,22 @@ window.DPR_JQUERY_LOADED = true;
                     </div>
                   </div>
                 </div>
-            <div class="row">
-                 <div class="col-md-4">
+              <div class="row">
+                 <div class="col">
                     <div class="form-group">
                         <label><b>Runner</b></label>
-                       <input type="text" name="runner" class="form-control" placeholder="Runner">
+                       <input type="text" name="runner" class="form-control">
                     </div>
                   </div>
-                  <div class="col-md-4">
+
+                  <div class="col">
                     <div class="form-group">
                         <label><b>Loss Purge</b></label>
-                       <input type="text" name="user[0][loss_purge]" class="form-control" placeholder="Loss Purge">
+                       <input type="text" name="user[0][loss_purge]" class="form-control">
                     </div>
                   </div>
-                  <div class="col-md-4">
+                  
+                  <div class="col">
                     <div class="form-group">
                         <label><b>Transaksi<font style="color: red">*</font></b></label>
                        <input type="hidden" name="" id="waktu" value="<?= date('his');  ?>">
@@ -473,36 +490,18 @@ window.DPR_JQUERY_LOADED = true;
                   </div>
               </div>
               <div class="row">
-                <div class="col-md-6">
+                <div class="col">
                     <div class="form-group">
                         <label><b>Mtrl Lot No.</b></label>
-                       <input type="text" name="user[0][lot_material_no]" class="form-control" placeholder="Material Lot Number">
+                       <input type="text" name="user[0][lot_material_no]" class="form-control">
                        <input type="hidden" name="user[0][pic]" value="<?= $data['user_name']; ?>" > 
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-group">
-                        <label><b>Nett Produksi </b></label>
-                          <input type="text" name="user[0][nett_prod]" id="nett_produksi" class="form-control" readonly="">
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                   <div class="form-group">
-                        <label><b>Gross Produksi</b></label>
-                          <input type="text" name="user[0][gross_prod]" id="gross_produksi" class="form-control" readonly="">
                     </div>
                   </div>
                 </div>
                <div class="row justify-content-center">
-                  <div class="col-md-12 text-center">
-                    <div class="form-group">
-                        <label style="font-weight:normal">
-                            <input type="checkbox" name="confirm_duplicate" value="1">
-                            Konfirmasi duplikat &mdash; centang hanya jika (tanggal, mesin, shift, produk) memang perlu diinput lebih dari sekali
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <div id="save"><input type="submit" id="submit" name="" class="btn btn-primary btn-lg px-5" value="Save"><span id="loading" class="ml-2" style="vertical-align: middle;"></span></div>
+                  <div class="col">
+                    <div class="form-group d-flex justify-content-center">
+                        <div id="save"><input type="submit" id="submit" name="" class="btn btn-primary" value="Save"><span id="loading" class="ml-2" style="vertical-align: middle;margin-top:35px"></span></div>
                     </div>
                   </div>
               </div>
@@ -518,21 +517,12 @@ window.DPR_JQUERY_LOADED = true;
 </div>
 
 <script type="text/javascript">
-    // #region agent log (pre-fix) H-A/H-C: confirm script executes at all on c_dpr/add_dpr
-    fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:script-top',message:'add_dpr.php inline script loaded',data:{href:(typeof location!=="undefined"?location.href:null)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-A'})}).catch(()=>{});
-    // #endregion
-
         $(document).ready(function() {
             $('.delete').click(function() {
             return confirm("Are you sure you want to delete?");
             });
         });
         $(document).ready(function(){
-            // Recalculate target_mc when NWT or OT changes
-            $('#nwt, #ot_mp').on('input change', function() {
-                setTarget();
-            });
-            
             var id_get = $('#id_bomS').val();
             $.ajax({
                       type    : "",
@@ -550,8 +540,6 @@ window.DPR_JQUERY_LOADED = true;
                     $('#ct_mc_aktual').html(ui.item.cyt_mc_bom + ' <br/> ' + ui.item.cyt_mp_bom);
                     $('#ct_mc').val(ui.item.cyt_mc_bom);
                     $('#ct_mp').val(ui.item.cyt_mp_bom);
-                    // Store cycle time quote for target calculation
-                    $('#ct_quo').val(ui.item.cyt_quo || ui.item.cyt_mc_bom); // Fallback to cyt_mc_bom if cyt_quo is not available
                     $('#id_pr').val(ui.item.id_pr); 
                     $('#customer').val(ui.item.customer);
                     $('#proses').val(ui.item.kode_proses);
@@ -569,12 +557,9 @@ window.DPR_JQUERY_LOADED = true;
 
                     var nwt = $('#nwt_mp').val();
                     var ot = $('#ot_mp').val();
-                    var target = (((parseFloat(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
+                    var target = (((parseInt(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
                     //var target = (nwt + ot)
                     $('#Target').val(parseInt(target));
-
-                    // Calculate target_mc using cycle time quote when BOM is selected
-                    setTarget();
 
                     var id_bom = ui.item.id_bom;
                     $('#tes').val(ui.item.hasil);
@@ -679,18 +664,14 @@ window.DPR_JQUERY_LOADED = true;
 
     function setTarget(id)
     {
-        var ct_quo = $('#ct_quo').val(); // Use cycle time quote instead of standard
+        var ct_aktual = $('#ct_mc_aktual').val();
         var cavity = $('#cavity').val();
         var nwt = $('#nwt').val();
         var ot = $('#ot_mp').val();
-        let nwt_plus_ot = parseFloat(nwt) + parseInt(ot);
+        let nwt_plus_ot = parseInt(nwt) + parseInt(ot);
         // alert(nwt_plus_ot);
-        if (ct_quo > 0 && cavity > 0 && nwt_plus_ot > 0) {
-            var hasil = ((3600/ct_quo)*(cavity*nwt_plus_ot));
-            $('#target_mc').val(hasil.toFixed(2));
-        } else {
-            $('#target_mc').val('');
-        }
+        var hasil = ((3600/ct_aktual)*(cavity*nwt_plus_ot));
+        $('#target_mc').val(hasil.toFixed(2));
         $('#target_mp').val(0);
     }
     
@@ -804,31 +785,35 @@ window.DPR_JQUERY_LOADED = true;
     function GrossNett()
     {
         var qty = parseFloat($('#qty').val());
-        var ct_std = $('#ct_mc').val(); // Changed from ct_aktual to ct_std
+        var ct_aktual = $('#ct_mc_aktual').val();
         var cavity = $('#cavity').val();
         var cavity2 = $('#cavity2').val();
         var defect = parseFloat($('#amountNG').val());
         var kalkulasi = qty + defect;
-        var hasil_time = (kalkulasi / cavity)*(ct_std/3600); // Using CT Std instead of CT MC Aktual
+        var hasil_time = (kalkulasi / cavity)*(ct_aktual/3600);
 
         console.log("cavity1: " + cavity);
         console.log("cavity2: " + cavity2);
-        console.log("ct_std: " + ct_std); // Added to log CT Std value
-        // Production Time formula using CT Std
+        //6000 / 11 = 545
+        //17 / 3600 = 0.0047 
+        //2.6
+
+
+
+        //var hasil_time = (kalkulasi / cavity * ct_aktual);
         var hasil = hasil_time.toFixed(1);
         $('#production_time').val(hasil);
         //$('#nett_produksi').val(hasil);
-        // LT input is in HOURS (user-friendly), calculations use hours directly
-        var LT = parseFloat($('#amountLT').val()) || 0; // Loss Time in hours (user input)
-        var LT_new = LT; // Already in hours
+        var LT = $('#amountLT').val();
+        var LT_new = $('#amountLT').val()/60;
         var calcDT = $('#amountIdle').val()/60;
 
         var nwt = $('#nwt').val();
         var ot = $('#ot_mp').val();
-        var nwt_new = parseFloat(nwt) + parseInt(ot);
+        var nwt_new = parseInt(nwt) + parseInt(ot);
 
         var calDT_new = nwt_new - hasil;
-        var calDT_new_lagi = calDT_new - LT_new; // LT_new is in hours
+        var calDT_new_lagi = calDT_new - LT;
         //var cek = nwt - calDT_new;
         var raw_nilaiGross = 3600*(nwt_new-calDT_new_lagi)/qty*cavity;
         var raw_nilaiGross_2 = 3600*nwt_new/qty*cavity2;
@@ -928,95 +913,6 @@ $('#gross_produksi').val(customRound(grossProduction).toFixed(2));
             return true;
         });
     });
-
-    // Auto-select Group based on Kanit selection (and lock it)
-    function getGroupFromKanit(kanit) {
-        // Match by real dropdown values: sometimes full names are used (e.g. "Rinaldi Hanif F")
-        var raw = (kanit || '').toString().trim();
-        if (!raw) return '';
-
-        // normalize: lowercase + remove non-letters to make matching resilient (spaces, dots, etc.)
-        var norm = raw.toLowerCase().replace(/[^a-z]/g, '');
-
-        // Seniors
-        if (norm.indexOf('matsohe') !== -1) return 'A';
-        if (norm.indexOf('marjoko') !== -1) return 'B';
-        if (norm.indexOf('suroto') !== -1) return 'C';
-
-        // Juniors
-        if (norm.indexOf('rinaldi') !== -1) return 'A';
-        if (norm.indexOf('alan') !== -1) return 'B';
-        if (norm.indexOf('ramadhan') !== -1) return 'C';
-
-        return '';
-    }
-
-    function bindAutoGroupByKanit() {
-        var $kanit = $('#kanit');
-        var $group = $('#group');
-
-        // #region agent log (pre-fix) H-B/H-C: confirm elements are found
-        fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:bindAutoGroupByKanit',message:'bindAutoGroupByKanit() called',data:{kanitCount:$kanit.length,groupCount:$group.length,kanitId:($kanit.attr?$kanit.attr("id"):null),groupId:($group.attr?$group.attr("id"):null)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-B'})}).catch(()=>{});
-        // #endregion
-
-        if (!$kanit.length || !$group.length) return;
-
-        function apply() {
-            var kanitRaw = ($kanit.val() || '').toString();
-            var kanitNorm = kanitRaw.trim().toLowerCase().replace(/[^a-z]/g, '');
-            var mappingVersion = 'norm-contains-v1';
-            var g = getGroupFromKanit($kanit.val());
-            var hiddenSelector = 'input[type="hidden"][name="user[0][group]"][data-auto-group="1"]';
-            var $hidden = $(hiddenSelector);
-
-            // #region agent log (pre-fix) H-D: apply() run and mapping result
-            fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:apply',message:'apply() executed',data:{mappingVersion:mappingVersion,kanitVal:$kanit.val(),kanitNorm:kanitNorm,mappedGroup:g,groupValBefore:$group.val(),hiddenCount:$hidden.length},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H-D'})}).catch(()=>{});
-            // #endregion
-
-            if (g) {
-                $group.val(g).trigger('change');
-                $group.prop('disabled', true);
-
-                if (!$hidden.length) {
-                    $('<input>', { type: 'hidden', name: 'user[0][group]', value: g })
-                        .attr('data-auto-group', '1')
-                        .insertAfter($group);
-                } else {
-                    $hidden.val(g);
-                }
-
-                // #region agent log (pre-fix) H-D: after set/lock
-                fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:apply-set',message:'group set and locked',data:{kanitVal:$kanit.val(),mappedGroup:g,groupValAfter:$group.val(),groupDisabled:$group.prop('disabled'),hiddenCountAfter:$('input[type=\"hidden\"][name=\"user[0][group]\"][data-auto-group=\"1\"]').length},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-D'})}).catch(()=>{});
-                // #endregion
-
-                if (window.DPR_DEBUG) {
-                    console.log('[DPR] auto group by kanit', { kanit: $kanit.val(), group: g });
-                }
-            } else {
-                $group.prop('disabled', false);
-                $hidden.remove();
-
-                // #region agent log (pre-fix) H-E: unmapped/empty path
-                fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:apply-unset',message:'group unlocked (no mapping)',data:{kanitVal:$kanit.val(),mappedGroup:g,groupDisabled:$group.prop('disabled')},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-E'})}).catch(()=>{});
-                // #endregion
-            }
-        }
-
-        $kanit.on('change', function() {
-            // #region agent log (pre-fix) H-D: kanit change event fired
-            fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:kanit-change',message:'#kanit change fired',data:{kanitVal:$kanit.val()},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-D'})}).catch(()=>{});
-            // #endregion
-            apply();
-        });
-        apply();
-    }
-
-    $(document).ready(function() {
-        // #region agent log (pre-fix) H-C: document ready reached
-        fetch('http://127.0.0.1:7244/ingest/d3f759ae-50e1-4f49-9539-47458f0f4b49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'application/views/dpr/add_dpr.php:docready',message:'document ready - about to bind auto group',data:{hasJquery:(typeof window.jQuery!=="undefined")},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H-C'})}).catch(()=>{});
-        // #endregion
-        bindAutoGroupByKanit();
-    });
 </script>
 
 
@@ -1073,13 +969,12 @@ $('#gross_produksi').val(customRound(grossProduction).toFixed(2));
         var kategori = $('#kategoriLT').val();
         var type     = $('#typeLT').val();
         var satuan   = $('#satuanLT').val();
-        var qty_hours = parseFloat($('#qtyLT').val()); // User inputs hours
-        var qty      = qty_hours * 60; // Convert to minutes for storage
+        var qty      = $('#qtyLT').val();
         var markup = "<tr><td><input type='button' value='X'></td><td>"+svLT+"</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][nama]' value='"+nama+"''>"+nama+"</td>"+
         "<td><input type='hidden' name='detailLT["+saveLT+"][kategori]' value='"+kategori+"'>"+kategori+"</td>"+
-        "<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+"</td>"+
-        "<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">Jam<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
+        "<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty+"</td>"+
+        "<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
         "</tr>";
         if(kategori == ''){
 			alert('Silahkan pilih nama defect/losstime terlebih dahulu!');
@@ -1137,18 +1032,14 @@ $(document).ready(function(){
 
             function totalLT()
             {
-                var sumMinutes = 0;
+                var sum = 0;
                 $('#tableLT > tr').each(function() {
+                      var nilai  = $('.nilai').val()
                     var price = parseFloat($(this).find('.nilai').val());
-                    if (!isNaN(price) && price > 0) {
-                        sumMinutes += price;
-                    }
+                    sum += price;
+                    $('#amountLT').val(sum);
                 });
-
-                var sumHours = sumMinutes / 60;
-                $('#amountLT').val(isFinite(sumHours) ? sumHours.toFixed(2) : '0.00');
-                $('#qty_lt_minutes').val(isFinite(sumMinutes) ? sumMinutes : 0);
-            }
+            } 
 
             function totalStartStop(qty)
             {
@@ -1161,6 +1052,5 @@ $(document).ready(function(){
     </script>
     </form>
 
-    <?php $this->load->view('layout/footer', ['jquery_loaded' => true]); ?>
   </body>
 </html>

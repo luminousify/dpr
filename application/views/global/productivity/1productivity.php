@@ -486,8 +486,8 @@ $(document).ready(function() {
                 buttons: [
                     {extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Productivity_Report_<?php echo str_replace('-', '_', $bulan); ?>_<?php echo $tahun; ?>'},
-                    {extend: 'pdf', title: 'Productivity_Report_<?php echo str_replace('-', '_', $bulan); ?>_<?php echo $tahun; ?>'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){
@@ -538,8 +538,8 @@ $(document).ready(function() {
                 buttons: [
                     {extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Productivity_Report_<?php echo str_replace('-', '_', $bulan); ?>_<?php echo $tahun; ?>'},
-                    {extend: 'pdf', title: 'Productivity_Report_<?php echo str_replace('-', '_', $bulan); ?>_<?php echo $tahun; ?>'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){
@@ -590,8 +590,8 @@ $(document).ready(function() {
                 buttons: [
                     {extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Productivity_Report_<?php echo str_replace('-', '_', $bulan); ?>_<?php echo $tahun; ?>'},
-                    {extend: 'pdf', title: 'Productivity_Report_<?php echo str_replace('-', '_', $bulan); ?>_<?php echo $tahun; ?>'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){

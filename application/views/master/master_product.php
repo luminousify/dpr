@@ -18,15 +18,16 @@
 }
 </style>
 <div class="row wrapper border-bottom white-bg page-heading">
-                <div class="col-lg-12">
+                <div class="col-lg-10">
                     <h2>Action</h2>
                     <div class="row">
-                    	<div class="col mb-2">
-                            <a href="<?= base_url('c_new/master_productAct'); ?>" class="btn btn-success btn-sm">
-                                <i class="fa fa-plus"></i> Add Master Product
-                            </a> 
+                    	<div class="col">
+                            <a href="<?= base_url('c_new/master_productAct'); ?>"><button class="btn btn-success">Add Master Product</button></a> 
                     	</div>
                     </div>
+                </div>
+                <div class="col-lg-2">
+
                 </div>
             </div>
         <div class="wrapper wrapper-content animated fadeInRight">
@@ -47,20 +48,16 @@
                                 <div class="col-sm-9">       
                                   <form action="<?= base_url('c_new/search_master_product'); ?>" method="POST">
                                   <div class="input-group">
-                                        <input type="text" class="form-control" name="keyword" placeholder="Cari Kode Product atau Nama Product..." value="<?php echo $keyword ?>" required>
+                                        <input type="text" class="form-control" name="keyword" placeholder="Cari disini ..." value="<?php echo $keyword ?>" required>
                                         <span class="input-group-btn ml-1">
-                                            <button type="submit" class="btn btn-sm btn-success text-white" name="tampil" value="Show">
-                                                <i class="fa fa-search"></i> Search
-                                            </button>
+                                            <input type="submit" class="btn btn-lg btn-success text-white" name="tampil" value="Show">
                                         </span>
                                   </div>
                                 </form>
                                 </div>
                               </div>
-                              <div class="row ml-3 mt-2">
-                                <div class="alert alert-info py-1">
-                                    <i class="fa fa-info-circle"></i> <strong>Catatan:</strong> Ketik <strong>Kode Product</strong> atau <strong>Nama Product</strong> untuk menampilkan data produk.
-                                </div>
+                              <div class="row ml-3" style="margin-bottom: -10px;">
+                                <p><strong>*Catatan :</strong> Ketik <strong>Kode Product / Nama Product</strong> untuk menampilkan data produk.</p>
                             </div>
                             </div>
 
@@ -77,13 +74,13 @@
                         <th style="text-align: center;" class="align-middle"><b>Kode Proses</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Nama Proses</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Usage</b></th>
+                        <th style="text-align: center;" class="align-middle"><b>MP Standar</b></th>
 				        <th style="text-align: center;" class="align-middle"><b>Cavity</b></th>
 				        <th style="text-align: center;" class="align-middle"><b>Satuan</b></th>
 				        <th style="text-align: center;" class="align-middle"><b>Type</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Cyt MC</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Cyt Quo</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Customer</b></th>
-                        <th style="text-align: center;" class="align-middle"><b>Cost</b></th>
 				        <th style="text-align: center;" class="align-middle"><b>Acc ID</b></th>
                         <th style="text-align: center;" class="align-middle"><b>Acc Inv</b></th>
 				        <th style="text-align: center;" class="align-middle"><b>Edit</b></th>
@@ -118,7 +115,10 @@
                                     </td>
                                     <td>
                                         <?php echo $data->usage   ; ?>
-                                    </td>  
+                                    </td>
+                                    <td>
+                                        <?php echo $data->mp_standar; ?>
+                                    </td>
                                     <td>
                                         <?php echo $data->cavity; ?>
                                     </td>
@@ -136,9 +136,6 @@
                                     </td>
                                     <td>
                                         <?php echo $data->customer; ?>
-                                    </td>
-                                    <td style="text-align: center;">
-                                        <?php echo isset($data->cost) ? $data->cost : '0'; ?>
                                     </td>
                                      <td>
                                         <?php echo $data->AccID; ?>
@@ -172,13 +169,13 @@
                         <th><b>Kode Proses</b></th>
                         <th><b>Nama Proses</b></th>
                         <th><b>Usage</b></th>
+                        <th><b>MP Standar</b></th>
                         <th><b>Cavity</b></th>
                         <th><b>Satuan</b></th>
                         <th><b>Type</b></th>
                         <th><b>Cyt MC</b></th>
                         <th><b>Cyt Quo</b></th>
                         <th><b>Customer</b></th>
-                        <th><b>Cost</b></th>
                         <th><b>Acc ID</b></th>
                         <th><b>Acc Inv</b></th>
                         <th><b>Edit</b></th>
@@ -232,14 +229,15 @@
                     scrollCollapse: true,
                     paging:         true,
                     fixedColumns:   {
-                        left: 3
+                        left: 3,
+                        right: 2
                     },
                 dom: '<"html5buttons"B>lTfgitp',
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){

@@ -2,6 +2,13 @@
 <?php $this->load->view('layout/sidebar'); ?>
 
 <!-- We need to ensure jQuery is loaded before any plugins -->
+<script>
+    // Check if jQuery is already loaded
+    if (typeof jQuery === 'undefined') {
+        document.write('<script src="<?= base_url(); ?>template/js/jquery-3.1.1.min.js"><\/script>');
+    }
+</script>
+
 <!-- DataTables CSS -->
 <link href="<?= base_url(); ?>template/css/plugins/dataTables/datatables.min.css" rel="stylesheet">
 <link href="<?= base_url(); ?>template/css/fixedColumns.bootstrap4.min.css" rel="stylesheet">
@@ -186,7 +193,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                         </div>
                     </div>
                 <div class="ibox-content">
-                  <form method="get" action="<?= site_url('c_report/productivity_quartal'); ?>">
+                  <?= form_open('c_report/annual_productivity'); ?>  
                     <div class="card rounded mb-4">
                         <div class="card-header">
                             <h2>Filter Data</h2>
@@ -196,11 +203,13 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                                 <div class="col-sm-3"> <b>Pilih Tahun</b> 
                                     <select name="year" class="form-control">
                                       <?php
+                                        // Ensure year is set
                                         $current_year = date('Y');
+                                        $selected_year = isset($year) ? (int)$year : $current_year;
                                         $start_year = $current_year - 1;
                                         $end_year = $current_year + 1;
                                         for($i = $start_year; $i <= $end_year; $i++) {
-                                          $selected = ($i == $year) ? 'selected="selected"' : '';
+                                          $selected = ($i == $selected_year) ? 'selected="selected"' : '';
                                           echo "<option value=\"$i\" $selected>$i</option>";
                                         }                          
                                       ?>
@@ -213,62 +222,19 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                             <p><strong>*Catatan :</strong> Data yang muncul hanya data pada <strong>tahun ini saja</strong>, jika ingin melihat data yang lain silahkan gunakan fitur <strong>filter</strong>.</p>
                         </div>
                     </div>
-                    </form>
-                    
-                    <!-- Custom Excel Export -->
-                    <div class="card rounded mb-4 border-info">
-                        <div class="card-header bg-info text-white">
-                            <h5><i class="fa fa-download"></i> Export Productivity Data</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-sm-3">
-                                    <label for="export_year_quartal" class="font-weight-bold">Pilih Tahun:</label>
-                                    <select id="export_year_quartal" name="year" class="form-control">
-                                        <?php 
-                                        $currentYear = date('Y');
-                                        for($y = $currentYear - 3; $y <= $currentYear + 1; $y++): ?>
-                                        <option value="<?= $y ?>" <?= $y == $year ? 'selected' : '' ?>><?= $y ?></option>
-                                        <?php endfor; ?>
-                                    </select>
-                                </div>
-                                <div class="col-sm-4">
-                                    <label>&nbsp;</label>
-                                    <button type="button" id="export_custom_excel_quartal" class="btn btn-success btn-block" onclick="exportCustomExcel()">
-                                        <i class="fa fa-file-excel-o"></i> Export Excel
-                                    </button>
-                                </div>
-                                <div class="col-sm-3">
-                                    <label>&nbsp;</label>
-                                </div>
-                                <div class="col-sm-2">
-                                    <label>&nbsp;</label>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-12">
-                                    <small class="text-muted">
-                                        <i class="fa fa-info-circle"></i> 
-                                        Data format: YY | Product ID | Product Name | Cycle Time Standard | Cycle Time Quote | Tool | 01 | 02 | ... | 12 
-                                        (kolom 01-12 menampilkan rata-rata CT aktual per bulan)
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
+                    <?= form_close(); ?>
                     <div class="tabs-container">
                         <ul class="nav nav-tabs">
-                                <li><a class="nav-link active" data-toggle="tab" href="#tab-1">Productivity Chart</a></li>
-                                <li><a class="nav-link" data-toggle="tab" href="#tab-2">Annual Productivity</a></li>
+                                <li><a class="nav-link" data-toggle="tab" href="#tab-1">Productivity Chart</a></li>
+                                <li><a class="nav-link active" data-toggle="tab" href="#tab-2">Annual Productivity</a></li>
                             </ul>
                         <div class="tab-content">
-                            <div role="tabpanel" id="tab-1" class="tab-pane active">
+                            <div role="tabpanel" id="tab-1" class="tab-pane">
                                 <div class="panel-body">
                                     <?php $this->load->view('global/productivity/productivity_q1'); ?>
                                 </div>
                             </div>
-                            <div role="tabpanel" id="tab-2" class="tab-pane">
+                            <div role="tabpanel" id="tab-2" class="tab-pane active">
                                 <div class="panel-body">
                                     <?php $this->load->view('global/productivity/annual_productivity'); ?>
                                 </div>
@@ -354,8 +320,8 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                 buttons: [
                     {extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
                     {extend: 'print',
                      customize: function (win){
                             $(win.document.body).addClass('white-bg');
@@ -388,8 +354,8 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                 buttons: [
                     {extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){
@@ -420,43 +386,6 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
             });
         });
-
-// Custom Excel Export Function
-function exportCustomExcel() {
-    var selectedYear = $('#export_year_quartal').val();
-    
-    // Show loading state
-    var $button = $('#export_custom_excel_quartal');
-    var originalText = $button.html();
-    $button.html('<i class="fa fa-spinner fa-spin"></i> Exporting...').prop('disabled', true);
-    
-    // Create form and submit
-    var form = $('<form>', {
-        'method': 'POST',
-        'action': '<?= base_url('c_report/export_custom_excel') ?>'
-    });
-    
-    var yearInput = $('<input>', {
-        'type': 'hidden',
-        'name': 'year',
-        'value': selectedYear
-    });
-    
-    form.append(yearInput);
-    $('body').append(form);
-    
-    // Submit form
-    form.submit();
-    
-    // Remove form after submission
-    setTimeout(function() {
-        form.remove();
-        // Restore button state (in case download doesn't start)
-        $button.html(originalText).prop('disabled', false);
-    }, 5000); // Increased timeout for Excel generation
-}
-
-
 
     </script>
 
@@ -493,11 +422,11 @@ function exportCustomExcel() {
    
 $(document).ready(function() {         
    var table = document.getElementById('datatable1');
-   if (!table) return; // Exit if table doesn't exist
    
-   // Get current month (not previous month)
+   // Get current date and previous month
    var currentDate = new Date();
-   var currentMonthIndex = currentDate.getMonth() + 1; // JavaScript months are 0-based, convert to 1-based for comparison
+   var lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+   var lastMonthIndex = lastMonth.getMonth() + 1; // JavaScript months are 0-based, convert to 1-based for comparison
    
    var options = {
          chart: {
@@ -518,34 +447,25 @@ $(document).ready(function() {
          yAxis: {
             title: {
                text: 'Productivity %'
-            },
-            min: 0,
-            max: 100,
-            tickInterval: 10
+            }
          },
          tooltip: {
             formatter: function() {
                return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +'% '+ this.x.toLowerCase();
+                  this.y +' '+ this.x.toLowerCase();
             }
          },
          colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
          plotOptions: {
             column: {
                 dataLabels: {
-                    enabled: true,
-                    formatter: function() {
-                        return this.y + '%';
-                    }
+                    enabled: true
                 },
                 enableMouseTracking: false
             },
             line: {
                 dataLabels: {
-                    enabled: true,
-                    formatter: function() {
-                        return this.y + '%';
-                    }
+                    enabled: true
                 },
                 enableMouseTracking: false
             }
@@ -637,14 +557,13 @@ $(document).ready(function() {
       var chart = new Highcharts.Chart(options);
    };
    
-   // Use our custom visualization that limits data to current month
-   customVisualize(table, options, currentMonthIndex);
+   // Use our custom visualization that limits data to previous month
+   customVisualize(table, options, lastMonthIndex);
 });
 
 $(document).ready(function() {         
-   var table = document.getElementById('datatable3');
-   if (!table) return; // Exit if table doesn't exist
-   var options = {
+   var table = document.getElementById('datatable3'),
+   options = {
          chart: {
             renderTo: 'container3',
             defaultSeriesType: 'column'
@@ -668,7 +587,7 @@ $(document).ready(function() {
          tooltip: {
             formatter: function() {
                return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +'% '+ this.x.toLowerCase();
+                  this.y +' '+ this.x.toLowerCase();
             }
          },
          colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],
@@ -711,9 +630,8 @@ $(document).ready(function() {
 });
 
 $(document).ready(function() {         
-   var table = document.getElementById('datatable4');
-   if (!table) return; // Exit if table doesn't exist
-   var options = {
+   var table = document.getElementById('datatable4'),
+   options = {
          chart: {
             renderTo: 'container4',
             defaultSeriesType: 'column'
@@ -737,7 +655,7 @@ $(document).ready(function() {
          tooltip: {
             formatter: function() {
                return '<b>'+ this.series.name +'</b><br/>'+
-                  this.y +'% '+ this.x.toLowerCase();
+                  this.y +' '+ this.x.toLowerCase();
             }
          },
          colors: [ '#4ec4ce', '#f7941d', '#cc113c',  'black'],

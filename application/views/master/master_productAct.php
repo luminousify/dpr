@@ -10,7 +10,15 @@
         height: auto;
         margin: 0 auto;
     }
-    tr {background-color: white} 
+    tr {background-color: white}
+    .duplicate-error {
+        color: #red;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    .kode-product-wrapper {
+        position: relative;
+    }
 }
 </style>
         <div class="wrapper wrapper-content animated fadeInRight">
@@ -26,16 +34,6 @@
                         </div>
                     </div>
     <div class="ibox-content">
-    <?php if ($this->session->flashdata('gagal')): ?>
-        <div class="alert alert-danger mt-2" style="text-align: center;font-size: 12px" role="alert">
-            <?php echo $this->session->flashdata('gagal'); ?>
-        </div>
-    <?php endif; ?>
-    <?php if ($this->session->flashdata('tambah')): ?>
-        <div class="alert alert-success mt-2" style="text-align: center;font-size: 12px" role="alert">
-            <?php echo $this->session->flashdata('tambah'); ?>
-        </div>
-    <?php endif; ?>
     <div class="table-responsive">
      <?php echo form_open('c_new/'.$action.'/t_product/master_product'); ?> 
      <!-- ke function add / nama_table / redirect kemana -->
@@ -50,18 +48,19 @@
           <td>Kode Proses</td>
           <td>Nama Proses</td>
           <td>Usage</td>
+          <td>MP Standar</td>
           <td>Cavity</td>
           <td>Satuan</td>
           <td>Type</td>
           <td>Cyt MC</td>
           <td>Cyt Quo</td>
           <td>Customer</td>
-          <td>Cost</td>
           <td><?= $action == "Add" ? '<span class="btn btn-warning" onclick="addMoreRows(this.form);"><i class="fa fa-plus-square-o"></i></span>' : ''; ?></td>
         </tr>
       </table>
 
-      <input type="submit" name="simpan" value="<?= $action; ?>" class="btn btn-success">
+      <input type="submit" name="simpan" id="submitBtn" value="<?= $action; ?>" class="btn btn-success">
+      <div id="global-error" class="text-danger" style="margin-top: 10px;"></div>
     <?php echo form_close(); ?>
 
 
@@ -86,6 +85,104 @@
     <!-- Page-Level Scripts -->
     <script>
         var save = -1;
+        var validationPending = 0;
+        var hasDuplicates = false;
+
+        // Check for duplicate kode_product via AJAX
+        function checkDuplicateKodeProduct(inputElement) {
+            var kodeProduct = inputElement.value.trim();
+            var $row = $(inputElement).closest('tr');
+            var $errorMsg = $row.find('.duplicate-error');
+            var $inputCell = $(inputElement).parent();
+
+            // Remove existing error message
+            $errorMsg.remove();
+            $inputCell.removeClass('has-error');
+
+            if (kodeProduct === '') {
+                updateSubmitButton();
+                return;
+            }
+
+            // Check for duplicates in the current form
+            var isDuplicateInForm = false;
+            $('input[name*="[kode_product]"]').each(function() {
+                if (this !== inputElement && $(this).val().trim() === kodeProduct) {
+                    isDuplicateInForm = true;
+                }
+            });
+
+            if (isDuplicateInForm) {
+                $inputCell.addClass('has-error');
+                $inputCell.append('<div class="duplicate-error">Duplicate in form!</div>');
+                updateSubmitButton();
+                return;
+            }
+
+            // AJAX check against database
+            validationPending++;
+            $.ajax({
+                url: '<?= base_url("c_new/cek_kode_product"); ?>',
+                type: 'POST',
+                data: {
+                    kode_product: kodeProduct
+                },
+                dataType: 'json',
+                success: function(response) {
+                    validationPending--;
+                    if (response.exists) {
+                        $inputCell.addClass('has-error');
+                        $inputCell.append('<div class="duplicate-error">' + response.message + '</div>');
+                    }
+                    updateSubmitButton();
+                },
+                error: function() {
+                    validationPending--;
+                    updateSubmitButton();
+                }
+            });
+        }
+
+        // Update submit button state based on validation
+        function updateSubmitButton() {
+            var duplicateCount = $('.duplicate-error').length;
+            hasDuplicates = duplicateCount > 0;
+
+            if (hasDuplicates || validationPending > 0) {
+                $('#submitBtn').prop('disabled', true);
+                if (hasDuplicates) {
+                    $('#global-error').text('Please fix duplicate Kode Product errors before submitting.');
+                } else {
+                    $('#global-error').text('Validating...');
+                }
+            } else {
+                $('#submitBtn').prop('disabled', false);
+                $('#global-error').text('');
+            }
+        }
+
+        // Event delegation for dynamically added kode_product inputs
+        $(document).on('blur', 'input[name*="[kode_product]"]', function() {
+            checkDuplicateKodeProduct(this);
+        });
+
+        // Also validate on keyup (with debounce for better UX)
+        var debounceTimer;
+        $(document).on('keyup', 'input[name*="[kode_product]"]', function() {
+            var $input = $(this);
+            var $row = $input.closest('tr');
+            var $errorMsg = $row.find('.duplicate-error');
+            
+            // Clear error while typing
+            $errorMsg.remove();
+            $input.parent().removeClass('has-error');
+            
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                checkDuplicateKodeProduct($input[0]);
+            }, 500);
+        });
+
 	function addMoreRows(frm) {
 	  save++;
 	var recRow    = '<tr><td><input type="text" name="user['+save+'][kode_product]" class="form-control"  ></td>' +
@@ -97,19 +194,21 @@
 		'<td><input type="text" name="user['+save+'][kode_proses]" class="form-control"  ></td>' +
 		'<td><select name="user['+save+'][nama_proses]" style="width:100px;" class="form-control"  ><option value=""></option><option value="RMW L">RMW L</option><option value="RMW L AS">RMW L AS</option><option value="P1">P1</option><option value="P2">P2</option><option value="P3">P3</option><option value="P4">P4</option><option value="P5">P5</option><option value="P6">P6</option><option value="PLATING">PLATING</option><option value="FINAL">FINAL</option><option value="ASSY">ASSY</option><option value="BARREL">BARREL</option><option value="WASHING">WASHING</option><option value="STAMPING">STAMPING</option><option value="INSPECTION">INSPECTION</option>><option value="BG">BABY GRIND</option></select></td>' +
         '<td><input type="text" name="user['+save+'][usage]" value="0" class="form-control"   /></td>' +
+        '<td><input type="text" name="user['+save+'][mp_standar]" value="0" class="form-control"   /></td>' +
         '<td><input type="text" name="user['+save+'][cavity]" class="form-control"   /></td>' +
         '<td><input type="text" name="user['+save+'][sp]" class="form-control"   /></td>' +
 		'<td><select name="user['+save+'][type]" style="width:80px;" class="form-control"  ><option value="RMW">RMW</option><option value="WIP">WIP</option><option value="FG">FG</option></select></td>' +
         '<td><input type="text" name="user['+save+'][cyt_mc]" class="form-control"   /></td>' +
         '<td><input type="text" name="user['+save+'][cyt_quo]" class="form-control"   /></td>' +
         '<td><input type="text" name="user['+save+'][customer]" class="form-control"   /></td>' +
-        '<td><input type="number" name="user['+save+'][cost]" value="0" step="0.01" min="0" class="form-control" style="width:80px;" /></td>' +
    		'<td><a href="javascript:void(0);" class="remCF"><button class="btn btn-danger btn-circle" type="button"><i class="fa fa-trash"></i></button></a></p></td><tr/>';
 	jQuery('#customFields').append(recRow);
 	}
 
 	$("#customFields").on('click','.remCF',function(){
 	        $(this).parent().parent().remove();
+	        // Re-validate remaining inputs after row removal
+	        updateSubmitButton();
 	    });
 
   function keyupct(ct)
@@ -121,6 +220,14 @@
     var hitung_shift = hitung_jam * 7;
     $('#tg_shift'+ct).val(hitung_shift);
   }
+
+  // Prevent form submission if there are duplicates
+  $('form').on('submit', function() {
+    if (hasDuplicates) {
+      alert('Please fix duplicate Kode Product errors before submitting.');
+      return false;
+    }
+  });
     </script>
 
     

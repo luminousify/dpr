@@ -48,15 +48,6 @@
                              <p><strong>*Catatan :</strong> Data yang muncul hanya data pada <strong>bulan ini saja</strong>, jika ingin melihat data yang lain silahkan gunakan fitur <strong>filter</strong>.</p>
 
                          </div>
-                         <div class="row mt-3">
-                             <div class="col-12">
-                                 <a href="<?= base_url(); ?>c_report/export_machine_efficiency_excel?year=<?= $tahun; ?>" 
-                                    class="btn btn-success" 
-                                    title="Export Machine Efficiency Data to Excel">
-                                    <i class="fa fa-file-excel-o"></i> Export to Excel
-                                 </a>
-                             </div>
-                         </div>
                      </div>
                      <?= form_close(); ?>
                      <div class="tabs-container">
@@ -250,39 +241,9 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
  <figure class="highcharts-figure">
 
      <script type="text/javascript">
-         Highcharts.visualize = function(table, options) {
-             // the categories
-             options.xAxis.categories = [];
-             $('tbody th', table).each(function(i) {
-                 options.xAxis.categories.push(this.innerHTML);
-             });
-
-             // the data series
-             options.series = [];
-             $('tr', table).each(function(i) {
-                 var tr = this;
-                 $('th, td', tr).each(function(j) {
-                     if (j > 0) { // skip first column
-                         if (i == 0) { // get the name and init the series
-                             options.series[j - 1] = {
-                                 name: this.innerHTML,
-                                 type: j <= 1 ? 'column' : 'line',
-                                 data: []
-                             };
-                         } else { // add values
-                             options.series[j - 1].data.push(parseFloat(this.innerHTML));
-                         }
-                     }
-                 });
-             });
-
-             var chart = new Highcharts.Chart(options);
-         }
-
-         // On document ready, call visualize on the datatable.
+         // On document ready, render the Machine Use By Month chart.
          $(document).ready(function() {
-             var table = document.getElementById('datatable1'),
-                 options = {
+             var options = {
                      chart: {
                          renderTo: 'container2',
                          defaultSeriesType: 'column'
@@ -292,10 +253,13 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                      },
                      xAxis: {
                          //gridLineWidth: 1,
+                         tickInterval: 1,
                          labels: {
+                             step: 1,
+                             rotation: -45,
                              style: {
                                  color: '#000',
-                                 font: '14px Trebuchet MS, Verdana, sans-serif'
+                                 font: '12px Trebuchet MS, Verdana, sans-serif'
                              }
                          }
                      },
@@ -385,7 +349,12 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                  };
 
 
-             Highcharts.visualize(table, options);
+             options.xAxis.categories = chart2Categories;
+             options.series = [
+                 { name: 'Machine Hours',      type: 'column', data: chart2MachineUse },
+                 { name: 'Available Capacity', type: 'line',   data: chart2Capacity }
+             ];
+             new Highcharts.Chart(options);
          });
      </script>
 
@@ -415,11 +384,11 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                      },
                      {
                          extend: 'excel',
-                         title: 'Data_2025_12_09'
+                         title: 'ExampleFile'
                      },
                      {
                          extend: 'pdf',
-                         title: 'Data_2025_12_09'
+                         title: 'ExampleFile'
                      },
 
                      {
@@ -478,11 +447,11 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                      },
                      {
                          extend: 'excel',
-                         title: 'Data_2025_12_09'
+                         title: 'ExampleFile'
                      },
                      {
                          extend: 'pdf',
-                         title: 'Data_2025_12_09'
+                         title: 'ExampleFile'
                      },
 
                      {
@@ -541,11 +510,11 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                      },
                      {
                          extend: 'excel',
-                         title: 'Data_2025_12_09'
+                         title: 'ExampleFile'
                      },
                      {
                          extend: 'pdf',
-                         title: 'Data_2025_12_09'
+                         title: 'ExampleFile'
                      },
 
                      {

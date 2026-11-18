@@ -1,0 +1,35 @@
+================================================================================
+DATA RECONCILIATION REPORT (TEST MODE)
+================================================================================
+Generated on: 2025-10-29 11:14:50
+Database Table: t_product
+Excel File: C:\Users\Pratama\AppData\Roaming\Output Messenger\CDJAAA\Received Files\202510\MP Actual.xls
+NOTE: This is a test run using sample data
+
+SECTION 1: SUMMARY
+----------------------------------------
+Total matched records: 3
+Total mismatched values: 1
+Records only in database: 3
+Records only in Excel: 2
+
+SECTION 2: MISMATCHED VALUES
+----------------------------------------
+SKU		Database Value		Excel Value
+------------------------------------------------------------
+SKU002		200.0		250.0
+
+SECTION 3: SKUs FOUND ONLY IN DATABASE
+----------------------------------------
+SKU004
+SKU005
+SKU006
+
+SECTION 4: SKUs FOUND ONLY IN EXCEL
+----------------------------------------
+SKU007
+SKU008
+
+================================================================================
+END OF REPORT
+================================================================================

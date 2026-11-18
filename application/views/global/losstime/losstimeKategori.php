@@ -36,6 +36,7 @@
                         <th>Total Loss Time (Hours)</th>
                         <th>Total Mc. Use (Hours)</th>
                         <th>Persentase Loss Time (%)</th>
+                        <th>Target (%)</th>
                         <th>View Detail LT</th>
                     </tr>
                     </thead>
@@ -43,14 +44,27 @@
                         <?php 
                         $total = 0; $total_ng = 0;
                         $view_detail = base_url('c_report/view_detail_lt');
+                        
+                        // Prepare target data mapping
+                        $target_mapping = array();
+                        if (isset($targets_by_category) && $targets_by_category instanceof CI_DB_result) {
+                            foreach($targets_by_category->result_array() as $target) {
+                                $target_mapping[$target['bagian']] = $target['target_percent'];
+                            }
+                        }
+                        
                         $no = 0 ; foreach($data_DefectGrafik->result_array() as $data)
                         {  $no++;
+                            // Get target for this category
+                            $target_value = isset($target_mapping[$data['kategori']]) ? $target_mapping[$data['kategori']] : 0;
+                            
                             echo '<tr>';
                             echo '<td>'.$no;'</td>';
                             echo '<td>'.$data['kategori'],'</td>';
                             echo '<td>'.round($data['qtyLT'],1),'</td>';
                             echo '<td>'.round($data['total_machine_use'],1).'</td>';
                             echo '<td>'.round($data['persen_lt'],1).'</td>';
+                            echo '<td>'.number_format($target_value, 2).'</td>';
                             echo '<td><center><a href="'.$view_detail.'/'.$data['kategori_new'].'/'.$bulan.'"><button class="btn btn-info btn-circle" type="button"><i class="fa fa-search"></i></button></a></td>';
                             echo '</tr>';
                         }  ?>
@@ -60,6 +74,8 @@
                         <th>No</th>
                         <th>Nama Kategori</th>
                         <th>Total</th>
+                        <th>Persentase Loss Time (%)</th>
+                        <th>Target (%)</th>
                         <th>View Detail LT</th>
                     </tr>
                     </tfoot>

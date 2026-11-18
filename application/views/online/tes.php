@@ -310,10 +310,9 @@
 							  	<div class="col-sm-3">
 							  		<div class="form-group">
 											  <label><b>Qty LT Total</b></label>
-							   <input type="text" class="form-control" id="amountLT" readonly="" value="0.00">
+											   <input type="text" name="user[0][qty_lt]" class="form-control" id="amountLT" readonly="">
 										</div>
 							  	</div>
-			  	<input type="hidden" name="user[0][qty_lt]" id="qty_lt_minutes" value="0">
 							</div>
 							  </div>
 						</div>
@@ -613,13 +612,12 @@ only screen and (max-width: 760px),
 		var kategori = $('#kategoriLT').val();
 		var type     = $('#typeLT').val();
 		var satuan   = $('#satuanLT').val();
-		var qty_hours = parseFloat($('#qtyLT').val()); // User inputs hours
-		var qty      = qty_hours * 60; // Convert to minutes for storage
+		var qty      = $('#qtyLT').val();
 		var markup = "<tr><td><input type='button' value='X'></td><td>"+svLT+"</td>"+
 		"<td><input type='hidden' name='detailLT["+saveLT+"][nama]' value='"+nama+"''>"+nama+"</td>"+
 		"<td><input type='hidden' name='detailLT["+saveLT+"][kategori]' value='"+kategori+"'>"+kategori+"</td>"+
-		"<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty_hours+"</td>"+
-		"<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">Jam<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
+		"<td><input type='hidden' name='detailLT["+saveLT+"][qty]' value="+qty+" class='nilai'>"+qty+"</td>"+
+		"<td><input type='hidden' name='detailLT["+saveLT+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detailLT["+saveLT+"][type]' value="+type+"></td>"+
 		"</tr>";
 		$("#tableLT").append(markup);
 		//totalLT();
@@ -663,18 +661,16 @@ $(document).ready(function(){
 
             function totalLT()
             {
-                var sumMinutes = 0;
+                var sum = 0;
                 $('#tableLT > tr').each(function() {
+                	  var nilai  = $('.nilai').val()
                     var price = parseFloat($(this).find('.nilai').val());
-                    if (!isNaN(price) && price > 0) {
-                        sumMinutes += price;
-                    }
+                    sum += price;
+                    //$(this).find('.amountNG').val(''+amount);
+                    $('#amountLT').val(parseFloat(sum));
                 });
-
-                var sumHours = sumMinutes / 60;
-                $('#amountLT').val(isFinite(sumHours) ? sumHours.toFixed(2) : '0.00');
-                $('#qty_lt_minutes').val(isFinite(sumMinutes) ? sumMinutes : 0);
-            }
+                
+            } 
 
             $('#text_subtotal').text()
 </script>

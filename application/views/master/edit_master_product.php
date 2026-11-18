@@ -89,6 +89,10 @@
                                     <input type="text" class="form-control" name="usage" value="<?php echo $dp->usage ?>">
                                 </div>
                                 <div class="form-group col-md-3">
+                                    <label for="mp_standar">MP Standar</label>
+                                    <input type="text" class="form-control" name="mp_standar" value="<?php echo $dp->mp_standar ?>">
+                                </div>
+                                <div class="form-group col-md-3">
                                   <label for="cavity">Cavity</label>
                                     <input type="text" class="form-control" name="cavity" value="<?php echo $dp->cavity ?>">
                                 </div>
@@ -125,10 +129,6 @@
                                 <div class="form-group col">
                                   <label for="AccInv">Acc Inv</label>
                                     <input type="text" class="form-control" name="AccInv" value="<?php echo $dp->AccInv ?>">
-                                </div>
-                                <div class="form-group col">
-                                  <label for="cost">Cost</label>
-                                    <input type="number" name="cost" class="form-control" value="<?php echo isset($dp->cost) ? $dp->cost : '0'; ?>" step="0.01" min="0">
                                 </div>
 
                             </div>
@@ -180,8 +180,8 @@
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){

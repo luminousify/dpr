@@ -832,6 +832,20 @@ class PHPExcel_Cell
      */
     public static function stringFromColumnIndex($pColumnIndex = 0)
     {
+        // Validation: PHP 7.1+ warns on non-numeric operands (e.g. nested stringFromColumnIndex in Excel5 writer).
+        if (!is_numeric($pColumnIndex)) {
+            $msg = sprintf(
+                '[PHPExcel] stringFromColumnIndex expected numeric index; got type=%s value=%s',
+                gettype($pColumnIndex),
+                is_scalar($pColumnIndex) ? var_export($pColumnIndex, true) : json_encode($pColumnIndex)
+            );
+            if (function_exists('log_message')) {
+                @log_message('error', $msg);
+            } else {
+                error_log($msg);
+            }
+        }
+
         //    Using a lookup cache adds a slight memory overhead, but boosts speed
         //    caching using a static within the method is faster than a class static,
         //        though it's additional memory overhead

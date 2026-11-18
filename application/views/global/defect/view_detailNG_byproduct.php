@@ -32,7 +32,7 @@
                         </div>
                     </div>
                 <div class="ibox-content">
-                    <?= form_open('c_report/view_detail_ng_byproduct/'.$header['kode_product'].'/'.$bulan); ?>  
+                    <?= form_open('c_report/view_detail_ng_byproduct/'.$header['kode_product'].'/'.$tahun.'/'.$bulan); ?>
                     <div class="card rounded mb-4">
                         <div class="card-header">
                             <h2>Filter Data</h2>
@@ -519,8 +519,8 @@ $(document).ready(function() {
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){
