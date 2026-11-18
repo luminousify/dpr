@@ -45,7 +45,6 @@
                                 echo '<td><input type="text" name="nama_product" value="'.$data->nama_product.'" class="form-control"></td>';
                                 echo '<td><input type="number" name="atas" value="'.$data->atas.'" class="form-control"></td>';
                                 echo '<td><input type="number" name="bawah" value="'.$data->bawah.'" class="form-control"></td>';
-                                <?php 
                                 echo '</tr>';
                                 endforeach;
                             } ?>
