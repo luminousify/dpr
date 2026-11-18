@@ -261,7 +261,8 @@ class c_machine extends CI_Controller {
 
   function add_totalMP()
   {
-        $input_date = strtotime($this->input->post('user')[0]['tanggal']);
+        $user_post = $this->input->post('user');
+        $input_date = strtotime((string) (is_array($user_post) ? ($user_post[0]['tanggal'] ?? '') : ''));
         $current_year = date('Y');
         $input_year = date('Y', $input_date);
 

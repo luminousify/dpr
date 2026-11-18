@@ -962,7 +962,7 @@ class PHPExcel_Reader_Excel2007 extends PHPExcel_Reader_Abstract implements PHPE
                                     // Extract all cell references in $ref
                                     $cellBlocks = explode(' ', str_replace('$', '', strtoupper($ref)));
                                     foreach ($cellBlocks as $cellBlock) {
-                                        $docSheet->getStyle($cellBlock)->setConditionalStyles($conditionalStyles);
+                                        $docSheet->getStyle($cellBlock)->setConditionalStyles($cellBlock, $conditionalStyles);
                                     }
                                 }
                             }

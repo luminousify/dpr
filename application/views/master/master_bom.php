@@ -94,9 +94,9 @@
                     ?>
                         <tr<?= $row_class ?> data-status="<?= $is_discontinued ? 'discontinued' : 'active' ?>">
                             <td><?= $no ?></td>
-                            <td><?= htmlspecialchars($data->nama_bom) ?></td>
-                            <td><?= htmlspecialchars($data->kode_product) ?></td>
-                            <td><?= htmlspecialchars($data->nama_product) ?></td>
+                            <td><?= htmlspecialchars($data->nama_bom ?? '') ?></td>
+                            <td><?= htmlspecialchars($data->kode_product ?? '') ?></td>
+                            <td><?= htmlspecialchars($data->nama_product ?? '') ?></td>
                             <td><?= htmlspecialchars($data->nama_proses) ?></td>
                             <td><?= $data->cyt_mc_bom ?></td>
                             <td><?= htmlspecialchars($data->kode_productBOMDetail) ?></td>

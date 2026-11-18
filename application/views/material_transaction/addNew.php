@@ -26,8 +26,8 @@
                 <div class="ibox ">
                     <div class="ibox-title">
                         <?php
-                            $tanggal_new =  $tanggal;
-                            $tanggal_new_fix = date("d-M-y", strtotime($tanggal_new));
+                            $tanggal_new =  $tanggal ?? '';
+                            $tanggal_new_fix = date("d-M-y", strtotime((string) $tanggal_new));
                         ?>
                         <h5>Add Material Transaction | Tanggal <?php echo $tanggal_new_fix ?></h5>
                         <div class="ibox-tools">

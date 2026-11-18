@@ -42,3 +42,8 @@ t_data.php
 
 # PHPUnit cache
 .phpunit.result.cache
+
+# PSI-344 local smoke artifacts
+application/session/
+tools-psi344/*.txt
+tools-psi344/*.log
