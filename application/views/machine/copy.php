@@ -58,9 +58,9 @@
                                     <label><b>Line</b></label>
                                     <select name="line" class="form-control" id="line" required="">
                                         <option value="">-Pilih Salah Satu-</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
                                     </select>
                                 </div>
                             </div>
@@ -189,10 +189,10 @@
                                     </td>
                                     <td>
                                         <select name="user[<?= $id; ?>][line]" class="form-control">
-                                            <option value="1" <?= ($data['line'] == '1' || $data['line'] == 1 || $data['line'] == 'A' || $data['line'] == '0' || $data['line'] == 0) ? 'selected' : ''; ?>>1</option>
-                                            <option value="2" <?= ($data['line'] == '2' || $data['line'] == 2 || $data['line'] == 'B') ? 'selected' : ''; ?>>2</option>
-                                            <option value="3" <?= ($data['line'] == '3' || $data['line'] == 3 || $data['line'] == 'C') ? 'selected' : ''; ?>>3</option>
-                                            <option value="4" <?= ($data['line'] == '4' || $data['line'] == 4 || $data['line'] == 'D') ? 'selected' : ''; ?>>4</option>
+                                            <option value="A" <?= $data['line'] == 'A' ? 'selected' : ''; ?>>A</option>
+                                            <option value="B" <?= $data['line'] == 'B' ? 'selected' : ''; ?>>B</option>
+                                            <option value="C" <?= $data['line'] == 'C' ? 'selected' : ''; ?>>C</option>
+                                            <option value="D" <?= $data['line'] == 'D' ? 'selected' : ''; ?>>D</option>
                                         </select>
                                     </td>
                                 </tr>
@@ -339,8 +339,8 @@
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){

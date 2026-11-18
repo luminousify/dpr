@@ -8,51 +8,21 @@ class m_machine extends CI_Model
                 $this->load->helper(array('url','html','form'));
         }
 
-        /**
-         * Get distinct line values from t_no_mesin.
-         * Used to populate Line dropdowns dynamically on machine pages.
-         *
-         * @return array<int, string>
-         */
-        public function get_distinct_lines()
-        {
-            $rows = $this->db
-                ->select('line')
-                ->from('t_no_mesin')
-                ->group_by('line')
-                ->order_by('line', 'ASC')
-                ->get()
-                ->result_array();
-
-            $lines = [];
-            foreach ($rows as $row) {
-                if (!isset($row['line'])) {
-                    continue;
-                }
-                $val = trim((string) $row['line']);
-                if ($val === '') {
-                    continue;
-                }
-                $lines[] = $val;
-            }
-
-            return $lines;
-        }
-
         public function tampil_machine_use($table , $tanggal_dari , $tanggal_sampai,$shift,$line)
         {
             if($line == 'All') { $lineNya = ''; } else { $lineNya = $this->db->where('line', $line);}
-            $this->db->select('*');
-            $this->db->from($table);
+            $this->db->select('om.*, tp.mp_standar AS mp_std, tp.cavity AS cavity_std');
+            $this->db->from($table . ' AS om');
+            $this->db->join('t_product AS tp', 'om.kp_pr = tp.kode_product', 'left');
             // $this->db->join('t_production_op', 't_production_op.id = blogs.id');
             //$this->db->join('t_production_op as w', 'q.tanggal = w.tanggal','q.shift = w.shift','q.no_mesin = w.mesin', 'left');
-            $this->db->where('tanggal >=', $tanggal_dari); 
-            $this->db->where('tanggal <=', $tanggal_sampai); 
-            $this->db->where('shift', $shift); 
+            $this->db->where('om.tanggal >=', $tanggal_dari);
+            $this->db->where('om.tanggal <=', $tanggal_sampai);
+            $this->db->where('om.shift', $shift);
             $lineNya;
-            $this->db->order_by('line','ASC');
-            $this->db->order_by('no_mesin','ASC');
-            return $this->db->get();         
+            $this->db->order_by('om.line','ASC');
+            $this->db->order_by('om.no_mesin','ASC');
+            return $this->db->get();
         }
 
         public function tampil_machine_use_coba($tanggal_dari , $tanggal_sampai,$shift,$line)
@@ -189,16 +159,7 @@ class m_machine extends CI_Model
                     $this->db->where('id_machine_use' , $id);
                     $this->db->set('send' , false);
                     $this->db->update('machine_use', $user);
-                    
                 }
-                    $url = "http://192.168.1.57/dpr/c_scheduler/send_notif_controller_edit/$id";
-                    $curl = curl_init($url);
-                    curl_setopt($curl, CURLOPT_URL, $url);
-                    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);            
-                    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-                    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);            
-                    $resp = curl_exec($curl);
-                    curl_close($curl);
         }
 
 
@@ -278,24 +239,6 @@ class m_machine extends CI_Model
         function delete_mu($id_machine_use){
                 $this->db->where('id_machine_use', $id_machine_use);
                 $this->db->delete('machine_use');
-        }
-
-        function batch_delete_mu($id_machine_uses){
-                if (empty($id_machine_uses) || !is_array($id_machine_uses)) {
-                        return false;
-                }
-                
-                // Filter out invalid IDs
-                $valid_ids = array_filter($id_machine_uses, function($id) {
-                        return is_numeric($id) && $id > 0;
-                });
-                
-                if (empty($valid_ids)) {
-                        return false;
-                }
-                
-                $this->db->where_in('id_machine_use', $valid_ids);
-                return $this->db->delete('machine_use');
         }
 
         public function delete_total_mp($id_mp){
@@ -1012,8 +955,26 @@ FROM (`t_production_op` `w`
 
         function layar_monitoring($tanggal,$shift)
         {
-            $query = $this->db->query("SELECT *, q.`kp_pr` AS kode_product, q.`np_pr` AS nama_product FROM `operasi_mesin` AS q
-            LEFT JOIN t_production_op AS w ON q.`tanggal` = w.`tanggal` AND q.`no_mesin` = w.`mesin` AND q.`shift` = w.`shift`
+            $query = $this->db->query("SELECT 
+                q.`no_mesin`,
+                q.`tanggal`,
+                q.`shift`,
+                q.`running`,
+                q.`line`,
+                q.`kp_pr`,
+                q.`np_pr`,
+                COALESCE(w.`pic`, q.`operator`) AS pic,
+                w.`qty_ok`,
+                COALESCE(w.`target_mc`, mu.`target`) AS target_mc,
+                w.`lot_global`,
+                (w.`id_production_op` IS NULL) AS belum_input,
+                COALESCE(w.`keterangan`, q.`keterangan`) AS keterangan
+            FROM `operasi_mesin` AS q
+            LEFT JOIN `t_production_op` AS w 
+                ON q.`tanggal` = w.`tanggal` 
+                AND q.`no_mesin` = w.`mesin` 
+                AND q.`shift` = w.`shift`
+            LEFT JOIN `machine_use` AS mu ON mu.`id_machine_use` = q.`id_machine_use`
             WHERE q.`tanggal` = '$tanggal' AND q.`shift` = '$shift'
             ORDER BY q.`no_mesin` ASC
             ");

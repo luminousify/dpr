@@ -72,6 +72,7 @@
                                                 <tr>
                                                     <th>No</th>
                                                     <th>Lot Number</th>
+                                                    <th>Product Name</th>
                                                     <th>Date</th>
                                                     <th>M/C</th>
                                                     <th>Cavity</th>
@@ -100,6 +101,7 @@
                                                 <tr>
                                                     <td><?= $no; ?></td>
                                                     <td><?= $data['lot_global']; ?></td>
+                                                    <td><?= $dh['nama_product']; ?></td>
                                                     <td><?= $data['tanggal']; ?></td>
                                                     <td><?= $data['mesin']; ?></td>
                                                     <td><?= $data['cavity']; ?></td>
@@ -131,6 +133,7 @@
                                                 { $id++; $no++;  ?>
                                                 <tr style="background:#1ab394;color: white;">
                                                     <th style="background:#1ab394;color: white;">Total</th>
+                                                    <th style="background:#1ab394;color: white;"></th>
                                                     <th style="background:#1ab394;color: white;"></th>
                                                     <td style="background:#1ab394;color: white;"></td>
                                                     <th style="background:#1ab394;color: white;"><?= $data2['mesin']; ?></th>
@@ -213,15 +216,33 @@
                     scrollX:        true,
                     scrollCollapse: true,
                     paging:         true,
+                    order:          [[2, 'asc']], // Order by Date column ascending
                     fixedColumns:   {
-                        left: 5,
+                        left: 6,
                     },
                 dom: '<"html5buttons"B>lTfgitp',
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', 
+                      title: '<?= $dh['kode_product'] . '_Production_' . $tanggal; ?>',
+                      exportOptions: {
+                          columns: ':visible',
+                          format: {
+                              body: function(data, row, column, node) {
+                                  // Check if this is the first column (No column)
+                                  if (column === 0) {
+                                      // Return the row number + 1
+                                      return row + 1;
+                                  }
+                                  // Strip HTML from other cells
+                                  data = $('<div>' + data + '</div>').text().trim();
+                                  return data;
+                              }
+                          }
+                      }
+                    },
+                    {extend: 'pdf', title: '<?= $dh['kode_product'] . '_Production_' . $tanggal; ?>'},
 
                     {extend: 'print',
                      customize: function (win){

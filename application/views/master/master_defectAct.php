@@ -32,10 +32,10 @@
         <table class="table table-bordered stripe row-border order-column" rules="all" style="background:#fff;" id="customFields" style="width: 100%">
         <tr style="background:#1ab394;color: white;text-align: center;">
           <td>Nama</td>
-          <td>Type</td>
-          <td>Kategori <button type="button" class="btn btn-xs btn-primary" onclick="showKategoriModal()">
+          <td>Type <button type="button" class="btn btn-xs btn-primary" onclick="showTypeModal()">
     <i class="fa fa-list"></i>
 </button></td>
+          <td>Kategori</td>
           <td>Satuan</td>
           <td><?= $action == "Add" ? '<span class="btn btn-warning" id="addMoreRowsBtn"><i class="fa fa-plus-square-o"></i></span>' : ''; ?></td>
         </tr>
@@ -44,20 +44,18 @@
     echo '<tr>';
     echo '<td><input type="text" name="user[0][nama]" value="'.$data->nama.'" class="form-control"><input type="hidden" name="id" value="'.$data->id.'"><input type="hidden" name="where" value="id"></td>';
     
-    // Type dropdown (now using types from t_defectdanlosstime table)
+    // Type dropdown
     echo '<td><select name="user[0][type]" class="form-control">';
-    foreach($types as $type) {
-        $selected = ($type->type == $data->type) ? 'selected' : '';
-        echo '<option value="'.htmlspecialchars($type->type).'" '.$selected.'>'.htmlspecialchars($type->type).'</option>';
+    foreach($categories as $category) {
+        $selected = ($category->nama_kategori == $data->type) ? 'selected' : '';
+        echo '<option value="'.htmlspecialchars($category->nama_kategori).'" '.$selected.'>'.htmlspecialchars($category->nama_kategori).'</option>';
     }
     echo '</select></td>';
     
-    // Kategori dropdown (now using categories from master_kategori_defect table)
+    // Kategori dropdown
     echo '<td><select name="user[0][kategori_defect]" class="form-control">';
-    foreach($categories as $category) {
-        $selected = ($category->nama_kategori == $data->kategori_defect) ? 'selected' : '';
-        echo '<option value="'.htmlspecialchars($category->nama_kategori).'" '.$selected.'>'.htmlspecialchars($category->nama_kategori).'</option>';
-    }
+    echo '<option value="NG" '.($data->kategori_defect == 'NG' ? 'selected' : '').'>NG</option>';
+    echo '<option value="LT" '.($data->kategori_defect == 'LT' ? 'selected' : '').'>LT</option>';
     echo '</select></td>';
     
     echo '<td><input type="text" name="user[0][satuan]" value="'.$data->satuan.'" class="form-control"></td>';
@@ -188,7 +186,7 @@
         },
 
         // Modal Functions
-        showKategoriModal: function() {
+        showTypeModal: function() {
             elements.typeModal.modal('show');
         },
 
@@ -223,11 +221,7 @@
         // Row Management
         addNewRow: function() {
             rowCounter++;
-            const types = <?= json_encode($types) ?>;
             const categories = <?= json_encode($categories) ?>;
-            const typeOptions = types.map(type => 
-                `<option value="${type.type}">${type.type}</option>`
-            ).join('');
             const categoryOptions = categories.map(category => 
                 `<option value="${category.nama_kategori}">${category.nama_kategori}</option>`
             ).join('');
@@ -237,12 +231,13 @@
                     <td><input type="text" name="user[${rowCounter}][nama]" class="form-control"></td>
                     <td>
                         <select name="user[${rowCounter}][type]" class="form-control">
-                            ${typeOptions}
+                            ${categoryOptions}
                         </select>
                     </td>
                     <td>
                         <select name="user[${rowCounter}][kategori_defect]" class="form-control">
-                            ${categoryOptions}
+                            <option value="NG">NG</option>
+                            <option value="LT">LT</option>
                         </select>
                     </td>
                     <td><input type="text" name="user[${rowCounter}][satuan]" class="form-control"></td>
@@ -328,7 +323,7 @@
     // Initialize when document is ready
     $(document).ready(function() {
         MasterDefect.init();
-        window.showKategoriModal = MasterDefect.showKategoriModal;
+        window.showTypeModal = MasterDefect.showTypeModal;
     });
 
 })(jQuery);

@@ -1,23 +1,5 @@
  <title>DPR | Inventory</title>
-<?php 
-// Helper function to safely calculate percentages (prevents division by zero)
-function safePercentage($value, $total, $decimal_places = 3) {
-    if (!isset($total) || !isset($value) || $total <= 0) {
-        return 0;
-    }
-    return round(($value / $total) * 100, $decimal_places);
-}
-
-// Helper function to safely calculate PPM (parts per million)
-function safePPM($value, $total) {
-    if (!isset($total) || !isset($value) || $total <= 0) {
-        return 0;
-    }
-    return round(($value / $total) * 1000000);
-}
-
-$this->load->view('layout/sidebar'); 
-?>
+<?php $this->load->view('layout/sidebar'); ?>
 
 
 <link href="<?= base_url(); ?>template/css/plugins/dataTables/datatables.min.css" rel="stylesheet">
@@ -81,35 +63,14 @@ $this->load->view('layout/sidebar');
                         </div>
                     </div>
                     <?= form_close(); ?>
-                    
-                    <?php if (!$has_data): ?>
-                    <div class="alert alert-warning mt-3">
-                        <h4><i class="fa fa-exclamation-triangle"></i> No Production Data Available</h4>
-                        <p>There is no production data available for this product (<strong><?php echo $dh['kode_product'] ?> - <?php echo $dh['nama_product'] ?></strong>).</p>
-                        <p>Total Quantity: <strong><?php echo $total_qty; ?></strong></p>
-                        <hr>
-                        <p class="mb-0"><strong>Possible reasons:</strong></p>
-                        <ul class="mb-0">
-                            <li>Product has not been produced yet</li>
-                            <li>Production data is not available in the selected period</li>
-                            <li>Data entry is pending or incomplete</li>
-                        </ul>
-                        <hr>
-                        <p class="mb-0">
-                            <a href="<?php echo site_url('c_inventory/index'); ?>" class="btn btn-primary">
-                                <i class="fa fa-arrow-left"></i> Back to Product List
-                            </a>
-                            <a href="<?php echo site_url('c_dpr/dpr'); ?>" class="btn btn-success">
-                                <i class="fa fa-plus"></i> Add Production Data
-                            </a>
-                        </p>
-                    </div>
-                    <?php else: ?>
+                    <br>
                     <div class="table-responsive mt-2">
                         <table class="table table-striped table-bordered table-hover dataTables-example" id="datatable1" style="width:100%" >
                                             <thead>
                                                 <tr>
                                                     <th>No</th>
+                                                    <th>Product Name</th>
+                                                    <th>Shift</th>
                                                     <th>Prod Date</th>
                                                     <th>Total OK</th>
                                                     <th>Total NG</th>
@@ -156,6 +117,8 @@ $this->load->view('layout/sidebar');
 $no = 0; foreach ($data_tabel->result_array() as $data): $no++; ?>
     <tr>
         <td><?= $no ?></td>
+        <td><?= $dh['nama_product'] ?></td>
+        <td><?= $data['shift'] ?></td>
         <td><?= $data['tanggal'] ?></td>
 
         <!-- grand totals -->
@@ -207,6 +170,8 @@ $no = 0; foreach ($data_tabel->result_array() as $data): $no++; ?>
                                             <tfoot>
                                                 <tr>
                                                     <th>No</th>
+                                                    <th>Product Name</th>
+                                                    <th>Shift</th>
                                                     <th>Prod Date</th>
                                                     <th>Total OK</th>
                                                     <th>Total NG</th>
@@ -346,122 +311,165 @@ $no = 0; foreach ($data_tabel->result_array() as $data): $no++; ?>
                                                     <td><?= $data['void']; ?></td>
                                                     <td><?= $data['flow_mark']; ?></td>
                                                 </tr>
+                                                <?php
+                                                // Safe percentage calculation helper
+                                                function safe_persen($value, $total) {
+                                                    return ($total > 0) ? round(($value / $total) * 100, 3) : 0;
+                                                }
+                                                ?>
                                                 <tr>
                                                     <td><strong>NG %</strong></td>
                                                     <td>
-                                                        <?php echo safePercentage($data['total_ng'], $data['total_qty']); ?>
+                                                        <?php $total_ng_persen = safe_persen($data['total_ng'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_ng_persen ?>
                                                     </td>
                                                     <td></td>
                                                     <td>
-                                                        <?php echo safePercentage($data['pin_seret'], $data['total_qty']); ?>
+                                                        <?php $total_pin_seret_persen = safe_persen($data['pin_seret'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_pin_seret_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['blackdot'], $data['total_qty']); ?>
+                                                        <?php $total_blackdot_persen = safe_persen($data['blackdot'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_blackdot_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['hike'], $data['total_qty']); ?>
+                                                        <?php $total_hike_persen = safe_persen($data['hike'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_hike_persen ?>
                                                      </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['sink_mark'], $data['total_qty']); ?>
+                                                        <?php $total_sink_mark_persen = safe_persen($data['sink_mark'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_sink_mark_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['oversize'], $data['total_qty']); ?>                     
+                                                        <?php $total_oversize_persen = safe_persen($data['oversize'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_oversize_persen ?>                     
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['undersize'], $data['total_qty']); ?>    
+                                                        <?php $total_undersize_persen = safe_persen($data['undersize'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_undersize_persen ?>    
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['settingan'], $data['total_qty']); ?>
+                                                        <?php $total_settingan_persen = safe_persen($data['settingan'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_settingan_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['waving'], $data['total_qty']); ?>
+                                                        <?php $total_waving_persen = safe_persen($data['waving'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_waving_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['dirty'], $data['total_qty']); ?> 
+                                                        <?php $total_dirty_persen = safe_persen($data['dirty'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_dirty_persen ?> 
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['broken'], $data['total_qty']); ?>
+                                                        <?php $total_broken_persen = safe_persen($data['broken'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_broken_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['oil'], $data['total_qty']); ?>
+                                                        <?php $total_oil_persen = safe_persen($data['oil'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_oil_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['undercut'], $data['total_qty']); ?>
+                                                        <?php $total_undercut_persen = safe_persen($data['undercut'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_undercut_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['fm'], $data['total_qty']); ?>
+                                                        <?php $total_fm_persen = safe_persen($data['fm'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_fm_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['white_mark'], $data['total_qty']); ?>
+                                                        <?php $total_white_mark_persen = safe_persen($data['white_mark'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_white_mark_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['white_dot'], $data['total_qty']); ?> 
+                                                        <?php $total_white_dot_persen = safe_persen($data['white_dot'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_white_dot_persen ?> 
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['pin_plong'], $data['total_qty']); ?>
+                                                        <?php $total_pin_plong_persen = safe_persen($data['pin_plong'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_pin_plong_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['bending'], $data['total_qty']); ?>
+                                                        <?php $total_bending_persen = safe_persen($data['bending'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_bending_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['short_shoot'], $data['total_qty']); ?>
+                                                        <?php $total_short_shoot_persen = safe_persen($data['short_shoot'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_short_shoot_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['flash'], $data['total_qty']); ?>
+                                                        <?php $total_flash_persen = safe_persen($data['flash'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_flash_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['gate_bolong'], $data['total_qty']); ?>
+                                                        <?php $total_gate_bolong_persen = safe_persen($data['gate_bolong'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_gate_bolong_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['crack'], $data['total_qty']); ?>
+                                                        <?php $total_crack_persen = safe_persen($data['crack'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_crack_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['berawan'], $data['total_qty']); ?>
+                                                        <?php $total_berawan_persen = safe_persen($data['berawan'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_berawan_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['gas_mark'], $data['total_qty']); ?>
+                                                        <?php $total_gas_mark_persen = safe_persen($data['gas_mark'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_gas_mark_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['ejector_mark'], $data['total_qty']); ?>
+                                                        <?php $total_ejector_mark_persen = safe_persen($data['ejector_mark'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_ejector_mark_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['hangus'], $data['total_qty']); ?>
+                                                        <?php $total_hangus_persen = safe_persen($data['hangus'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_hangus_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['gas_burn'], $data['total_qty']); ?> 
+                                                        <?php $total_gas_burn_persen = safe_persen($data['gas_burn'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_gas_burn_persen ?> 
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['scratch'], $data['total_qty']); ?>
+                                                        <?php $total_scratch_persen = safe_persen($data['scratch'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_scratch_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['discolour'], $data['total_qty']); ?>
+                                                        <?php $total_discolour_persen = safe_persen($data['discolour'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_discolour_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['silver'], $data['total_qty']); ?>    
+                                                        <?php $total_silver_persen = safe_persen($data['silver'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_silver_persen ?>    
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['dent'], $data['total_qty']); ?>
+                                                        <?php $total_dent_persen = safe_persen($data['dent'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_dent_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['flow_gate'], $data['total_qty']); ?>
+                                                        <?php $total_flow_gate_persen = safe_persen($data['flow_gate'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_flow_gate_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['gate_long'], $data['total_qty']); ?>
+                                                        <?php $total_gate_long_persen = safe_persen($data['gate_long'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_gate_long_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['weld_line'], $data['total_qty']); ?>
+                                                        <?php $total_weld_line_persen = safe_persen($data['weld_line'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_weld_line_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['void'], $data['total_qty']); ?>
+                                                        <?php $total_void_persen = safe_persen($data['void'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_void_persen ?>
                                                     </td>
                                                     <td>
-                                                        <?php echo safePercentage($data['flow_mark'], $data['total_qty']); ?>
+                                                        <?php $total_flow_mark_persen = safe_persen($data['flow_mark'], $data['total_ok'] + $data['total_ng']); ?>
+                                                        <?php echo $total_flow_mark_persen ?>
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td><strong>PPM</strong></td>
                                                     <td>
-                                                        <?php echo safePPM($data['total_ng'], $data['total_qty']); ?>
+                                                        <?php $total_ppm = ($data['total_qty'] > 0) ? round(($data['total_ng'] / $data['total_qty']) * 1000000) : 0; ?>
+                                                        <?php echo $total_ppm ?>
                                                     </td>
                                                     <td></td>
                                                     <td></td>
@@ -575,15 +583,16 @@ $no = 0; foreach ($data_tabel->result_array() as $data): $no++; ?>
                     scrollX:        true,
                     scrollCollapse: true,
                     paging:         true,
+                    order:          [[0, 'asc']], // Order by No column ascending
                     fixedColumns:   {
-                        left: 5,
+                        left: 6,
                     },
                 dom: '<"html5buttons"B>lTfgitp',
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: '<?= $dh['kode_product'] . '_Analysis_' . $tanggal; ?>'},
+                    {extend: 'pdf', title: '<?= $dh['kode_product'] . '_Analysis_' . $tanggal; ?>'},
 
                     {extend: 'print',
                      customize: function (win){
@@ -627,6 +636,7 @@ $no = 0; foreach ($data_tabel->result_array() as $data): $no++; ?>
                     scrollX:        true,
                     scrollCollapse: true,
                     paging:         true,
+                    order:          [[0, 'asc']], // Order by first column ascending
                     fixedColumns:   {
                         left: 3,
                     },
@@ -634,8 +644,8 @@ $no = 0; foreach ($data_tabel->result_array() as $data): $no++; ?>
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: '<?= $dh['kode_product'] . '_Analysis_Summary_' . $tanggal; ?>'},
+                    {extend: 'pdf', title: '<?= $dh['kode_product'] . '_Analysis_Summary_' . $tanggal; ?>'},
 
                     {extend: 'print',
                      customize: function (win){

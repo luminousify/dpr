@@ -11,7 +11,15 @@
         height: auto;
         margin: 0 auto;
     }
-    tr {background-color: white} 
+    tr {background-color: white}
+    .bom-error {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+    .has-error .select2-selection {
+        border-color: #dc3545 !important;
+    }
 }
 </style>
         <div class="wrapper wrapper-content animated fadeInRight">
@@ -27,17 +35,7 @@
                         </div>
                     </div>
     <div class="ibox-content">
-    <?php if ($this->session->flashdata('gagal')): ?>
-        <div class="alert alert-danger mt-2" style="text-align: center;font-size: 12px" role="alert">
-            <?php echo $this->session->flashdata('gagal'); ?>
-        </div>
-    <?php endif; ?>
-    <?php if ($this->session->flashdata('success')): ?>
-        <div class="alert alert-success mt-2" style="text-align: center;font-size: 12px" role="alert">
-            <?php echo $this->session->flashdata('success'); ?>
-        </div>
-    <?php endif; ?>
-     <form action="<?php echo site_url('c_new/add_bom')?>" method="post" id="bomForm" onsubmit="return validateBomForm()">
+     <form action="<?php echo site_url('c_new/add_bom')?>" method="post">
         <div class="card rounded">
             <div class="card-header">
                 <h5>BOM</h5>
@@ -45,14 +43,14 @@
             <div class="card-body">
                   <div class="form-group row">
                     <label for="kode_produk" class="col-sm-2 col-form-label">Pilih Kode Produk / Nama BOM</label>
-                    <div class="col-sm-10">
-                        <?php  
+                    <div class="col-sm-10" id="nama_bom_wrapper">
+                        <?php
                         $sql = "SELECT IFNULL(MAX(p.id_bom),0)as id_bom from t_bom as p";
                         $query = $this->db->query($sql);
                         foreach ($query->result() as $row)
                         {
                             $tambah = $row->id_bom;
-                            $data  = $tambah+1;      
+                            $data  = $tambah+1;
                         }
                         ?>
                         <input type="hidden" class="form-control" name="user[0][id_bom]" placeholder="" value="<?php echo $data ?>">
@@ -61,6 +59,7 @@
                         <input type="hidden" class="form-control" name="user[0][alias_bom]" value="FG">
                         <input type="hidden" class="form-control" name="user[0][divisi]" value="<?php echo $this->session->userdata('divisi') ?>">
                         <select class="form-control" name="" multiple id="nama_bom"></select>
+                        <div class="bom-error" id="bom_error_message"></div>
                     </div>
                   </div>
                   <div class="form-group row">
@@ -85,7 +84,7 @@
                     <div class="col-sm-10">
                         <input type="hidden" class="form-control" name="user_detail[0][id_bom]" id="id_bom_release" value="<?php echo $data ?>">
                         <input type="hidden" class="form-control" name="user_detail[0][id_product]" id="id_product_release">
-                        <select class="form-control" name="kode_produk_release" id="kode_produk_release">
+                        <select class="form-control" name="kode_produk_release" id="kode_produk_release" onchange="getKodeProdukRelease(this.value)">
                             <option value=''>Please select item ...</option>
                         </select>
                     </div>
@@ -93,7 +92,8 @@
                   <div class="row justify-content-center mt-3">
                      <div class="col">
                         <div class="form-group d-flex justify-content-center">
-                            <input type="submit" id="submit" name="simpan" class="btn btn-primary mt-3" value="Save">
+                            <input type="submit" id="submitBtn" name="simpan" class="btn btn-primary mt-3" value="Save">
+                            <div id="global_error" class="text-danger ml-3 mt-3"></div>
                          </div>
                      </div>
                 </div>
@@ -111,9 +111,11 @@
 <?php $this->load->view('layout/footer'); ?>
 
 <script>
+    var hasBomDuplicate = false;
+
     $(document).ready(function(){
       $("#nama_bom").select2({
-         ajax: { 
+         ajax: {
            url: '<?= base_url() ?>c_new/get_kodeProductRelease',
            type: "post",
            dataType: 'json',
@@ -130,20 +132,56 @@
            },
            cache: true
          }
-     }).on('change', function() {
-         var selectedData = $(this).select2('data');
-         if (selectedData && selectedData.length > 0) {
-             // Get the first selected item (since it's multiple select, but typically one is selected)
-             var selectedItem = selectedData[0];
-             $('#nama_bom_new').val(selectedItem.text);
-             $('#id_product').val(selectedItem.id);
-         }
+     }).on('select2:select', function(e) {
+        var selectedData = e.params.data;
+        getKodeProduk(selectedData.id);
+        checkDuplicateBom(selectedData.id);
+     }).on('select2:unselect', function() {
+        clearBomError();
      });
    });
+
+    function checkDuplicateBom(id_product) {
+        if (!id_product || id_product === '') {
+            clearBomError();
+            return;
+        }
+
+        $.ajax({
+            url: '<?= base_url("c_new/cek_bom_by_product"); ?>',
+            type: 'POST',
+            data: {
+                id_product: id_product
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.exists) {
+                    $('#nama_bom_wrapper').addClass('has-error');
+                    $('#bom_error_message').text(response.message);
+                    $('#submitBtn').prop('disabled', true);
+                    $('#global_error').text('Please select a different product.');
+                    hasBomDuplicate = true;
+                } else {
+                    clearBomError();
+                }
+            },
+            error: function() {
+                clearBomError();
+            }
+        });
+    }
+
+    function clearBomError() {
+        $('#nama_bom_wrapper').removeClass('has-error');
+        $('#bom_error_message').text('');
+        $('#submitBtn').prop('disabled', false);
+        $('#global_error').text('');
+        hasBomDuplicate = false;
+    }
 
     $(document).ready(function(){
       $("#kode_produk_release").select2({
-         ajax: { 
+         ajax: {
            url: '<?= base_url() ?>c_new/get_kodeProductRelease',
            type: "post",
            dataType: 'json',
@@ -160,61 +198,25 @@
            },
            cache: true
          }
-     }).on('change', function() {
-         var selectedData = $(this).select2('data');
-         if (selectedData && selectedData.length > 0) {
-             var selectedItem = selectedData[0];
-             $('#id_product_release').val(selectedItem.id);
-         }
      });
    });
 
-    // Form validation before submission
-    function validateBomForm() {
-        var idProduct = $('#id_product').val();
-        var namaBom = $('#nama_bom_new').val();
-        var idProductRelease = $('#id_product_release').val();
-        var errors = [];
-
-        if (!idProduct || idProduct === '') {
-            errors.push('Please select a Product/BOM from the dropdown');
-        }
-
-        if (!namaBom || namaBom === '') {
-            errors.push('Product/BOM name is required');
-        }
-
-        if (!idProductRelease || idProductRelease === '') {
-            errors.push('Please select a Release Product from the dropdown');
-        }
-
-        if (errors.length > 0) {
-            alert('Please fix the following errors:\n\n' + errors.join('\n'));
-            return false;
-        }
-
-        return true;
-    }
-
-    // Functions are now handled by select2 change events above
-    // Keeping these for backward compatibility if needed elsewhere
     function getKodeProduk(value){
-        var selectedData = $('#nama_bom').select2('data');
-        if (selectedData && selectedData.length > 0) {
-            var selectedItem = selectedData[0];
-            $('#nama_bom_new').val(selectedItem.text);
-            $('#id_product').val(selectedItem.id);
-        }
+        $('#nama_bom_new').val($('#nama_bom').text());
+        $('#id_product').val(value);
     }
 
     function getKodeProdukRelease(value){
-        var selectedData = $('#kode_produk_release').select2('data');
-        if (selectedData && selectedData.length > 0) {
-            var selectedItem = selectedData[0];
-            $('#id_product_release').val(selectedItem.id);
-        }
+        $('#id_product_release').val($('#kode_produk_release').val());
     }
 
+    // Prevent form submission if there are duplicates
+    $('form').on('submit', function() {
+        if (hasBomDuplicate) {
+            alert('Please fix duplicate BOM errors before submitting.');
+            return false;
+        }
+    });
 
 </script>
 

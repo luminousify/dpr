@@ -23,7 +23,17 @@
      }
  </style>
  <?php $this->load->view('report/menu_report'); ?>
- <?php $valueNya < 5 || $valueNya > 5 ? $angka = 31 : $angka = 12; ?>
+ <?php
+ // Fix: Handle URL-encoded spaces and check both variations
+ $name_clean = urldecode($name);
+ if($name == 'Total Dispose' || $name == 'Total%20Dispose' || $name_clean == 'Total Dispose') {
+     $angka = 12;
+ } elseif($valueNya < 5 || $valueNya > 5) {
+     $angka = 31;
+ } else {
+     $angka = 12;
+ }
+ ?>
  <input type="hidden" name="" id="iniValue" value="<?php echo $valueNya == '' ? 1 : $valueNya; ?>">
  <div class="wrapper wrapper-content animated fadeInRight">
      <div class="row">
@@ -38,13 +48,58 @@
                      </div>
                  </div>
                  <div class="ibox-content">
-                    <?php if (strpos($jenis, 'qty_ng') !== false): ?>
+
+                    
+                    <?php 
+                    $name_clean = urldecode($name);
+                    if($name == 'Total Dispose' || $name == 'Total%20Dispose' || $name_clean == 'Total Dispose'): 
+                    ?>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Select Month:</label>
+                                <div class="input-group">
+                                    <select name="month_year" class="form-control" id="ng_report_month">
+                                        <?php
+                                        $currentYear = date('Y');
+                                        $months = [
+                                            '01' => 'January', '02' => 'February', '03' => 'March',
+                                            '04' => 'April', '05' => 'May', '06' => 'June',
+                                            '07' => 'July', '08' => 'August', '09' => 'September',
+                                            '10' => 'October', '11' => 'November', '12' => 'December'
+                                        ];
+                                        // Show last 24 months
+                                        for($y = 0; $y < 2; $y++) {
+                                            $year = $currentYear - $y;
+                                            foreach ($months as $key => $monthName) {
+                                                $value = "$year-$key";
+                                                $selected = ($value == date('Y-m')) ? 'selected' : '';
+                                                echo "<option value=\"$value\" $selected>$monthName $year</option>";
+                                            }
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="button" class="btn btn-warning" id="print_ng_monthly_report">
+                                        <i class="fa fa-print"></i> Print NG Report Monthly
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Daily NG Report Section -->
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Select Date:</label>
-                                <div class="input-group date">
-                                    <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                                <div class="input-group">
                                     <input type="text" class="form-control datepicker" id="ng_report_date" value="<?php echo date('Y-m-d'); ?>">
                                 </div>
                             </div>
@@ -65,16 +120,17 @@
                          <table class="table table-striped table-bordered table-hover dataTables-example" style="width:100%">
                              <thead>
                                  <tr>
-                                     <th><b>No</b></th>
+                                     <?php
+                                     $name_clean = urldecode($name);
+                                     if($name == 'Total Dispose' || $name == 'Total%20Dispose' || $name_clean == 'Total Dispose'): ?>
+                                         <th><b>Nomer Mesin</b></th>
+                                     <?php else: ?>
+                                         <th><b>No</b></th>
+                                     <?php endif; ?>
                                      <th><b>Product ID</b></th>
                                      <th><b>Product Name</b></th>
-                                     <?php if ($jenis === 'qty_ok') { ?>
+                                     <?php if ($valueNya > 5) {  ?>
                                          <th><b>Customer</b></th>
-                                     <?php } else if ($valueNya > 5) {  ?>
-                                         <th><b>Customer</b></th>
-                                     <?php } ?>
-                                     <?php if ($jenis === 'qty_ok') { ?>
-                                         <th><b>Total Production</b></th>
                                      <?php } ?>
                                      <?php if ($valueNya > 1 && $valueNya < 5) {  ?>
                                          <th><b>Proses</b></th>
@@ -92,39 +148,42 @@
                                          <th><b>CT Aktual</b></th>
                                      <?php } ?>
                                      <th><?= $name; ?></th>
-                                     <?php for ($i = 1; $i <= $angka; $i++) { ?>
-                                        <th style="background:#1ab394;color: white;text-align: center;">
-                                            <center><?php echo $i; ?></center>
-                                        </th>
-                                     <?php } ?>
+                                     <?php if ($name == 'Total Dispose'): ?>
+                                         <?php for ($i = 1; $i <= 12; $i++) { ?>
+                                         <th style="background:#1ab394;color: white;text-align: center;">
+                                             <center><?php echo $i; ?></center>
+                                         </th>
+                                         <?php } ?>
+                                     <?php else: ?>
+                                         <?php for ($i = 1; $i <= $angka; $i++) { ?>
+                                         <th style="background:#1ab394;color: white;text-align: center;">
+                                             <center><?php echo $i; ?></center>
+                                         </th>
+                                         <?php } ?>
+                                     <?php endif; ?>
                                      <?php if ($valueNya > 0 && $valueNya < 6) {  ?>
                                          <th><b>Alias BOM</b></th>
                                          <th><b>ID BOM</b></th>
                                      <?php } ?>
                                  </tr>
                              </thead>
-                            <tbody>
-                                <?php $total = 0;
-                                   $total_ng = 0;
-                                   // Aggregates for GRAND TOTAL
-                                   $grand_total_overall = 0;
-                                   $grand_total_days = array();
-                                   for ($gi = 1; $gi <= $angka; $gi++) { $grand_total_days[$gi] = 0; }
-                                   $no = 0;
-                                   foreach ($data_production->result_array() as $data) {
+                             <tbody>
+                                 <?php $total = 0;
+                                    $total_ng = 0;
+                                    $no = 0;
+                                    foreach ($data_production->result_array() as $data) {
                                         $no++;
                                         echo '<tr>';
-                                        echo '<td>' . $no;
-                                        '</td>';
+                                        $name_clean = urldecode($name);
+                                        if($name == 'Total Dispose' || $name == 'Total%20Dispose' || $name_clean == 'Total Dispose') {
+                                            echo '<td>' . $data['mesin'] . '</td>';
+                                        } else {
+                                            echo '<td>' . $no . '</td>';
+                                        }
                                         echo '<td class="str">' . $data['kode_product'], '</td>';
                                         echo '<td>' . $data['nama_product'], '</td>';
-                                        if ($jenis === 'qty_ok') {
+                                        if ($valueNya > 5) {
                                             echo '<td>' . $data['customer'], '</td>';
-                                        } else if ($valueNya > 5) {
-                                            echo '<td>' . $data['customer'], '</td>';
-                                        }
-                                        if ($jenis === 'qty_ok') {
-                                            echo '<td>' . round($data['total_production'], 2) . '</td>';
                                         }
                                         if ($valueNya > 1 && $valueNya < 5) {
                                             echo '<td>' . $data['nama_proses'], '</td>';
@@ -141,25 +200,21 @@
                                             echo '<td>' . ($data['cyt_mc'] + $data['cyt_mp']), '</td>';
                                             echo '<td>' . ($data['ct_mc_aktual'] + $data['ct_mp_aktual']), '</td>';
                                         }
-                                       $row_total = round($data['total'], 2);
-                                       echo '<td>' . $row_total, '</td>';
-                                       
-                                       // Track grand total separately for qty_ok reports
-                                       if ($jenis === 'qty_ok') {
-                                           // For qty_ok reports, we need to add the total production to the grand total
-                                           $grand_total_overall += round($data['total_production'], 2);
-                                       } else {
-                                           $grand_total_overall += $row_total;
-                                       }
-                                       
-                                       // Display daily data
-                                       for ($i = 1; $i <= $angka; $i++) {
-                                           // Show the value for the day (OK quantity)
-                                           $dayVal = round($data['t' . $i . $name], 2);
-                                           echo '<td>' . $dayVal . '</td>';
-                                           $grand_total_days[$i] += $dayVal;
-                                       }
-                                       
+                                        echo '<td>' . round($data['total'], 2), '</td>';
+                                        $name_clean = urldecode($name);
+                                        if($name == 'Total Dispose' || $name == 'Total%20Dispose' || $name_clean == 'Total Dispose') {
+                                            for ($i = 1; $i <= 12; $i++) {
+                                                $column_name = 't' . $i . $jenis;
+                                                $column_value = isset($data[$column_name]) ? $data[$column_name] : 0;
+                                                echo '<td>' . round($column_value, 2) . '</td>';
+                                            }
+                                        } else {
+                                            for ($i = 1; $i <= $angka; $i++) {
+                                                $column_name = 't' . $i . $jenis;
+                                                $column_value = isset($data[$column_name]) ? $data[$column_name] : 0;
+                                                echo '<td>' . round($column_value, 2) . '</td>';
+                                            }
+                                        }
                                         if ($valueNya > 0 && $valueNya < 6) {
                                             echo '<td>' . $data['alias_bom'], '</td>';
                                             echo '<td>' . $data['id_bom'], '</td>';
@@ -168,19 +223,19 @@
                                     }
                                     ?>
                              </tbody>
-                            <tfoot>
-                                <!-- Search Row - Must come FIRST (DataTables needs it for functionality) -->
-                                 <tr class="search-row">
-                                     <th><b>No</b></th>
+                             <tfoot>
+                                 <tr>
+                                     <?php
+                                     $name_clean = urldecode($name);
+                                     if($name == 'Total Dispose' || $name == 'Total%20Dispose' || $name_clean == 'Total Dispose'): ?>
+                                         <th><b>Nomer Mesin</b></th>
+                                     <?php else: ?>
+                                         <th><b>No</b></th>
+                                     <?php endif; ?>
                                      <th><b>Product ID</b></th>
                                      <th><b>Product Name</b></th>
-                                     <?php if ($jenis === 'qty_ok') { ?>
+                                     <?php if ($valueNya > 5) {  ?>
                                          <th><b>Customer</b></th>
-                                     <?php } else if ($valueNya > 5) {  ?>
-                                         <th><b>Customer</b></th>
-                                     <?php } ?>
-                                     <?php if ($jenis === 'qty_ok') { ?>
-                                         <th><b>Total Production</b></th>
                                      <?php } ?>
                                      <?php if ($valueNya > 1 && $valueNya < 6) {  ?>
                                          <th><b>Proses</b></th>
@@ -198,48 +253,28 @@
                                          <th><b>CT Aktual</b></th>
                                      <?php } ?>
                                      <th><?= $name; ?></th>
-                                     <?php for ($i = 1; $i <= $angka; $i++) { ?>
-                                        <th style="background:#1ab394;color: white;text-align: center;">
-                                            <center><?php echo $i; ?></center>
-                                        </th>
-                                     <?php } ?>
+                                     <?php
+                                     $name_clean = urldecode($name);
+                                     if($name == 'Total Dispose' || $name == 'Total%20Dispose' || $name_clean == 'Total Dispose'): ?>
+                                         <?php for ($i = 1; $i <= 12; $i++) { ?>
+                                         <th style="background:#1ab394;color: white;text-align: center;">
+                                             <center><?php echo $i; ?>
+                                         </th>
+                                         </center>
+                                         <?php } ?>
+                                     <?php else: ?>
+                                         <?php for ($i = 1; $i <= $angka; $i++) { ?>
+                                         <th style="background:#1ab394;color: white;text-align: center;">
+                                             <center><?php echo $i; ?>
+                                         </th>
+                                         </center>
+                                         <?php } ?>
+                                     <?php endif; ?>
                                      <?php if ($valueNya > 0 && $valueNya < 6) {  ?>
                                          <th><b>Alias BOM</b></th>
                                          <th><b>ID BOM</b></th>
                                      <?php } ?>
                                  </tr>
-                               <!-- GRAND TOTAL Row - Must be LAST for export -->
-                                <tr class="grand-total-row" style="background-color:#1ab394;color:#ffffff;font-weight:bold;">
-                                    <?php
-                                    // Columns before the measure column - must match header exactly
-                                    echo '<th></th>'; // No
-                                    echo '<th></th>'; // Product ID
-                                    echo '<th style="text-align:right;">GRAND TOTAL:</th>'; // Product Name as label
-                                    
-                                    // Customer column - conditional for qty_ok report
-                                    if ($jenis === 'qty_ok') { echo '<th></th>'; } 
-                                    else if ($valueNya > 5) { echo '<th></th>'; } // Customer (1 column)
-                                    
-                                    // Total Production column for qty_ok report
-                                    if ($jenis === 'qty_ok') { echo '<th></th>'; }
-                                    
-                                    if ($valueNya > 1 && $valueNya < 5) { echo '<th></th>'; } // Proses (1 column)
-                                    if ($valueNya > 1 && $valueNya < 5) { echo '<th></th>'; } // Machine (1 column)
-                                    if ($valueNya > 2 && $valueNya < 5) { echo '<th></th>'; } // Shift (1 column)
-                                    if ($valueNya > 3 && $valueNya < 5) { 
-                                        echo '<th></th><th></th><th></th><th></th>'; // Group, Target, CT Standar, CT Aktual (4 columns)
-                                    }
-                                    // Measure column - qty_ok or other metric
-                                    echo '<th style="text-align:center;"><b>' . number_format($grand_total_overall, 2) . '</b></th>';
-                                    
-                                    // Day columns
-                                    for ($i = 1; $i <= $angka; $i++) {
-                                        echo '<th style="text-align:center;"><b>' . number_format($grand_total_days[$i], 2) . '</b></th>';
-                                    }
-                                    
-                                    if ($valueNya > 0 && $valueNya < 6) { echo '<th></th><th></th>'; } // Alias BOM, ID BOM (2 columns)
-                                    ?>
-                                </tr>
                              </tfoot>
                          </table>
                      </div>
@@ -569,48 +604,46 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
      <script>
          $(document).ready(function() {
-             // Initialize datepicker for NG report
+             // Handle print NG monthly report button click
+             $('#print_ng_monthly_report').on('click', function() {
+                 var selectedMonth = $('#ng_report_month').val();
+                 if(selectedMonth) {
+                     var printWindow = window.open('<?= site_url("c_dpr/print_ng_monthly_report") ?>?month=' + selectedMonth, '_blank', 'width=900,height=600');
+                     if(printWindow) {
+                         printWindow.focus();
+                     }
+                 } else {
+                     alert('Please select a month first');
+                 }
+             });
+
+             // Initialize datepicker for daily NG report
              if($('#ng_report_date').length) {
                  $('#ng_report_date').datepicker({
-                     todayBtn: "linked",
-                     keyboardNavigation: false,
-                     forceParse: false,
-                     calendarWeeks: true,
+                     format: 'yyyy-mm-dd',
                      autoclose: true,
-                     format: "yyyy-mm-dd"
-                 });
-                 
-                 // Handle print NG report button click
-                 $('#print_ng_report').on('click', function() {
-                     var selectedDate = $('#ng_report_date').val();
-                     if(selectedDate) {
-                         // Create a popup window for printing
-                         var printWindow = window.open('<?= site_url("c_dpr/print_ng_report") ?>?date=' + selectedDate, '_blank', 'width=800,height=600');
-                         
-                         // You can also use this alternative approach to redirect to print page
-                         // window.location.href = '<?= site_url("c_dpr/print_ng_report") ?>?date=' + selectedDate;
-                         
-                         // Focus the print window
-                         if(printWindow) {
-                             printWindow.focus();
-                         }
-                     } else {
-                         alert('Please select a date first');
-                     }
+                     todayHighlight: true
                  });
              }
-             
-             // Initialize DataTables - Add search inputs to FIRST footer row only (not grand total row)
-             $('.dataTables-example tfoot tr.search-row th').each(function() {
+
+             // Print NG Report button handler
+             $('#print_ng_report').on('click', function() {
+                 var selectedDate = $('#ng_report_date').val();
+                 if(selectedDate) {
+                     var printWindow = window.open('<?= site_url("c_dpr/print_ng_report") ?>?date=' + selectedDate, '_blank', 'width=800,height=600');
+                     if(printWindow) {
+                         printWindow.focus();
+                     }
+                 } else {
+                     alert('Please select a date first.');
+                 }
+             });
+
+             // Initialize DataTables
+             $('.dataTables-example tfoot th').each(function() {
                  $(this).html('<input type="text" placeholder="Search" style="width:100%" />');
              });
-             // Calculate the number of fixed columns based on the report type and options
-            var iniValue = parseInt($('#iniValue').val()) + 3;
-            
-            // For qty_ok reports, we need extra column for Customer and Total Production
-            <?php if ($jenis === 'qty_ok') { ?>
-                iniValue += 2; // Add 2 more columns for Customer and Total Production
-            <?php } ?>
+             var iniValue = parseInt($('#iniValue').val()) + 3;
              if (iniValue == 9) {
                  iniValue = 0;
              }
@@ -626,94 +659,33 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                      left: iniValue,
                  },
                  dom: '<"html5buttons"B>lTfgitp',
-                buttons: [{
-                        extend: 'copy',
-                        footer: true,
-                        exportOptions: {
-                            orthogonal: 'export',
-                            format: {
-                                footer: function(data, row, column, node) {
-                                    // Only export grand total row (last row), skip search row
-                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
-                                        return data;
-                                    }
-                                    return '';
-                                }
-                            }
-                        }
-                    },
-                    {
-                        extend: 'csv',
-                        footer: true,
-                        exportOptions: {
-                            orthogonal: 'export',
-                            format: {
-                                footer: function(data, row, column, node) {
-                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
-                                        return data;
-                                    }
-                                    return '';
-                                }
-                            }
-                        }
-                    },
-                    {
-                        extend: 'excel',
-                        title: '<?php echo ucfirst(str_replace('_', ' ', $jenis)); ?>_Report_<?php echo str_replace(' ', '_', $name); ?>_<?php echo str_replace('-', '_', $tanggal); ?>',
-                        footer: true,
-                        exportOptions: {
-                            orthogonal: 'export',
-                            format: {
-                                footer: function(data, row, column, node) {
-                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
-                                        return data;
-                                    }
-                                    return '';
-                                }
-                            }
-                        }
-                    },
-                    {
-                        extend: 'pdf',
-                        title: '<?php echo ucfirst(str_replace('_', ' ', $jenis)); ?>_Report_<?php echo str_replace(' ', '_', $name); ?>_<?php echo str_replace('-', '_', $tanggal); ?>',
-                        footer: true,
-                        exportOptions: {
-                            orthogonal: 'export',
-                            format: {
-                                footer: function(data, row, column, node) {
-                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
-                                        return data;
-                                    }
-                                    return '';
-                                }
-                            }
-                        }
-                    },
+                 buttons: [{
+                         extend: 'copy'
+                     },
+                     {
+                         extend: 'csv'
+                     },
+                     {
+                         extend: 'excel',
+                         title: 'ExampleFile'
+                     },
+                     {
+                         extend: 'pdf',
+                         title: 'ExampleFile'
+                     },
 
-                    {
-                        extend: 'print',
-                        footer: true,
-                        exportOptions: {
-                            orthogonal: 'export',
-                            format: {
-                                footer: function(data, row, column, node) {
-                                    if ($(node).closest('tr').hasClass('grand-total-row')) {
-                                        return data;
-                                    }
-                                    return '';
-                                }
-                            }
-                        },
-                        customize: function(win) {
-                            $(win.document.body).addClass('white-bg');
-                            $(win.document.body).css('font-size', '10px');
+                     {
+                         extend: 'print',
+                         customize: function(win) {
+                             $(win.document.body).addClass('white-bg');
+                             $(win.document.body).css('font-size', '10px');
 
-                            $(win.document.body).find('table')
-                                .addClass('compact')
-                                .css('font-size', 'inherit');
-                        }
-                    }
-                ],
+                             $(win.document.body).find('table')
+                                 .addClass('compact')
+                                 .css('font-size', 'inherit');
+                         }
+                     }
+                 ],
                  initComplete: function() {
                      // Apply the search
                      this.api().columns().every(function() {

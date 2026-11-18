@@ -1,4 +1,4 @@
-<script src="<?= base_url(); ?>template/js/jquery-3.1.1.min.js"></script>
+<!-- jQuery already loaded in footer, removing duplicate -->
 <style>
     th, td { white-space: nowrap; }
     div.dataTables_wrapper {
@@ -26,6 +26,14 @@
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
+        </select>
+    </div>
+    <div class="col">
+        <b>Line : </b>
+         <select name="user[0][line]" class="form-control">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
         </select>
     </div>
     <div class="col">
@@ -65,12 +73,13 @@
 <br/>
 <hr>
 <div class="table-responsive">
-                    <table class="table table-striped table-bordered table-hover dataTables-example" id="datatable1" width="100%">
+                    <table class="table table-striped table-bordered table-hover dataTables-example-total-mp" id="datatableTotalMP" width="100%">
                             <thead>
                                 <tr>
                                     <th>No</th>
                                     <th>Tanggal</th>
                                     <th>Shift</th>
+                                    <th>Line</th>
                                     <th>Total MP Hadir</th>
                                     <th>Total MP Tidak Hadir</th>
                                     <th>Total Sisa MP Hadir</th>
@@ -90,12 +99,13 @@
                                     <td><?php echo $i++; ?></td>
                                     <td><?= $data['tanggal']; ?></td>
                                     <td><?= $data['shift']; ?></td>
+                                    <td><?= $data['line']; ?></td>
                                     <td><?= $data['total']; ?></td>
                                     <td><?= $data['total_tidak_hadir']; ?></td>
                                     <td><?= $data['sisa_mp_hadir']; ?></td>
                                     <td><?= $data['keterangan']; ?></td>
                                     <td><?= $data['keterangan_sisa']; ?></td>
-                                    <td style="text-align: center;" class="align-middle"><button class="btn btn-sm btn-info btn-circle bi bi-pen-fill mr-1 btn-edit" data-id="<?= $data['id_mp']?>" data-tanggal="<?= $data['tanggal']?>" data-shift="<?= $data['shift']?>" data-total="<?= $data['total']?>" data-total_tidak_hadir="<?= $data['total_tidak_hadir']?>" data-total_sisa_mp_hadir="<?= $data['sisa_mp_hadir']?>" data-keterangan="<?= $data['keterangan']?>" data-keterangan_sisa="<?= $data['keterangan_sisa']?>"><center><i class="fa fa-pencil"></i></center></button></td>
+                                    <td style="text-align: center;" class="align-middle"><button class="btn btn-sm btn-info btn-circle bi bi-pen-fill mr-1 btn-edit" data-id="<?= $data['id_mp']?>" data-tanggal="<?= $data['tanggal']?>" data-shift="<?= $data['shift']?>" data-line="<?= $data['line']?>" data-total="<?= $data['total']?>" data-total_tidak_hadir="<?= $data['total_tidak_hadir']?>" data-total_sisa_mp_hadir="<?= $data['sisa_mp_hadir']?>" data-keterangan="<?= $data['keterangan']?>" data-keterangan_sisa="<?= $data['keterangan_sisa']?>"><center><i class="fa fa-pencil"></i></center></button></td>
                                     <td><a href="<?php echo base_url('c_machine/delete_total_mp/'.$data['id_mp']) ?>"><center><button class="btn btn-danger btn-circle delete"><i class="fa fa-trash"></i></button></center></a></td>
                                 </tr>
                                 <?php } ?>
@@ -105,6 +115,7 @@
                                     <th>No</th>
                                     <th>Tanggal</th>
                                     <th>Shift</th>
+                                    <th>Line</th>
                                     <th>Total MP Hadir</th>
                                     <th>Total MP Tidak Hadir</th>
                                     <th>Sisa MP Hadir</th>
@@ -131,11 +142,11 @@
                 <?php endforeach; ?>
                 <input type="hidden" class="id" name="id" id="id">
                 <div class="form-row">
-                    <div class="form-group col-md-6">
+                    <div class="form-group col-md-4">
                         <label>Tanggal</label>
                         <input type="date" class="form-control tanggal" id="tanggal" name="tanggal" value="<?php echo $data_modal['tanggal'] ?>">
                     </div>
-                    <div class="form-group col-md-6">
+                    <div class="form-group col-md-4">
                         <label>Shift</label>
                         <select class="form-control shift" id="shift" name="shift">
                             <option <?php if( $data_modal['shift'] =='1'){echo "selected"; } ?> value='1'>1</option>
@@ -143,6 +154,14 @@
                             <option <?php if( $data_modal['shift'] =='3'){echo "selected"; } ?> value='3'>3</option>
                         </select>
                         <!-- <input type="text" class="form-control shift" id="shift" name="shift" value="<?php //echo $data_modal['shift'] ?>"> -->
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Line</label>
+                        <select class="form-control line" id="line" name="line">
+                            <option <?php if( $data_modal['line'] =='A'){echo "selected"; } ?> value='A'>A</option>
+                            <option <?php if( $data_modal['line'] =='B'){echo "selected"; } ?> value='B'>B</option>
+                            <option <?php if( $data_modal['line'] =='C'){echo "selected"; } ?> value='C'>C</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
@@ -200,38 +219,4 @@
         </div>                                          
     </div>
 
-<script>
-
-
-    $(document).ready(function() {
-            $('.delete').click(function() {
-            return confirm("Are you sure you want to delete?");
-            });
-        });
-
-
-    $(document).ready(function(){
- 
-        // get Edit Product
-        $('.btn-edit').click(function(){
-            // get data from button edit
-            const id                    = $(this).data('id');
-            const tanggal               = $(this).data('tanggal');
-            const shift                 = $(this).data('shift');
-            const total                 = $(this).data('total');
-            const total_tidak_hadir     = $(this).data('total_tidak_hadir');
-            const total_sisa_mp_hadir   = $(this).data('total_sisa_mp_hadir');
-            const keterangan            = $(this).data('keterangan');
-            // Set data to Form Edit
-            $('.id').val(id);
-            $('.tanggal').val(tanggal);
-            $('.shift').val(shift);
-            $('.total').val(total);
-            $('.total_tidak_hadir').val(total_tidak_hadir);
-            $('.total_sisa_mp_hadir').val(total_sisa_mp_hadir);
-            $('.keterangan').val(keterangan);
-            $('#editModal').modal('show');
-        });
-         
-    });
-</script>
+<!-- jQuery scripts moved to 1machine.php initializeOtherComponents() to ensure jQuery loads first -->

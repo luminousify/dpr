@@ -22,23 +22,26 @@ class c_dpr extends CI_Controller {
  
   public function dpr()
   {
-      // Treat any POST with filter fields as an explicit filter request
-      $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') &&
-                      ($this->input->post('tanggal_dari') !== null || $this->input->post('tanggal_sampai') !== null || $this->input->post('shift') !== null);
-
-      if($isFilterPost)
+      if($this->input->post('show'))
       {
       $dari = $this->input->post('tanggal_dari');
       $sampai = $this->input->post('tanggal_sampai');
       $shift = $this->input->post('shift');
-      
-      // Store filter values in session for future use
-      $this->session->set_userdata('dpr_tanggal_dari', $dari);
-      $this->session->set_userdata('dpr_tanggal_sampai', $sampai);
-      $this->session->set_userdata('dpr_shift', $shift);
-      
+
+      // Log session info for debugging
+      $session_nama = isset($_SESSION['nama_actor']) ? $_SESSION['nama_actor'] : 'NOT SET';
+      $session_posisi = isset($_SESSION['posisi']) ? $_SESSION['posisi'] : 'NOT SET';
+      log_message('info', "DPR PAGE - Session: nama_actor=$session_nama, posisi=$session_posisi");
+      log_message('info', "DPR PAGE - Date range: $dari to $sampai, shift=$shift");
+
       $data_tabel = $this->mm->tampil_production_rev($dari , $sampai,$shift);
-      
+      log_message('info', "DPR PAGE - Query returned " . $data_tabel->num_rows() . " rows");
+
+      // Log first few IDs to verify order
+      $result_array = $data_tabel->result_array();
+      $first_ids = array_slice(array_column($result_array, 'id'), 0, 5);
+      log_message('info', "DPR PAGE - First 5 IDs: " . implode(', ', $first_ids));
+
       $data = [
               'data'              => $this->data,
               'aktif'             => 'dpr',
@@ -55,36 +58,13 @@ class c_dpr extends CI_Controller {
       }
       else
       {
-        // Check for GET parameters (from edit redirect)
-        $get_dari = $this->input->get('tanggal_dari');
-        $get_sampai = $this->input->get('tanggal_sampai');
-        $get_shift = $this->input->get('shift');
-        
-        // Priority 1: GET parameters from redirect
-        if ($get_dari || $get_sampai || $get_shift) {
-          $dari = $get_dari ?: date('Y-m-d');
-          $sampai = $get_sampai ?: date('Y-m-d');
-          $shift = $get_shift ?: 'All';
-        }
-        // Priority 2: Stored session values
-        else if ($this->session->userdata('dpr_tanggal_dari') || $this->session->userdata('dpr_tanggal_sampai')) {
-          $dari = $this->session->userdata('dpr_tanggal_dari') ?: date('Y-m-d');
-          $sampai = $this->session->userdata('dpr_tanggal_sampai') ?: date('Y-m-d');
-          $shift = $this->session->userdata('dpr_shift') ?: 'All';
-        }
-        // Priority 3: Default values
-        else {
-          $dari = date('Y-m-d');
-          $sampai = date('Y-m-d');
-          $shift = 'All';
-        }
-        
-        $data_tabel = $this->mm->tampil_production_rev($dari , $sampai , $shift);
-        
+        $dari      = date('Y-m-d');
+        $sampai    = date('Y-m-d');
+        $shift = 'All';
         $data = [
                 'data'              => $this->data,
                 'aktif'             => 'dpr',
-                'data_tabel'        => $data_tabel,
+                'data_tabel'        => $this->mm->tampil_production_rev($dari , $sampai , 'All'),
                 'dari'              => $dari,
                 'sampai'            => $sampai,
                 'shift'             => $shift,
@@ -134,124 +114,71 @@ class c_dpr extends CI_Controller {
 
   function report($jenis,$name) //qty_ok , ok
   {
-    // Check if this is a POST request AND tahun parameter exists (more robust than checking button)
-    $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
-                    ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
-
-    // Handle POST request - Process and Redirect (PRG Pattern)
-    if($isFilterPost) {
+    if($this->input->post('show') == 'Show')
+      {
         $tahun = $this->input->post('tahun');
-        $pilihan = $this->input->post('pilihan');
-        
-        // Validate format to ensure it's Y-m
-        if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
-            $tahun = date('Y-m');
-            log_message('debug', 'Invalid tahun format, using default: ' . $tahun);
-        }
-        
-        // Validate pilihan to ensure it's a valid option
-        if (!in_array($pilihan, ['1', '2', '3', '4', '5', '6'])) {
-            $pilihan = '1';
-        }
-        
-        // Build GET URL with parameters and redirect (PRG Pattern)
-        $redirect_url = site_url('c_dpr/report/' . $jenis . '/' . $name . '?tahun=' . urlencode($tahun) . '&pilihan=' . urlencode($pilihan));
-        redirect($redirect_url);
-        return; // Stop execution after redirect
-    }
-    
-    // Handle GET request - Display results
-    $tahun = $this->input->get('tahun');
-    $pilihan = $this->input->get('pilihan');
-    
-    // Default values if no GET parameters
-    if (empty($tahun)) {
+      }
+      else
+      {
         $tahun = date('Y-m');
-    }
-    if (empty($pilihan)) {
-        $pilihan = '1'; // Default to first option
-    }
-    
-    // Validate format to ensure it's Y-m
-    if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
-        $tahun = date('Y-m');
-        log_message('debug', 'Invalid tahun format, using default: ' . $tahun);
-    }
-    
-    // Validate pilihan to ensure it's a valid option
-    if (!in_array($pilihan, ['1', '2', '3', '4', '5', '6'])) {
-        $pilihan = '1';
-    }
+      }
 
-    $tahuns = substr($tahun,0,4);
-    $bulan  = substr($tahun,5,2);
+      $tahuns = substr($tahun,0,4);
+      $bulan  = substr($tahun,5,2);
+      $pilihan = $this->input->post('pilihan');
 
-    if($pilihan == 5)
-    {
+      // Special handling for Total Dispose report (uses qty_ng but with custom display)
+      if($name == 'Total Dispose') {
+        $query_model = 'onlineReportDisposeYear';
+        $query_grafik = 'onlineGrafikDisposeYear';
+        // Use qty_ng as the field for Total Dispose
+        $jenis = 'qty_ng';
+        // Force pilihan to 5 for yearly aggregation (12 columns)
+        $pilihan = 5;
+      }
+      elseif($pilihan == 5)
+      {
         $query_model = 'onlineYear';
         $query_grafik = 'onlineGrafik';
-    }
-    else if($pilihan == 6){
+      }
+      else if($pilihan == 6){
         $query_model = 'reportByCustMonthly';
         $query_grafik = 'onlineGrafik';
-    }
-    else
-    {
+      }
+      else
+      {
         $query_model = 'onlineReport';
         $query_grafik = 'onlineGrafik';
+      }
+      $tanggal      = $tahun;
+      $data = [
+              'data'            => $this->data,
+              'aktif'           => 'report',
+              'data_production' => $this->mm->$query_model($tanggal, $jenis),
+              'data_grafik'     => $this->mm->$query_grafik($tanggal, $jenis),
+              'judul_laporan'   => 'Reporting Production '.$name,
+              'tanggal'         => $tahun,
+              'tahun'           => $tahuns,
+              'bulan'           => $bulan,
+              'name'            => $name,
+              'jenis'           => $jenis,
+              'valueNya'        => $this->input->post('pilihan')
+            ];
+      $this->load->view('report/report' , $data);
     }
-    $tanggal      = $tahun;
-    $data = [
-            'data'            => $this->data,
-            'aktif'           => 'report',
-            'data_production' => $this->mm->$query_model($tanggal, $jenis),
-            'data_grafik'     => $this->mm->$query_grafik($tanggal, $jenis), 
-            'judul_laporan'   => 'Reporting Production '.$name,
-            'tanggal'         => $tahun,
-            'tahun'           => $tahuns,
-            'bulan'           => $bulan,
-            'name'            => $name,
-            'jenis'           => $jenis,
-            'valueNya'        => $pilihan
-          ];
-    $this->load->view('report/report' , $data);
-  }
       
 
   function productivity()
     {
-        // Check if this is a POST request AND tahun parameter exists
-        $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
-                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
-
-        // Handle POST request - Process and Redirect (PRG Pattern)
-        if($isFilterPost) {
-            $tahun = $this->input->post('tahun');
-            
-            // Validate format to ensure it's Y-m
-            if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
-                $tahun = date('Y-m');
-            }
-            
-            // Build GET URL with parameters and redirect (PRG Pattern)
-            $redirect_url = site_url('c_dpr/productivity?tahun=' . urlencode($tahun));
-            redirect($redirect_url);
-            return; // Stop execution after redirect
-        }
-        
-        // Handle GET request - Display results
-        $tahun = $this->input->get('tahun');
-        
-        // Default value if no GET parameter
-        if (empty($tahun)) {
-            $tahun = date('Y-m');
-        }
-        
-        // Validate format to ensure it's Y-m
-        if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
-            $tahun = date('Y-m');
-        }
-        
+      if($this->input->post('show') == 'Show')
+      {
+        $tahun = $this->input->post('tahun');
+          
+      }
+      else
+      {
+        $tahun = date('Y-m');
+      }
         $tahuns = substr($tahun,0,4);
         $bulan  = substr($tahun,5,2);
 
@@ -265,42 +192,20 @@ class c_dpr extends CI_Controller {
                   'tahun'       => $tahuns,
                   'bulan'       => $bulan
                   ];
-        $this->load->view('report/1productivity' , $data);
+      $this->load->view('report/1productivity' , $data);
     }
 
     function productivity_detail()
     {
-        // Check if this is a POST request AND tahun parameter exists
-        $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
-                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
-
-        // Handle POST request - Process and Redirect (PRG Pattern)
-        if($isFilterPost) {
-            $tahun = $this->input->post('tahun');
-            
-            // Validate format to ensure it's Y (this method uses Y format)
-            if (!preg_match('/^\d{4}$/', $tahun)) {
-                $tahun = date('Y');
-            }
-            
-            // Build GET URL with parameters and redirect (PRG Pattern)
-            $redirect_url = site_url('c_dpr/productivity_detail?tahun=' . urlencode($tahun));
-            redirect($redirect_url);
-            return; // Stop execution after redirect
-        }
-        
-        // Handle GET request - Display results
-        $tahun = $this->input->get('tahun');
-        
-        // Default value if no GET parameter (this method uses Y format)
-        if (empty($tahun)) {
-            $tahun = date('Y');
-        }
-        
-        // Validate format to ensure it's Y
-        if (!preg_match('/^\d{4}$/', $tahun)) {
-            $tahun = date('Y');
-        }
+      if($this->input->post('show') == 'Show')
+      {
+        $tahun = $this->input->post('tahun');
+          
+      }
+      else
+      {
+        $tahun = date('Y');
+      }
 
         $tahuns = substr($tahun,0,4);
         $bulan  = substr($tahun,5,2);
@@ -311,43 +216,20 @@ class c_dpr extends CI_Controller {
                   'tahun'       => $tahuns,
                   'bulan'       => $bulan
                   ];
-        $this->load->view('report/detail_productivity' , $data);
+      $this->load->view('report/detail_productivity' , $data);
     }
 
     function productivity_detail_by_part_by_month()
     {
-        // Check if this is a POST request AND tahun parameter exists
-        $isFilterPost = ($this->input->server('REQUEST_METHOD') === 'POST') && 
-                        ($this->input->post('tahun') !== null && $this->input->post('tahun') !== '');
-
-        // Handle POST request - Process and Redirect (PRG Pattern)
-        if($isFilterPost) {
-            $tahun = $this->input->post('tahun');
-            
-            // Validate format to ensure it's Y-m
-            if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
-                $tahun = date('Y-m');
-            }
-            
-            // Build GET URL with parameters and redirect (PRG Pattern)
-            $redirect_url = site_url('c_dpr/productivity_detail_by_part_by_month?tahun=' . urlencode($tahun));
-            redirect($redirect_url);
-            return; // Stop execution after redirect
-        }
-        
-        // Handle GET request - Display results
-        $tahun = $this->input->get('tahun');
-        
-        // Default value if no GET parameter
-        if (empty($tahun)) {
-            $tahun = date('Y-m');
-        }
-        
-        // Validate format to ensure it's Y-m
-        if (!preg_match('/^\d{4}-\d{2}$/', $tahun)) {
-            $tahun = date('Y-m');
-        }
-        
+      if($this->input->post('show') == 'Show')
+      {
+        $tahun = $this->input->post('tahun');
+          
+      }
+      else
+      {
+        $tahun = date('Y-m');
+      }
         $tahuns = substr($tahun,0,4);
         $bulan  = substr($tahun,5,2);
 
@@ -358,7 +240,7 @@ class c_dpr extends CI_Controller {
                   'tahun'       => $tahuns,
                   'bulan'       => $bulan
                   ];
-        $this->load->view('report/productivity_detail_by_part_by_month' , $data);
+      $this->load->view('report/productivity_detail_by_part_by_month' , $data);
     }
 
     function view_detail_worst_nett($kode_product,$bulan)  
@@ -448,11 +330,6 @@ class c_dpr extends CI_Controller {
             'cek_kanit'       => 1,
         );                
         $this->mm->update($data,$id);
-        
-        // Clear query cache after verification update
-        $this->db->cache_delete_all();
-        log_message('debug', 'Kanit verification updated and cache cleared for: ' . $id);
-        
         redirect('c_dpr/dpr'); 
       } 
 
@@ -466,11 +343,6 @@ class c_dpr extends CI_Controller {
             'pic_kasi'       => $pic_kasi,
         );                
         $this->mm->update_verif_kasi($data,$tanggal,$shift);
-        
-        // Clear query cache after verification update
-        $this->db->cache_delete_all();
-        log_message('debug', 'Kasi verification updated and cache cleared');
-        
         redirect('c_dpr/dpr'); 
       } 
 
@@ -507,47 +379,47 @@ class c_dpr extends CI_Controller {
     }
     
     public function print_ng_report() {
-        // Get date from query parameter with fallback to current date
         $date = $this->input->get('date');
         if (empty($date)) {
-            $date = date('Y-m-d'); // Default to current date if not provided
+            $date = date('Y-m-d');
         }
-        
-        // Log incoming date parameter for debugging
-        log_message('debug', 'NG Report - Received date parameter: ' . $date);
-        
-        // Format the date to ensure correct format (Y-m-d)
+
         $formatted_date = date('Y-m-d', strtotime($date));
-        log_message('debug', 'NG Report - Controller formatted date: ' . $formatted_date);
-        
-        // Get NG reports for the selected date
         $ng_data = $this->mm->get_ng_reports($formatted_date);
-        
-        // Log the number of results for debugging
-        log_message('debug', 'NG Report - Number of results: ' . $ng_data->num_rows());
-        
-        // If no results, try directly with hardcoded date format that matches DB
-        if ($ng_data->num_rows() == 0 && $date == '2025-05-09') {
-            log_message('debug', 'NG Report - Trying alternative date format: 2025-5-9');
-            $alt_date = '2025-5-9'; // Try without leading zeros
-            $ng_data = $this->mm->get_ng_reports($alt_date);
-            log_message('debug', 'NG Report - Alternative query results: ' . $ng_data->num_rows());
-        }
-        
+
         $data = [
             'data' => $this->data,
             'ng_reports' => $ng_data,
             'date' => $formatted_date,
             'judul_laporan' => 'NG Report - ' . date('d F Y', strtotime($formatted_date)),
-            'aktif' => 'report',
-            'debug_info' => [
-                'received_date' => $date,
-                'formatted_date' => $formatted_date,
-                'result_count' => $ng_data->num_rows()
-            ]
+            'aktif' => 'report'
+        ];
+
+        $this->load->view('report/print_ng_report', $data);
+    }
+    
+    public function print_ng_monthly_report() {
+        $month_year = $this->input->get('month');
+        
+        if (empty($month_year)) {
+            $month_year = date('Y-m');
+        }
+        
+        // Parse year and month
+        $year = date('Y', strtotime($month_year . '-01'));
+        $month = date('m', strtotime($month_year . '-01'));
+        
+        $ng_monthly_data = $this->mm->get_ng_monthly_reports($year, $month);
+        
+        $data = [
+            'data' => $this->data,
+            'ng_reports' => $ng_monthly_data,
+            'month_year' => $month_year,
+            'month_name' => date('F Y', strtotime($month_year . '-01')),
+            'judul_laporan' => 'Monthly NG Report - ' . date('F Y', strtotime($month_year . '-01')),
+            'aktif' => 'report'
         ];
         
-        // Load the print view
-        $this->load->view('report/print_ng_report', $data);
+        $this->load->view('report/print_ng_monthly_report', $data);
     }
 }

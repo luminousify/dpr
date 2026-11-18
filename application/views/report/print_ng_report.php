@@ -1,174 +1,302 @@
-<?php 
+<?php
 /**
- * Print NG Report View
- * Displays Not Good (NG) items for a specific date
+ * Print NG Report View - BON TRANSAKSI Format
+ * Displays Not Good (NG) items for disposal for a specific date
  */
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DPR | NG Report <?php echo date('d-m-Y', strtotime($date)); ?></title>
+    <title>BON TRANSAKSI - <?php echo date('d-M-y', strtotime($date)); ?></title>
     <link href="<?= base_url(); ?>template/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?= base_url(); ?>template/font-awesome/css/font-awesome.css" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            padding: 10px;
-            font-size: 12px;
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            font-size: 11px;
+            background: #fff;
         }
-        .company-info {
-            margin-bottom: 10px;
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
         }
-        .company-name {
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .department {
-            font-size: 12px;
-        }
-        .report-title {
-            text-align: center;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-        .date-info {
-            text-align: right;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-        .surat-jalan {
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-        table {
+        
+        /* Header Section */
+        .header-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 20px;
         }
-        th, td {
-            border: 1px solid #000;
-            padding: 3px 4px;
+        .header-table td {
+            border: 2px solid #000;
+            padding: 8px;
+            vertical-align: top;
+        }
+        .header-left {
+            width: 30%;
             text-align: left;
-            font-size: 11px;
+            font-size: 10px;
+            line-height: 1.4;
         }
-        th {
-            background-color: #f2f2f2;
-            font-size: 11px;
-        }
-        .no-data {
+        .header-center {
+            width: 40%;
             text-align: center;
-            padding: 10px;
-            font-style: italic;
-            color: #777;
+            vertical-align: middle;
+        }
+        .header-right {
+            width: 30%;
+            text-align: right;
+            position: relative;
+        }
+        .document-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin: 0;
+        }
+
+
+        
+        /* Info Section */
+        .info-section {
+            margin-bottom: 15px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
             font-size: 11px;
+        }
+        .info-col {
+            flex: 1;
+        }
+        .info-label {
+            display: inline-block;
+            width: 100px;
+        }
+        .info-value {
+            font-weight: bold;
+        }
+        
+        /* Checkbox Row */
+        .checkbox-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .checkbox {
+            width: 12px;
+            height: 12px;
+            border: 2px solid #000;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .checkbox.checked {
+            background-color: #000;
+        }
+        
+        /* Main Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .data-table th,
+        .data-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 10px;
+        }
+        .data-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-right {
+            text-align: right;
+        }
+        
+        /* Signature Section */
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .signature-table td {
+            border: 2px solid #000;
+            padding: 10px;
+            height: 120px;
+            vertical-align: top;
+            text-align: center;
+            width: 50%;
+        }
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 60px;
+        }
+
+        
+        .no-print {
+            display: block;
         }
         @media print {
             .no-print {
                 display: none;
             }
             body {
-                padding: 0;
-                margin: 0;
-                font-size: 11px;
+                padding: 10px;
             }
             .container {
-                width: 100%;
-                max-width: none;
+                max-width: 100%;
             }
-            table { page-break-inside: auto; }
-            tr { page-break-inside: avoid; page-break-after: auto; }
-            thead { display: table-header-group; }
-            tfoot { display: table-footer-group; }
+            @page {
+                margin: 0.5cm;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="company-info">
-            <div class="company-name">PT. PADMA SOODE INDONESIA</div>
-            <div class="department">PPIC Department</div>
-            <div class="report-title">SHIPPING DISPOSAL</div>
+        <!-- Header Table -->
+        <table class="header-table">
+            <tr>
+                <td class="header-left">
+                    <strong>PT. Padma Soode Indonesia</strong><br>
+                    Bekasi - Indonesia
+                </td>
+                <td class="header-center">
+                    <div class="document-title">BON TRANSAKSI</div>
+                </td>
+                <td class="header-right">
+                </td>
+            </tr>
+        </table>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-row">
+                <div class="info-col">
+                    <span class="info-label">Tanggal</span> : 
+                    <span class="info-value"><?= date('d-M-y', strtotime($date)); ?></span>
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-col">
+                    <span class="info-label">No Bon</span> : 
+                    <span class="info-value">BB6.<?= date('ymd', strtotime($date)); ?>.001</span>
+                </div>
+            </div>
         </div>
-        
-        <div class="date-info">
-            <strong>Date:</strong> <?php echo date('d-M-y', strtotime($date)); ?>
+
+        <!-- Checkbox Row -->
+        <div class="checkbox-row">
+            <div class="checkbox-item">
+                <span class="checkbox"></span>
+                <span>Permintaan</span>
+            </div>
+            <div class="checkbox-item">
+                <span class="checkbox checked"></span>
+                <span>Penyerahan</span>
+            </div>
+            <div class="checkbox-item">
+                <span class="checkbox"></span>
+                <span>Pengembalian</span>
+            </div>
         </div>
-        
-        <div class="surat-jalan">
-            <strong>No. Surat Jalan:</strong>
+
+        <div class="checkbox-row">
+            <div class="checkbox-item">
+                <span class="checkbox"></span>
+                <span>Bahan Baku</span>
+            </div>
+            <div class="checkbox-item">
+                <span class="checkbox"></span>
+                <span>Produk Jadi</span>
+            </div>
+            <div class="checkbox-item">
+                <span class="checkbox"></span>
+                <span>Retur</span>
+            </div>
+            <div class="checkbox-item">
+                <span class="checkbox checked"></span>
+                <span>Disposal</span>
+            </div>
+            <div class="checkbox-item">
+                <span class="checkbox"></span>
+                <span>Scrap</span>
+            </div>
         </div>
-        
-        <!-- Button to print -->
-        <div class="no-print" style="text-align: right; margin-bottom: 15px;">
+
+        <!-- Print Button -->
+        <div class="no-print" style="text-align: right; margin: 15px 0;">
             <button class="btn btn-primary" onclick="window.print();">
-                <i class="fa fa-print"></i> Print Report
+                <i class="fa fa-print"></i> Print
             </button>
             <button class="btn btn-default" onclick="window.close();">
                 Close
             </button>
         </div>
-        
-        <?php /* Debug information section (will not print) */ ?>
-        <?php if (isset($debug_info) && ENVIRONMENT !== 'production'): ?>
-        <div class="alert alert-info no-print">
-            <h4>Debug Information</h4>
-            <ul>
-                <li>Received Date: <?= $debug_info['received_date'] ?></li>
-                <li>Formatted Date: <?= $debug_info['formatted_date'] ?></li>
-                <li>Result Count: <?= $debug_info['result_count'] ?></li>
-            </ul>
-        </div>
-        <?php endif; ?>
-        
+
+        <!-- Data Table -->
         <?php if ($ng_reports->num_rows() > 0): ?>
-        <table class="table table-bordered">
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width: 5%;">No.</th>
-                    <th style="width: 20%;">Product ID</th>
-                    <th style="width: 30%;">Product Name</th>
+                    <th style="width: 10%;">Nomer Mesin</th>
+                    <th style="width: 15%;">Part /Product ID</th>
+                    <th style="width: 35%;">Part /Product Name</th>
                     <th style="width: 10%;">Unit</th>
-                    <th style="width: 10%;">Qty NG</th>
-                    <th style="width: 25%;">Remark</th>
+                    <th style="width: 10%;">Qty</th>
+                    <th style="width: 10%;">Keterangan</th>
                 </tr>
             </thead>
             <tbody>
-                <?php 
-                $no = 1;
+                <?php
                 $total_ng = 0;
-                foreach ($ng_reports->result_array() as $row): 
+                foreach ($ng_reports->result_array() as $row):
                     $total_ng += $row['qty_ng'];
                 ?>
                 <tr>
-                    <td style="text-align: center;"><?= $no++; ?></td>
+                    <td class="text-center"><?= $row['mesin']; ?></td>
                     <td><?= $row['kode_product']; ?></td>
                     <td><?= $row['nama_product']; ?></td>
-                    <td style="text-align: center;"><?= $row['unit']; ?></td>
-                    <td style="text-align: center;"><?= $row['qty_ng']; ?></td>
-                    <td><?= !empty($row['keterangan']) ? $row['keterangan'] : ''; ?></td>
+                    <td class="text-center"><?= $row['unit']; ?></td>
+                    <td class="text-center"><?= $row['qty_ng']; ?></td>
+                    <td class="text-center"><?= $row['ng_type']; ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
         <?php else: ?>
-        <div class="no-data">
-            <p>No NG items found for this date.</p>
+        <div style="text-align: center; padding: 30px; border: 1px solid #ddd; font-style: italic; color: #777;">
+            Tidak ada data untuk tanggal ini.
         </div>
         <?php endif; ?>
 
-        <table style="width: 100%; margin-top: 40px; border-collapse: collapse;">
+        <!-- Signature Section -->
+        <table class="signature-table">
             <tr>
-                <td style="border: 1px solid black; width: 60%; height: 100px;"></td>
-                <td style="border: 1px solid black; width: 20%; height: 100px; text-align: center; vertical-align: top; padding: 5px;">
-                    Shipping By
+                <td>
+                    <div class="signature-title">Diserahkan Oleh</div>
                 </td>
-                <td style="border: 1px solid black; width: 20%; height: 100px; text-align: center; vertical-align: top; padding: 5px;">
-                    Received by
+                <td>
+                    <div class="signature-title">Diterima Oleh</div>
                 </td>
             </tr>
         </table>
+
     </div>
-    
+
     <script src="<?= base_url(); ?>template/js/jquery-3.1.1.min.js"></script>
     <script src="<?= base_url(); ?>template/js/bootstrap.min.js"></script>
 </body>

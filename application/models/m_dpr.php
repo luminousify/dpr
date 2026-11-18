@@ -52,10 +52,9 @@ class m_dpr extends CI_Model
 
   public function tampil_production_rev($tanggal_dari, $tanggal_sampai, $shift)
   {
-    $nama = isset($_SESSION['nama_actor']) ? $_SESSION['nama_actor'] : '';
-    $posisi = isset($_SESSION['posisi']) ? $_SESSION['posisi'] : '';
+    $nama = $_SESSION['nama_actor'];
 
-    if ($posisi == 'kanit') {
+    if ($_SESSION['posisi'] == 'kanit') {
       if ($shift == 'All') {
         $shiftNya = '';
       } else {
@@ -119,8 +118,19 @@ class m_dpr extends CI_Model
               ROUND(SUM((CASE WHEN e.nama = 'COMPRESSOR' THEN e.qty END)),2) AS compressor,
               ROUND(SUM((CASE WHEN e.nama = 'LISTRIK' THEN e.qty END)),2) AS listrik,
               ROUND(SUM((CASE WHEN e.nama = 'QC LOLOS' THEN e.qty END)),2) AS qc_lolos,
-              ROUND(SUM(q.`production_time` / q.`nwt_mp`) * 100,2) AS mach_use,
-              ROUND(SUM(q.`ot_mp` / q.`nwt_mp`) * 100,2) AS persen_ot,
+              ROUND(SUM(
+                CASE 
+                  WHEN COALESCE(q.`nwt_mp`, 0) > 0 THEN q.`production_time` / q.`nwt_mp`
+                  WHEN COALESCE(q.`ot_mp`, 0) > 0 THEN q.`production_time` / q.`ot_mp`
+                  ELSE 0
+                END
+              ) * 100, 2) AS mach_use,
+              ROUND(SUM(
+                CASE 
+                  WHEN COALESCE(q.`nwt_mp`, 0) > 0 THEN q.`ot_mp` / q.`nwt_mp`
+                  ELSE 0
+                END
+              ) * 100, 2) AS persen_ot,
               q.`runner`,q.`loss_purge`,q.`keterangan`, 
               GROUP_CONCAT(DISTINCT ct.`cutting_tools_id`) AS cutting_tools_ids,
               GROUP_CONCAT(DISTINCT cts.`code`) AS cutting_tools_codes
@@ -133,7 +143,6 @@ class m_dpr extends CI_Model
               $shiftNya
               GROUP BY q.`id_production`
               ORDER BY q.`cek_kanit` DESC, q.`tanggal`, q.`mesin` ASC");
-      
       return $query;
     } else {
       if ($shift == 'All') {
@@ -199,8 +208,19 @@ class m_dpr extends CI_Model
             ROUND(SUM((CASE WHEN e.nama = 'COMPRESSOR' THEN e.qty END)),2) AS compressor,
             ROUND(SUM((CASE WHEN e.nama = 'LISTRIK' THEN e.qty END)),2) AS listrik,
             ROUND(SUM((CASE WHEN e.nama = 'QC LOLOS' THEN e.qty END)),2) AS qc_lolos,
-            ROUND(SUM(q.`production_time` / q.`nwt_mp`) * 100,2) AS mach_use,
-            ROUND(SUM(q.`ot_mp` / q.`nwt_mp`) * 100,2) AS persen_ot,
+            ROUND(SUM(
+              CASE 
+                WHEN COALESCE(q.`nwt_mp`, 0) > 0 THEN q.`production_time` / q.`nwt_mp`
+                WHEN COALESCE(q.`ot_mp`, 0) > 0 THEN q.`production_time` / q.`ot_mp`
+                ELSE 0
+              END
+            ) * 100, 2) AS mach_use,
+            ROUND(SUM(
+              CASE 
+                WHEN COALESCE(q.`nwt_mp`, 0) > 0 THEN q.`ot_mp` / q.`nwt_mp`
+                ELSE 0
+              END
+            ) * 100, 2) AS persen_ot,
             q.`runner`,q.`loss_purge`,q.`keterangan`, 
             GROUP_CONCAT(DISTINCT ct.`cutting_tools_id`) AS cutting_tools_ids,
             GROUP_CONCAT(DISTINCT cts.`code`) AS cutting_tools_codes
@@ -213,7 +233,197 @@ class m_dpr extends CI_Model
             $shiftNya
             GROUP BY q.`id_production`
             ORDER BY q.`cek_kanit` DESC, q.`kanit`, q.`tanggal`, q.`mesin` ASC");
-      
+      return $query;
+    }
+  }
+
+  // New method for monthly export
+  public function tampil_production_by_month($bulan, $tahun, $shift)
+  {
+    $nama = $_SESSION['nama_actor'];
+
+    if ($_SESSION['posisi'] == 'kanit') {
+      if ($shift == 'All') {
+        $shiftNya = '';
+      } else {
+        $shiftNya = 'AND q.shift = ' . $shift . '';
+      }
+
+      $query = $this->db->query("SELECT q.*, w.line,
+              SUM((CASE WHEN e.nama = 'BENDING' THEN e.qty END)) AS bending,
+              SUM((CASE WHEN e.nama = 'BERAWAN' THEN e.qty END)) AS berawan,
+              SUM((CASE WHEN e.nama = 'BLACKDOT' THEN e.qty END)) AS blackdot,
+              SUM((CASE WHEN e.nama = 'BROKEN' THEN e.qty END)) AS broken,
+              SUM((CASE WHEN e.nama = 'CRACK' THEN e.qty END)) AS crack,
+              SUM((CASE WHEN e.nama = 'DENT' THEN e.qty END)) AS dent,
+              SUM((CASE WHEN e.nama = 'DIRTY' THEN e.qty END)) AS dirty,
+              SUM((CASE WHEN e.nama = 'DISCOLOUR' THEN e.qty END)) AS discolour,
+              SUM((CASE WHEN e.nama = 'EJECTOR MARK' THEN e.qty END)) AS ejector_mark,
+              SUM((CASE WHEN e.nama = 'FLASH' THEN e.qty END)) AS flash,
+              SUM((CASE WHEN e.nama = 'FLOW GATE' THEN e.qty END)) AS flow_gate,
+              SUM((CASE WHEN e.nama = 'FLOW MARK' THEN e.qty END)) AS flow_mark,
+              SUM((CASE WHEN e.nama = 'FOREIGN MATERIAL' THEN e.qty END)) AS fm,
+              SUM((CASE WHEN e.nama = 'GAS BURN' THEN e.qty END)) AS gas_burn,
+              SUM((CASE WHEN e.nama = 'GAS MARK' THEN e.qty END)) AS gas_mark,
+              SUM((CASE WHEN e.nama = 'GATE BOLONG' THEN e.qty END)) AS gate_bolong,
+              SUM((CASE WHEN e.nama = 'GATE LONG' THEN e.qty END)) AS gate_long,
+              SUM((CASE WHEN e.nama = 'HANGUS' THEN e.qty END)) AS hangus,
+              SUM((CASE WHEN e.nama = 'HIKE' THEN e.qty END)) AS hike,
+              SUM((CASE WHEN e.nama = 'OIL' THEN e.qty END)) AS oil,
+              SUM((CASE WHEN e.nama = 'OVERSIZE' THEN e.qty END)) AS oversize,
+              SUM((CASE WHEN e.nama = 'PIN PLONG' THEN e.qty END)) AS pin_plong,
+              SUM((CASE WHEN e.nama = 'PIN SERET' THEN e.qty END)) AS pin_seret,
+              SUM((CASE WHEN e.nama = 'SCRATCH' THEN e.qty END)) AS scratch,
+              SUM((CASE WHEN e.nama = 'SETTINGAN' THEN e.qty END)) AS settingan,
+              SUM((CASE WHEN e.nama = 'SHORT SHOOT' THEN e.qty END)) AS short_shoot,
+              SUM((CASE WHEN e.nama = 'SILVER' THEN e.qty END)) AS silver,
+              SUM((CASE WHEN e.nama = 'SINK MARK' THEN e.qty END)) AS sink_mark,
+              SUM((CASE WHEN e.nama = 'UNDERCUT' THEN e.qty END)) AS undercut,
+              SUM((CASE WHEN e.nama = 'UNDERSIZE' THEN e.qty END)) AS under_size,
+              SUM((CASE WHEN e.nama = 'VOID' THEN e.qty END)) AS void,
+              SUM((CASE WHEN e.nama = 'WAVING' THEN e.qty END)) AS waving,
+              SUM((CASE WHEN e.nama = 'WELD LINE' THEN e.qty END)) AS weld_line,
+              SUM((CASE WHEN e.nama = 'WHITE DOT' THEN e.qty END)) AS white_dot,
+              SUM((CASE WHEN e.nama = 'WHITE MARK' THEN e.qty END)) AS white_mark,
+              ROUND(SUM((CASE WHEN e.nama = 'ADJUST PARAMETER' THEN e.qty END)),2) AS adjust_parameter,
+              ROUND(SUM((CASE WHEN e.nama = 'PRE HEATING MATERIAL' THEN e.qty END)),2) AS pre_heating_material,
+              ROUND(SUM((CASE WHEN e.nama = 'CLEANING HOPPER & BARREL' THEN e.qty END)),2) AS cleaning,
+              ROUND(SUM((CASE WHEN e.nama = 'SET UP MOLD' THEN e.qty END)),2) AS set_up_mold,
+              ROUND(SUM((CASE WHEN e.nama = 'SET UP PARAMETER MACHINE' THEN e.qty END)),2) AS set_up_par_machine,
+              ROUND(SUM((CASE WHEN e.nama = 'IPQC INSPECTION' THEN e.qty END)),2) AS ipqc_inspection,
+              ROUND(SUM((CASE WHEN e.nama = 'NO PACKING' THEN e.qty END)),2) AS no_packing,
+              ROUND(SUM((CASE WHEN e.nama = 'NO MATERIAL' THEN e.qty END)),2) AS no_material,
+              ROUND(SUM((CASE WHEN e.nama = 'MATERIAL PROBLEM' THEN e.qty END)),2) AS material_problem,
+              ROUND(SUM((CASE WHEN e.nama = 'NO OPERATOR' THEN e.qty END)),2) AS no_operator,
+              ROUND(SUM((CASE WHEN e.nama = 'DAILY CHECK LIST' THEN e.qty END)),2) AS daily_check_list,
+              ROUND(SUM((CASE WHEN e.nama = 'OVERHOULE MOLD' THEN e.qty END)),2) AS overhoule_mold,
+              ROUND(SUM((CASE WHEN e.nama = 'MOLD PROBLEM' THEN e.qty END)),2) AS mold_problem,
+              ROUND(SUM((CASE WHEN e.nama = 'TRIAL' THEN e.qty END)),2) AS trial,
+              ROUND(SUM((CASE WHEN e.nama = 'MACHINE' THEN e.qty END)),2) AS machine,
+              ROUND(SUM((CASE WHEN e.nama = 'HOPPER DRYER' THEN e.qty END)),2) AS hopper_dryer,
+              ROUND(SUM((CASE WHEN e.nama = 'ROBOT' THEN e.qty END)),2) AS robot,
+              ROUND(SUM((CASE WHEN e.nama = 'MTC' THEN e.qty END)),2) AS mtc,
+              ROUND(SUM((CASE WHEN e.nama = 'COOLING TOWER' THEN e.qty END)),2) AS cooling_tower,
+              ROUND(SUM((CASE WHEN e.nama = 'COMPRESSOR' THEN e.qty END)),2) AS compressor,
+              ROUND(SUM((CASE WHEN e.nama = 'LISTRIK' THEN e.qty END)),2) AS listrik,
+              ROUND(SUM((CASE WHEN e.nama = 'QC LOLOS' THEN e.qty END)),2) AS qc_lolos,
+              ROUND(SUM(
+                CASE 
+                  WHEN COALESCE(q.`nwt_mp`, 0) > 0 THEN q.`production_time` / q.`nwt_mp`
+                  WHEN COALESCE(q.`ot_mp`, 0) > 0 THEN q.`production_time` / q.`ot_mp`
+                  ELSE 0
+                END
+              ) * 100, 2) AS mach_use,
+              ROUND(SUM(
+                CASE 
+                  WHEN COALESCE(q.`nwt_mp`, 0) > 0 THEN q.`ot_mp` / q.`nwt_mp`
+                  ELSE 0
+                END
+              ) * 100, 2) AS persen_ot,
+              q.`runner`,q.`loss_purge`,q.`keterangan`, 
+              GROUP_CONCAT(DISTINCT ct.`cutting_tools_id`) AS cutting_tools_ids,
+              GROUP_CONCAT(DISTINCT cts.`code`) AS cutting_tools_codes
+              FROM `v_production_op` AS q
+              LEFT JOIN t_operator AS w ON q.`kanit` = w.`nama_operator`
+              LEFT JOIN t_production_op_dl AS e ON q.`id_production` = e.`id_production`
+              LEFT JOIN t_production_op_cutting_tools_usage AS ct ON q.`id_production` = ct.`id_production`
+              LEFT JOIN cutting_tools AS cts ON ct.`cutting_tools_id` = cts.`id`
+              WHERE YEAR(q.tanggal) = '$tahun' AND MONTH(q.tanggal) = '$bulan'
+              AND q.kanit = '$nama'
+              $shiftNya
+              GROUP BY q.`id_production`
+              ORDER BY q.`cek_kanit` DESC, q.`tanggal`, q.`mesin` ASC");
+      return $query;
+    } else {
+      if ($shift == 'All') {
+        $shiftNya = '';
+      } else {
+        $shiftNya = 'AND q.shift = ' . $shift . '';
+      }
+
+      $query = $this->db->query("SELECT q.*, w.line,
+              SUM((CASE WHEN e.nama = 'BENDING' THEN e.qty END)) AS bending,
+              SUM((CASE WHEN e.nama = 'BERAWAN' THEN e.qty END)) AS berawan,
+              SUM((CASE WHEN e.nama = 'BLACKDOT' THEN e.qty END)) AS blackdot,
+              SUM((CASE WHEN e.nama = 'BROKEN' THEN e.qty END)) AS broken,
+              SUM((CASE WHEN e.nama = 'CRACK' THEN e.qty END)) AS crack,
+              SUM((CASE WHEN e.nama = 'DENT' THEN e.qty END)) AS dent,
+              SUM((CASE WHEN e.nama = 'DIRTY' THEN e.qty END)) AS dirty,
+              SUM((CASE WHEN e.nama = 'DISCOLOUR' THEN e.qty END)) AS discolour,
+              SUM((CASE WHEN e.nama = 'EJECTOR MARK' THEN e.qty END)) AS ejector_mark,
+              SUM((CASE WHEN e.nama = 'FLASH' THEN e.qty END)) AS flash,
+              SUM((CASE WHEN e.nama = 'FLOW GATE' THEN e.qty END)) AS flow_gate,
+              SUM((CASE WHEN e.nama = 'FLOW MARK' THEN e.qty END)) AS flow_mark,
+              SUM((CASE WHEN e.nama = 'FOREIGN MATERIAL' THEN e.qty END)) AS fm,
+              SUM((CASE WHEN e.nama = 'GAS BURN' THEN e.qty END)) AS gas_burn,
+              SUM((CASE WHEN e.nama = 'GAS MARK' THEN e.qty END)) AS gas_mark,
+              SUM((CASE WHEN e.nama = 'GATE BOLONG' THEN e.qty END)) AS gate_bolong,
+              SUM((CASE WHEN e.nama = 'GATE LONG' THEN e.qty END)) AS gate_long,
+              SUM((CASE WHEN e.nama = 'HANGUS' THEN e.qty END)) AS hangus,
+              SUM((CASE WHEN e.nama = 'HIKE' THEN e.qty END)) AS hike,
+              SUM((CASE WHEN e.nama = 'OIL' THEN e.qty END)) AS oil,
+              SUM((CASE WHEN e.nama = 'OVERSIZE' THEN e.qty END)) AS oversize,
+              SUM((CASE WHEN e.nama = 'PIN PLONG' THEN e.qty END)) AS pin_plong,
+              SUM((CASE WHEN e.nama = 'PIN SERET' THEN e.qty END)) AS pin_seret,
+              SUM((CASE WHEN e.nama = 'SCRATCH' THEN e.qty END)) AS scratch,
+              SUM((CASE WHEN e.nama = 'SETTINGAN' THEN e.qty END)) AS settingan,
+              SUM((CASE WHEN e.nama = 'SHORT SHOOT' THEN e.qty END)) AS short_shoot,
+              SUM((CASE WHEN e.nama = 'SILVER' THEN e.qty END)) AS silver,
+              SUM((CASE WHEN e.nama = 'SINK MARK' THEN e.qty END)) AS sink_mark,
+              SUM((CASE WHEN e.nama = 'UNDERCUT' THEN e.qty END)) AS undercut,
+              SUM((CASE WHEN e.nama = 'UNDERSIZE' THEN e.qty END)) AS under_size,
+              SUM((CASE WHEN e.nama = 'VOID' THEN e.qty END)) AS void,
+              SUM((CASE WHEN e.nama = 'WAVING' THEN e.qty END)) AS waving,
+              SUM((CASE WHEN e.nama = 'WELD LINE' THEN e.qty END)) AS weld_line,
+              SUM((CASE WHEN e.nama = 'WHITE DOT' THEN e.qty END)) AS white_dot,
+              SUM((CASE WHEN e.nama = 'WHITE MARK' THEN e.qty END)) AS white_mark,
+              ROUND(SUM((CASE WHEN e.nama = 'ADJUST PARAMETER' THEN e.qty END)),2) AS adjust_parameter,
+              ROUND(SUM((CASE WHEN e.nama = 'PRE HEATING MATERIAL' THEN e.qty END)),2) AS pre_heating_material,
+              ROUND(SUM((CASE WHEN e.nama = 'CLEANING HOPPER & BARREL' THEN e.qty END)),2) AS cleaning,
+              ROUND(SUM((CASE WHEN e.nama = 'SET UP MOLD' THEN e.qty END)),2) AS set_up_mold,
+              ROUND(SUM((CASE WHEN e.nama = 'SET UP PARAMETER MACHINE' THEN e.qty END)),2) AS set_up_par_machine,
+              ROUND(SUM((CASE WHEN e.nama = 'IPQC INSPECTION' THEN e.qty END)),2) AS ipqc_inspection,
+              ROUND(SUM((CASE WHEN e.nama = 'NO PACKING' THEN e.qty END)),2) AS no_packing,
+              ROUND(SUM((CASE WHEN e.nama = 'NO MATERIAL' THEN e.qty END)),2) AS no_material,
+              ROUND(SUM((CASE WHEN e.nama = 'MATERIAL PROBLEM' THEN e.qty END)),2) AS material_problem,
+              ROUND(SUM((CASE WHEN e.nama = 'NO OPERATOR' THEN e.qty END)),2) AS no_operator,
+              ROUND(SUM((CASE WHEN e.nama = 'DAILY CHECK LIST' THEN e.qty END)),2) AS daily_check_list,
+              ROUND(SUM((CASE WHEN e.nama = 'OVERHOULE MOLD' THEN e.qty END)),2) AS overhoule_mold,
+              ROUND(SUM((CASE WHEN e.nama = 'MOLD PROBLEM' THEN e.qty END)),2) AS mold_problem,
+              ROUND(SUM((CASE WHEN e.nama = 'TRIAL' THEN e.qty END)),2) AS trial,
+              ROUND(SUM((CASE WHEN e.nama = 'MACHINE' THEN e.qty END)),2) AS machine,
+              ROUND(SUM((CASE WHEN e.nama = 'HOPPER DRYER' THEN e.qty END)),2) AS hopper_dryer,
+              ROUND(SUM((CASE WHEN e.nama = 'ROBOT' THEN e.qty END)),2) AS robot,
+              ROUND(SUM((CASE WHEN e.nama = 'MTC' THEN e.qty END)),2) AS mtc,
+              ROUND(SUM((CASE WHEN e.nama = 'COOLING TOWER' THEN e.qty END)),2) AS cooling_tower,
+              ROUND(SUM((CASE WHEN e.nama = 'COMPRESSOR' THEN e.qty END)),2) AS compressor,
+              ROUND(SUM((CASE WHEN e.nama = 'LISTRIK' THEN e.qty END)),2) AS listrik,
+              ROUND(SUM((CASE WHEN e.nama = 'QC LOLOS' THEN e.qty END)),2) AS qc_lolos,
+              ROUND(SUM(
+                CASE 
+                  WHEN COALESCE(q.`nwt_mp`, 0) > 0 THEN q.`production_time` / q.`nwt_mp`
+                  WHEN COALESCE(q.`ot_mp`, 0) > 0 THEN q.`production_time` / q.`ot_mp`
+                  ELSE 0
+                END
+              ) * 100, 2) AS mach_use,
+              ROUND(SUM(
+                CASE 
+                  WHEN COALESCE(q.`nwt_mp`, 0) > 0 THEN q.`ot_mp` / q.`nwt_mp`
+                  ELSE 0
+                END
+              ) * 100, 2) AS persen_ot,
+              q.`runner`,q.`loss_purge`,q.`keterangan`, 
+              GROUP_CONCAT(DISTINCT ct.`cutting_tools_id`) AS cutting_tools_ids,
+              GROUP_CONCAT(DISTINCT cts.`code`) AS cutting_tools_codes
+              FROM `v_production_op` AS q
+              LEFT JOIN t_operator AS w ON q.`kanit` = w.`nama_operator`
+              LEFT JOIN t_production_op_dl AS e ON q.`id_production` = e.`id_production`
+              LEFT JOIN t_production_op_cutting_tools_usage AS ct ON q.`id_production` = ct.`id_production`
+              LEFT JOIN cutting_tools AS cts ON ct.`cutting_tools_id` = cts.`id`
+              WHERE YEAR(q.tanggal) = '$tahun' AND MONTH(q.tanggal) = '$bulan'
+              $shiftNya
+              GROUP BY q.`id_production`
+              ORDER BY q.`cek_kanit` DESC, q.`kanit`, q.`tanggal`, q.`mesin` ASC");
       return $query;
     }
   }
@@ -284,86 +494,43 @@ class m_dpr extends CI_Model
     } else {
       $pilihanNya = 'p.id_product ,';
     }
-    
-    // Check if this is a qty_ok report to include customer and total production
-    if ($jenis === 'qty_ok') {
-      $query = $this->db->query("SELECT * , p.customer, 
-                      SUM(p.qty_ok + p.qty_ng) AS total_production,
-                      SUM(p.`$jenis`) AS total, 
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '01') THEN `p`.`$jenis` ELSE NULL END)) AS `t1$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '02') THEN `p`.`$jenis` ELSE NULL END)) AS `t2$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '03') THEN `p`.`$jenis` ELSE NULL END)) AS `t3$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '04') THEN `p`.`$jenis` ELSE NULL END)) AS `t4$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '05') THEN `p`.`$jenis` ELSE NULL END)) AS `t5$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '06') THEN `p`.`$jenis` ELSE NULL END)) AS `t6$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '07') THEN `p`.`$jenis` ELSE NULL END)) AS `t7$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '08') THEN `p`.`$jenis` ELSE NULL END)) AS `t8$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '09') THEN `p`.`$jenis` ELSE NULL END)) AS `t9$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '10') THEN `p`.`$jenis` ELSE NULL END)) AS `t10$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '11') THEN `p`.`$jenis` ELSE NULL END)) AS `t11$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '12') THEN `p`.`$jenis` ELSE NULL END)) AS `t12$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '13') THEN `p`.`$jenis` ELSE NULL END)) AS `t13$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '14') THEN `p`.`$jenis` ELSE NULL END)) AS `t14$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '15') THEN `p`.`$jenis` ELSE NULL END)) AS `t15$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '16') THEN `p`.`$jenis` ELSE NULL END)) AS `t16$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '17') THEN `p`.`$jenis` ELSE NULL END)) AS `t17$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '18') THEN `p`.`$jenis` ELSE NULL END)) AS `t18$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '19') THEN `p`.`$jenis` ELSE NULL END)) AS `t19$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '20') THEN `p`.`$jenis` ELSE NULL END)) AS `t20$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '21') THEN `p`.`$jenis` ELSE NULL END)) AS `t21$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '22') THEN `p`.`$jenis` ELSE NULL END)) AS `t22$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '23') THEN `p`.`$jenis` ELSE NULL END)) AS `t23$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '24') THEN `p`.`$jenis` ELSE NULL END)) AS `t24$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '25') THEN `p`.`$jenis` ELSE NULL END)) AS `t25$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '26') THEN `p`.`$jenis` ELSE NULL END)) AS `t26$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '27') THEN `p`.`$jenis` ELSE NULL END)) AS `t27$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '28') THEN `p`.`$jenis` ELSE NULL END)) AS `t28$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '29') THEN `p`.`$jenis` ELSE NULL END)) AS `t29$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '30') THEN `p`.`$jenis` ELSE NULL END)) AS `t30$jenis`,
-                      SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '31') THEN `p`.`$jenis` ELSE NULL END)) AS `t31$jenis`
-                                FROM `v_production_op` AS p 
-                                WHERE SUBSTR(p.tanggal,1,7) = '$tanggal'
-                                GROUP BY $pilihanNya p.customer, SUBSTR(p.tanggal,1,7)
-                                order by p.`mesin` ");
-    } else {
-      // Original query for other report types
-      $query = $this->db->query("SELECT *  , SUM(p.`$jenis`) AS total, 
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '01') THEN `p`.`$jenis` ELSE NULL END)) AS `t1$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '02') THEN `p`.`$jenis` ELSE NULL END)) AS `t2$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '03') THEN `p`.`$jenis` ELSE NULL END)) AS `t3$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '04') THEN `p`.`$jenis` ELSE NULL END)) AS `t4$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '05') THEN `p`.`$jenis` ELSE NULL END)) AS `t5$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '06') THEN `p`.`$jenis` ELSE NULL END)) AS `t6$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '07') THEN `p`.`$jenis` ELSE NULL END)) AS `t7$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '08') THEN `p`.`$jenis` ELSE NULL END)) AS `t8$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '09') THEN `p`.`$jenis` ELSE NULL END)) AS `t9$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '10') THEN `p`.`$jenis` ELSE NULL END)) AS `t10$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '11') THEN `p`.`$jenis` ELSE NULL END)) AS `t11$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '12') THEN `p`.`$jenis` ELSE NULL END)) AS `t12$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '13') THEN `p`.`$jenis` ELSE NULL END)) AS `t13$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '14') THEN `p`.`$jenis` ELSE NULL END)) AS `t14$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '15') THEN `p`.`$jenis` ELSE NULL END)) AS `t15$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '16') THEN `p`.`$jenis` ELSE NULL END)) AS `t16$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '17') THEN `p`.`$jenis` ELSE NULL END)) AS `t17$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '18') THEN `p`.`$jenis` ELSE NULL END)) AS `t18$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '19') THEN `p`.`$jenis` ELSE NULL END)) AS `t19$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '20') THEN `p`.`$jenis` ELSE NULL END)) AS `t20$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '21') THEN `p`.`$jenis` ELSE NULL END)) AS `t21$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '22') THEN `p`.`$jenis` ELSE NULL END)) AS `t22$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '23') THEN `p`.`$jenis` ELSE NULL END)) AS `t23$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '24') THEN `p`.`$jenis` ELSE NULL END)) AS `t24$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '25') THEN `p`.`$jenis` ELSE NULL END)) AS `t25$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '26') THEN `p`.`$jenis` ELSE NULL END)) AS `t26$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '27') THEN `p`.`$jenis` ELSE NULL END)) AS `t27$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '28') THEN `p`.`$jenis` ELSE NULL END)) AS `t28$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '29') THEN `p`.`$jenis` ELSE NULL END)) AS `t29$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '30') THEN `p`.`$jenis` ELSE NULL END)) AS `t30$jenis`,
-                        SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '31') THEN `p`.`$jenis` ELSE NULL END)) AS `t31$jenis`
-                                  FROM `v_production_op` AS p 
-                                  WHERE SUBSTR(p.tanggal,1,7) = '$tanggal'
-                                  GROUP BY $pilihanNya SUBSTR(p.tanggal,1,7)
-                                  order by p.`mesin` ");
-    }
+
+    $query = $this->db->query("SELECT *  , SUM(p.`$jenis`) AS total, 
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '01') THEN `p`.`$jenis` ELSE NULL END)) AS `t1$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '02') THEN `p`.`$jenis` ELSE NULL END)) AS `t2$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '03') THEN `p`.`$jenis` ELSE NULL END)) AS `t3$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '04') THEN `p`.`$jenis` ELSE NULL END)) AS `t4$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '05') THEN `p`.`$jenis` ELSE NULL END)) AS `t5$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '06') THEN `p`.`$jenis` ELSE NULL END)) AS `t6$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '07') THEN `p`.`$jenis` ELSE NULL END)) AS `t7$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '08') THEN `p`.`$jenis` ELSE NULL END)) AS `t8$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '09') THEN `p`.`$jenis` ELSE NULL END)) AS `t9$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '10') THEN `p`.`$jenis` ELSE NULL END)) AS `t10$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '11') THEN `p`.`$jenis` ELSE NULL END)) AS `t11$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '12') THEN `p`.`$jenis` ELSE NULL END)) AS `t12$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '13') THEN `p`.`$jenis` ELSE NULL END)) AS `t13$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '14') THEN `p`.`$jenis` ELSE NULL END)) AS `t14$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '15') THEN `p`.`$jenis` ELSE NULL END)) AS `t15$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '16') THEN `p`.`$jenis` ELSE NULL END)) AS `t16$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '17') THEN `p`.`$jenis` ELSE NULL END)) AS `t17$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '18') THEN `p`.`$jenis` ELSE NULL END)) AS `t18$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '19') THEN `p`.`$jenis` ELSE NULL END)) AS `t19$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '20') THEN `p`.`$jenis` ELSE NULL END)) AS `t20$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '21') THEN `p`.`$jenis` ELSE NULL END)) AS `t21$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '22') THEN `p`.`$jenis` ELSE NULL END)) AS `t22$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '23') THEN `p`.`$jenis` ELSE NULL END)) AS `t23$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '24') THEN `p`.`$jenis` ELSE NULL END)) AS `t24$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '25') THEN `p`.`$jenis` ELSE NULL END)) AS `t25$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '26') THEN `p`.`$jenis` ELSE NULL END)) AS `t26$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '27') THEN `p`.`$jenis` ELSE NULL END)) AS `t27$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '28') THEN `p`.`$jenis` ELSE NULL END)) AS `t28$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '29') THEN `p`.`$jenis` ELSE NULL END)) AS `t29$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '30') THEN `p`.`$jenis` ELSE NULL END)) AS `t30$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,9,2) = '31') THEN `p`.`$jenis` ELSE NULL END)) AS `t31$jenis`
+                              FROM `v_production_op` AS p 
+                              WHERE SUBSTR(p.tanggal,1,7) = '$tanggal'
+                              GROUP BY $pilihanNya  SUBSTR(p.tanggal,1,7)
+                              order by p.`mesin` ");
 
     return $query;
   }
@@ -426,8 +593,8 @@ class m_dpr extends CI_Model
     $query = $this->db->query("SELECT
          q.kp_pr AS kode_product,
     q.nama_product AS nama_product,
-    q.`customer`,
-    
+    pr.customer,
+
         SUM(CASE WHEN DAY(q.tanggal) = 1 THEN `q`.`$jenis` ELSE 0 END) AS `t1$jenis`,
         SUM(CASE WHEN DAY(q.tanggal) = 2 THEN `q`.`$jenis` ELSE 0 END) AS `t2$jenis`,
         SUM(CASE WHEN DAY(q.tanggal) = 3 THEN `q`.`$jenis` ELSE 0 END) AS `t3$jenis`,
@@ -462,11 +629,48 @@ class m_dpr extends CI_Model
         SUM(`q`.`$jenis`) AS 'total'
     FROM
         v_production_op q
+    LEFT JOIN t_bom b ON b.id_bom = q.id_bom
+    LEFT JOIN t_product pr ON pr.id_product = b.id_product
     WHERE
         YEAR(q.tanggal) = '$tahun' AND MONTH(q.tanggal) = '$bulan'
     GROUP BY
-        q.kp_pr, q.nama_product, q.`customer`;
+        q.kp_pr, q.nama_product, pr.customer
     ");
+    return $query;
+  }
+
+  public function onlineReportDisposeYear($tahun, $jenis)
+  {
+    $query = $this->db->query("SELECT * , SUM(p.`$jenis`) AS total,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '01') THEN `p`.`$jenis` ELSE NULL END)) AS `t1$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '02') THEN `p`.`$jenis` ELSE NULL END)) AS `t2$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '03') THEN `p`.`$jenis` ELSE NULL END)) AS `t3$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '04') THEN `p`.`$jenis` ELSE NULL END)) AS `t4$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '05') THEN `p`.`$jenis` ELSE NULL END)) AS `t5$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '06') THEN `p`.`$jenis` ELSE NULL END)) AS `t6$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '07') THEN `p`.`$jenis` ELSE NULL END)) AS `t7$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '08') THEN `p`.`$jenis` ELSE NULL END)) AS `t8$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '09') THEN `p`.`$jenis` ELSE NULL END)) AS `t9$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '10') THEN `p`.`$jenis` ELSE NULL END)) AS `t10$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '11') THEN `p`.`$jenis` ELSE NULL END)) AS `t11$jenis`,
+                    SUM((CASE WHEN (SUBSTR(`p`.`tanggal`,6,2) = '12') THEN `p`.`$jenis` ELSE NULL END)) AS `t12$jenis`
+                              FROM `v_production_op` AS p
+                              WHERE SUBSTR(p.tanggal,1,4) = '$tahun'
+                              GROUP BY p.mesin , SUBSTR(p.tanggal,1,4)
+                              order by p.`mesin` ");
+
+    return $query;
+  }
+
+  public function onlineGrafikDisposeYear($tahun, $jenis)
+  {
+    $query = $this->db->query("SELECT * ,  MAX(total) AS totalitas FROM (SELECT p.* ,  SUM(p.$jenis) AS total
+        FROM `v_production_op` AS p
+        WHERE SUBSTR(p.tanggal,1,4) = '$tahun'
+        GROUP BY p.mesin , SUBSTR(p.tanggal,1,4)) AS p
+        GROUP BY p.mesin , SUBSTR(p.tanggal,1,4)
+        ORDER BY MAX(total) DESC
+        LIMIT 10");
     return $query;
   }
 
@@ -645,19 +849,6 @@ class m_dpr extends CI_Model
     return $query;
   }
 
-  public function find_duplicate_entry($tanggal, $mesin, $shift, $id_bom)
-  {
-    return $this->db->select('id_production_op, id_production, operator, qty_ok, tanggal_input')
-      ->from('t_production_op')
-      ->where('tanggal', $tanggal)
-      ->where('mesin', $mesin)
-      ->where('shift', $shift)
-      ->where('id_bom', $id_bom)
-      ->limit(1)
-      ->get()
-      ->row();
-  }
-
   function add()
   {
     $id_production  = $this->input->post("id_production");
@@ -669,55 +860,30 @@ class m_dpr extends CI_Model
       $this->session->set_flashdata('gagal', 'Gagal menambahkan, data yang anda input sudah ada!');
       redirect('c_dpr/add_dpr');
     } else {
-      $users = isset($_POST['user']) && is_array($_POST['user']) ? $_POST['user'] : array();
-      $confirm_duplicate = $this->input->post('confirm_duplicate') == '1';
-      if (!$confirm_duplicate) {
-        foreach ($users as $u) {
-          $dup = $this->find_duplicate_entry($u['tanggal'], $u['mesin'], $u['shift'], $u['id_bom']);
-          if ($dup) {
-            $msg = 'Duplikat terdeteksi: tanggal ' . $u['tanggal']
-                 . ', mesin ' . $u['mesin'] . ', shift ' . $u['shift']
-                 . ' sudah diinput (operator: ' . $dup->operator
-                 . ', qty OK: ' . $dup->qty_ok
-                 . ', jam input: ' . $dup->tanggal_input . ').'
-                 . ' Jika benar-benar perlu menambah, kirim ulang dengan centang "Konfirmasi duplikat".';
-            $this->session->set_flashdata('gagal', $msg);
-            redirect('c_dpr/add_dpr');
-            return;
-          }
-        }
-      }
-      $this->load->library('dpr_batch_builder');
-
-      $user_rows = Dpr_batch_builder::build_production_op_rows($users, array(
-        'lot_global'    => $this->input->post('lot_global'),
-        'tanggal_input' => $input,
-        'runner'        => $this->input->post('runner'),
-        'id_production' => $id_production,
-      ));
-      if (! empty($user_rows)) {
-        $this->db->insert_batch('t_production_op', $user_rows);
+      foreach ($_POST['user'] as $user) {
+        $this->db->set('lot_global', $this->input->post("lot_global"));
+        $this->db->set('tanggal_input', $input);
+        $this->db->set('runner', $this->input->post("runner"));
+        $this->db->set('id_production', $id_production);
+        $this->db->insert('t_production_op', $user);
       }
 
       $details = isset($_POST['detail']) && is_array($_POST['detail']) ? $_POST['detail'] : array();
-      $detail_rows = Dpr_batch_builder::build_child_rows($details, array('id_production' => $id_production));
-      if (! empty($detail_rows)) {
-        $this->db->insert_batch('t_production_op_dl', $detail_rows);
+      foreach ($details as $detail) {
+        $this->db->set('id_production', $id_production);
+        $this->db->insert('t_production_op_dl', $detail);
       }
 
       $detailsLT = isset($_POST['detailLT']) && is_array($_POST['detailLT']) ? $_POST['detailLT'] : array();
-      $detaillt_rows = Dpr_batch_builder::build_child_rows($detailsLT, array('id_production' => $id_production));
-      if (! empty($detaillt_rows)) {
-        $this->db->insert_batch('t_production_op_dl', $detaillt_rows);
+      foreach ($detailsLT as $detailLT) {
+        $this->db->set('id_production', $id_production);
+        $this->db->insert('t_production_op_dl', $detailLT);
       }
 
-      $ress_list = isset($_POST['ress']) && is_array($_POST['ress']) ? $_POST['ress'] : array();
-      $ress_rows = Dpr_batch_builder::build_child_rows($ress_list, array(
-        'runner'        => $this->input->post('runner'),
-        'id_production' => $id_production,
-      ));
-      if (! empty($ress_rows)) {
-        $this->db->insert_batch('t_production_op_release', $ress_rows);
+      foreach ($_POST['ress'] as $ress) {
+        $this->db->set('runner', $this->input->post("runner"));
+        $this->db->set('id_production', $id_production);
+        $this->db->insert('t_production_op_release', $ress);
       }
     }
   }
@@ -828,14 +994,17 @@ SUM(qq.target_dpr) AS target_dpr
 
   // Sync cutting tool usages for a production record
   public function sync_cutting_tools_by_production($id_production, $cutting_tools) {
-    $this->load->library('dpr_batch_builder');
     // Remove all existing usages first
     $this->db->where('id_production', $id_production);
     $this->db->delete('t_production_op_cutting_tools_usage');
     // Insert new usages if any
-    $tool_rows = Dpr_batch_builder::build_cutting_tools_rows(is_array($cutting_tools) ? $cutting_tools : array(), $id_production);
-    if (! empty($tool_rows)) {
-      $this->db->insert_batch('t_production_op_cutting_tools_usage', $tool_rows);
+    if (!empty($cutting_tools) && is_array($cutting_tools)) {
+      foreach ($cutting_tools as $tool_id) {
+        $this->db->insert('t_production_op_cutting_tools_usage', [
+          'id_production' => $id_production,
+          'cutting_tools_id' => $tool_id
+        ]);
+      }
     }
   }
   
@@ -846,38 +1015,71 @@ SUM(qq.target_dpr) AS target_dpr
    * @return object Query result
    */
   public function get_ng_reports($date) {
-    // Ensure correct date format (MySQL expects Y-m-d)
     $formatted_date = date('Y-m-d', strtotime($date));
-    
-    // Create alternative date format without leading zeros
     $year = date('Y', strtotime($date));
-    $month = (int)date('m', strtotime($date)); // Remove leading zero
-    $day = (int)date('d', strtotime($date));   // Remove leading zero
+    $month = (int)date('m', strtotime($date));
+    $day = (int)date('d', strtotime($date));
     $alt_date = "$year-$month-$day";
-    
-    // Log the date formats for debugging
-    log_message('debug', 'NG Report - Standard formatted date: ' . $formatted_date);
-    log_message('debug', 'NG Report - Alternative formatted date: ' . $alt_date);
-    
-    // Updated query to include the NG type names from t_production_op_dl table as the remark
+
     $query = $this->db->query("SELECT 
         b.kp_pr AS kode_product,
         b.np_pr AS nama_product,
         tp.sp AS unit,
-        p.qty_ng,
-        GROUP_CONCAT(dl.nama SEPARATOR ', ') AS keterangan 
+        dl.nama AS ng_type,
+        p.mesin,
+        SUM(dl.qty) AS qty_ng
     FROM t_production_op p
     JOIN select_bom b ON b.id_bom = p.id_bom
     LEFT JOIN t_product tp ON tp.kode_product = b.kp_pr
     LEFT JOIN t_production_op_dl dl ON dl.id_production = p.id_production AND dl.type = 'NG'
     WHERE (p.tanggal = '$formatted_date' OR p.tanggal = '$alt_date') 
-      AND p.qty_ng > 0
-    GROUP BY p.id_production, b.kp_pr, b.np_pr, tp.sp, p.qty_ng");
-    
-    // Log the SQL query and row count for debugging
-    log_message('debug', 'NG Report - SQL Query: ' . $this->db->last_query());
-    log_message('debug', 'NG Report - Row count: ' . $query->num_rows());
-    
+      AND dl.qty > 0
+    GROUP BY p.id_production, b.kp_pr, b.np_pr, tp.sp, dl.nama, p.mesin
+    ORDER BY p.mesin, b.kp_pr, dl.nama");
+
+    return $query;
+  }
+  
+  /**
+   * Get Monthly NG Reports aggregated by NG type
+   * 
+   * @param string $year Year (e.g., '2024')
+   * @param string $month Month (e.g., '01')
+   * @return object Query result with aggregated NG data by type
+   */
+  public function get_ng_monthly_reports($year, $month) {
+    $query = $this->db->query("SELECT
+        sub.kode_product,
+        sub.nama_product,
+        sub.unit,
+        sub.mesin,
+        GROUP_CONCAT(
+            CONCAT(sub.ng_type, ': ', sub.qty_type_total)
+            ORDER BY sub.ng_type
+            SEPARATOR ', '
+        ) AS keterangan,
+        SUM(sub.qty_type_total) AS qty_ng
+    FROM (
+        SELECT
+            b.kp_pr AS kode_product,
+            b.np_pr AS nama_product,
+            tp.sp AS unit,
+            p.mesin,
+            dl.nama AS ng_type,
+            SUM(dl.qty) AS qty_type_total
+        FROM t_production_op p
+        JOIN select_bom b ON b.id_bom = p.id_bom
+        LEFT JOIN t_product tp ON tp.kode_product = b.kp_pr
+        LEFT JOIN t_production_op_dl dl ON dl.id_production = p.id_production AND dl.type = 'NG'
+        WHERE YEAR(p.tanggal) = '$year'
+          AND MONTH(p.tanggal) = '$month'
+          AND dl.qty > 0
+        GROUP BY b.kp_pr, b.np_pr, tp.sp, dl.nama, p.mesin
+        ORDER BY CAST(p.mesin AS UNSIGNED) ASC, b.kp_pr ASC, dl.nama ASC
+    ) AS sub
+    GROUP BY sub.kode_product, sub.nama_product, sub.unit, sub.mesin
+    ORDER BY CAST(sub.mesin AS UNSIGNED) ASC, sub.kode_product ASC");
+
     return $query;
   }
 }

@@ -30,6 +30,34 @@
                         </div>
                     </div>
                 <div class="ibox-content">
+                  <?= form_open('c_report/production_qty_ppm_detail'); ?>  
+                    <div class="card rounded mb-4">
+                        <div class="card-header">
+                            <h2>Filter Data</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" style="margin-left:2px;">
+                                <div class="col-sm-3"> <b>Pilih Tahun</b> 
+                                    <select name="tahun" value="<?php echo $tahun ?>" class="form-control">
+                                      <?php
+                                        $tahuns = date('Y')-1;
+                                        $now=date('Y')+1;
+                                        for($i=$tahuns; $i<=$now; $i++){?>   
+                                          <option value="<?php echo $i ?>" <?php if($i == $tahun) 
+                                          { 
+                                            echo 'selected="selected"';}?>><?php echo $i; ?></option>;<?php
+                                          }                          
+                                      ?>
+                                    </select>
+                                </div>
+                                <div class="col"><input type="submit" name="show" class="btn btn-primary" style="margin-top:20px;" value="Show"></div>
+                            </div>
+                        </div>
+                        <div class="row ml-4">
+                            <p><strong>*Catatan :</strong> Data yang muncul hanya data pada <strong>tahun ini saja</strong>, jika ingin melihat data yang lain silahkan gunakan fitur <strong>filter</strong>.</p>
+                        </div>
+                    </div>
+                    <?= form_close(); ?>
                 	<?php foreach ($total_prod_qty_and_ppm->result_array() as $prod_ppm_detail) : ?>  
             		<?php endforeach; ?>
                     <table class="table table-striped table-bordered table-hover dataTables-example">
@@ -419,8 +447,8 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                 buttons: [
                     {extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){

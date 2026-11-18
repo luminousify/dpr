@@ -11,14 +11,14 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
             // Get jsPDF reference
             var jsPDFConstructor = window.jsPDF || window.jspdf.jsPDF;
             
-            // Create custom PDF export function with optimized memory usage
+            // Create custom PDF export function with HIGH RESOLUTION
             window.customPDFExport = function(chart) {
                 try {
-                    // Render at reduced resolution for memory efficiency
-                    var renderWidth = 600;   // Reduced from 800 to save memory
-                    var renderHeight = 400;  // Reduced from 500 to save memory
+                    // Render at HIGH resolution for quality (3x larger)
+                    var renderWidth = 1200;  // High res width
+                    var renderHeight = 750;  // High res height
                     
-                    // Get the SVG of the chart at optimized resolution
+                    // Get the SVG of the chart at high resolution
                     var svg = chart.getSVG({
                         chart: {
                             width: renderWidth,
@@ -26,24 +26,19 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                         }
                     });
                     
-                    // Create canvas with optimized size
+                    // Create a HIGH RESOLUTION canvas
                     var canvas = document.createElement('canvas');
                     canvas.width = renderWidth;
                     canvas.height = renderHeight;
                     var ctx = canvas.getContext('2d');
                     
-                    // Set canvas memory optimization
-                    ctx.imageSmoothingEnabled = false; // Disable smoothing for memory
-                    
                     // Create an image from the SVG
                     var img = new Image();
                     img.onload = function() {
                         try {
-                            // Clear canvas with white background
+                            // Draw at high resolution
                             ctx.fillStyle = 'white';
                             ctx.fillRect(0, 0, renderWidth, renderHeight);
-                            
-                            // Draw image with memory considerations
                             ctx.drawImage(img, 0, 0, renderWidth, renderHeight);
                             
                             // Create PDF with A4 landscape
@@ -80,25 +75,15 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                     
                     img.onerror = function() {
                         console.error('Error loading chart image');
-                        alert('Error loading chart. The chart might be too complex. Please try again.');
+                        alert('Error loading chart. Please try again.');
                     };
                     
-                    // Set image source with memory error handling
-                    try {
-                        var svgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
-                        img.src = svgData;
-                    } catch (e) {
-                        console.error('Error encoding SVG data:', e);
-                        alert('Error processing chart data. The chart might be too large. Try refreshing the page.');
-                    }
+                    // Set image source
+                    var svgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+                    img.src = svgData;
                 } catch (e) {
-                    if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
-                        console.error('Canvas quota exceeded:', e);
-                        alert('Chart is too large for PDF export. Try reducing the chart data or use the browser\'s print function instead.');
-                    } else {
-                        console.error('Error in customPDFExport:', e);
-                        alert('Error exporting PDF. Please try again or use browser print (Ctrl+P).');
-                    }
+                    console.error('Error in customPDFExport:', e);
+                    alert('Error exporting PDF. Please try again.');
                 }
             };
             
@@ -141,7 +126,7 @@ window.jsPDF = window.jspdf?.jsPDF || window.jsPDF;
                 };
             }
             
-            console.log('Custom PDF export handler installed (Optimized Resolution)');
+            console.log('Custom PDF export handler installed (High Resolution)');
         }
     }, 100);
 })();

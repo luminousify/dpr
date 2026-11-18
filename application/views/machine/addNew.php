@@ -62,7 +62,10 @@
         </select>
        </div>
     </div>
-
+    <div class="col">
+    <label><b></b></label><br/><br/>
+       <a class="btn btn-danger" style="color:white" onclick="checkDataProdPlan()">Check</a>
+    </div>
 </div>
                         <table class="table table-striped table-bordered table-hover dataTables-example" style="width:100%" id="customFields" >
                             <thead>
@@ -80,17 +83,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php 
-                                $id = -1; 
-                                $no = 0; 
-                                $total = 0;
-                                
-                                // Check if data_tabel exists and has results
-                                if (isset($data_tabel) && $data_tabel && $data_tabel->num_rows() > 0) {
-                                    foreach($data_tabel->result_array() as $data) {
-                                        $no++; 
-                                        $id++; 
-                                ?>
+                                <?php $id = -1; $no = 0 ; foreach($data_tabel->result_array() as $data)
+                                {  $no++; $id++; ?>
                                 <tr>
                                     <td><?= $data['no_mesin']; ?><input type="hidden" id="no_mesin<?= $id; ?>" name="user[<?= $id; ?>][no_mesin]" value="<?= $data['no_mesin']; ?>"></td>
                                     <td><?= $data['tonnase']; ?><input type="hidden" name="user[<?= $id; ?>][tonnase]" value="<?= $data['tonnase']; ?>"></td>
@@ -105,7 +99,7 @@
                                         <input type="hidden" name="user[<?= $id; ?>][target]" id="target_mc<?= $id; ?>" class="form-control">
                                         <input type="hidden" name="user[<?= $id; ?>][target_ppic]" id="target_ppic<?= $id; ?>" class="form-control">
                                     </td>
-                                    <td><input type="text" class="form-control" name="user[<?= $id; ?>][operator]" id="operator<?= $id; ?>"></td>
+                                    <td><input type="text" class="form-control" name="user[<?= $id; ?>][operator]"></td>
                                     <td><input type="text" name="user[<?= $id; ?>][man_power]" class="form-control" value="0.5"></td>
                                     <td><select name="user[<?= $id; ?>][jenis_mesin]" class="form-control">
                                             <option value="">-</option>
@@ -125,20 +119,7 @@
 
 
                                 </tr>
-                            <?php  
-                                        $total = $no; 
-                                    } // end foreach
-                                } else {
-                                    // Show message if no data found
-                                    echo '<tr><td colspan="10" style="text-align: center; padding: 20px;">';
-                                    echo '<strong>No machines found for Line: ' . (isset($line) && $line !== '' ? htmlspecialchars($line) : 'N/A') . '</strong><br>';
-                                    echo 'Please check:<br>';
-                                    echo '1. Master data machines are set up for this line<br>';
-                                    echo '2. Machines are marked as active (aktif = 1)<br>';
-                                    echo '3. Machines are assigned to your division (' . (isset($this->data['bagian']) ? htmlspecialchars($this->data['bagian']) : 'N/A') . ')';
-                                    echo '</td></tr>';
-                                }
-                                ?>
+                            <?php  $total = $no; } ?>
                             </tbody>
                         </table>
                         <input type="hidden" name="" id="totalAkhir" value="<?= $total; ?>">
@@ -158,11 +139,6 @@
 
 
 <?php $this->load->view('layout/footer'); ?>
-    <script src="<?= base_url(); ?>template/js/plugins/dataTables/datatables.min.js"></script>
-    <script src="<?= base_url(); ?>template/js/plugins/dataTables/dataTables.bootstrap4.min.js"></script>
-    <script src="<?= base_url(); ?>assets/scripts/jszip.min.js"></script>
-    <script src="<?= base_url(); ?>assets/scripts/dataTables.buttons.min.js"></script>
-    <script src="<?= base_url(); ?>assets/scripts/buttons.html5.min.js"></script>
     <script>
         function getNWT(){
             const days = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
@@ -184,25 +160,6 @@
                 }
             }
         }
-        function bindOperatorAutocomplete(x) {
-            var $op = $('#operator' + x);
-            if (!$op.length) return;
-            // prevent double-binding when called multiple times
-            if ($op.data('uiAutocompleteBound')) return;
-            $op.data('uiAutocompleteBound', true);
-
-            $op.autocomplete({
-                source: "<?php echo site_url('c_operator/get_autocompleteOperator');?>",
-                minLength: 1,
-                select: function (event, ui) {
-                    if (ui && ui.item && ui.item.value) {
-                        $op.val(ui.item.value);
-                    }
-                    return false;
-                }
-            });
-        }
-
         function getDataItem(x){
             $(document).ready(function(){
             $('#id_bom'+ x).autocomplete({
@@ -213,6 +170,12 @@
                     $('#ct_mc'+ x).val(ui.item.cyt_mc_bom);
                     $('#cavity'+ x).val(ui.item.cavity_product); 
 
+                    // var nwt = $('#nwt_mp').val();
+                    // var ot = $('#ot_mp').val();
+                    // var target = (((parseInt(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
+                    // //var target = (nwt + ot)
+                    // $('#Target').val(parseInt(target));  
+
                     //hitung target
                     var nwt = $('#nwt'+ x).val();
                     var target = ((3600/ui.item.cyt_mc_bom)*(ui.item.cavity_product*nwt));  
@@ -220,17 +183,8 @@
                 }
                 });
             });
-            // Ensure operator autocomplete is also available for this row
-            bindOperatorAutocomplete(x);
+            console.log("running")
         }
-
-        // Init Operator autocomplete for all rows (so it works even if user types Operator first)
-        $(document).ready(function(){
-            var total = parseInt($('#totalAkhir').val() || '0', 10);
-            for (var i = 0; i <= total; i++) {
-                bindOperatorAutocomplete(i);
-            }
-        });
     	
 
         function ubahBom(id)
@@ -246,65 +200,21 @@
             } );
             //alert(iniValue);
             $('.dataTables-example').DataTable({
-                // Show all rows and remove DataTables controls (Search + Show N entries)
+                pageLength: 10,
                 responsive: false,
                     // scrollY:        "300px",
                     scrollX:        true,
                     scrollCollapse: true,
-                    paging:         false,
-                    searching:      false,
-                    lengthChange:   false,
+                    paging:         true,
                     fixedColumns:   {
                         left: 3,
                     },
-                // Remove 'l' (length menu), 'f' (filter/search), and 'p' (pagination) from the layout
-                dom: '<"html5buttons"B>t',
+                dom: '<"html5buttons"B>lTfgitp',
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {
-                        extend: 'excel',
-                        title: 'Machine_Operation_<?= isset($line) ? 'Line_' . $line . '_' : ''; ?><?= date('Y-m-d'); ?>',
-                        filename: 'Machine_Operation_<?= isset($line) ? 'Line_' . $line . '_' : ''; ?><?= date('Y-m-d'); ?>',
-                        exportOptions: {
-                            format: {
-                                body: function (data, row, column, node) {
-                                    // Extract value from input fields
-                                    var $cell = $(node);
-                                    var $input = $cell.find('input[type="text"]:not([type="hidden"])');
-                                    var $select = $cell.find('select');
-                                    var $hidden = $cell.find('input[type="hidden"]');
-                                    
-                                    // Get visible text content (excluding input/select elements)
-                                    var visibleText = $cell.clone().children('input, select, hidden').remove().end().text().trim();
-                                    
-                                    // If there's visible text content (like machine number, tonnage), use it
-                                    if (visibleText && visibleText.length > 0) {
-                                        return visibleText;
-                                    }
-                                    
-                                    // If there's a text input, get its value
-                                    if ($input.length > 0) {
-                                        return $input.val() || '';
-                                    }
-                                    
-                                    // If there's a select, get selected option text
-                                    if ($select.length > 0) {
-                                        return $select.find('option:selected').text() || '';
-                                    }
-                                    
-                                    // If only hidden inputs, return empty
-                                    if ($hidden.length > 0 && $input.length === 0 && $select.length === 0) {
-                                        return '';
-                                    }
-                                    
-                                    // Otherwise return the cell text content (for regular cells)
-                                    return data.replace(/<[^>]*>/g, '').trim();
-                                }
-                            }
-                        }
-                    },
-                    {extend: 'pdf', title: 'Machine_Operation_<?= isset($line) ? 'Line_' . $line . '_' : ''; ?><?= date('Y-m-d'); ?>'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){
@@ -317,8 +227,20 @@
                     }
                     }
                 ],
-                // No initComplete column-search setup needed on this page
-                // (searching is disabled and we don't render a footer search row)
+        initComplete: function () {
+            // Apply the search
+            this.api().columns().every( function () {
+                var that = this;
+ 
+                $( 'input', this.footer() ).on( 'keyup change clear', function () {
+                    if ( that.search() !== this.value ) {
+                        that
+                            .search( this.value )
+                            .draw();
+                    }
+                } );
+            } );
+        }
                
 
             });
@@ -346,6 +268,100 @@
     $("#customFields").on('click','.remCF',function(){
             $(this).parent().parent().remove();
         });
+
+    //Function to check whether date and current bom already have data on production_plan or not.
+    function checkDataProdPlan()
+    {
+        //current
+        var tgl_input = $('#tgl_input').val();
+        var shift_input = $('#shift').val();
+        var group_input = $('#group').val();
+        // console.log(tgl_input);
+        // console.log(shift_input);
+        // console.log(group_input);
+        // var res = bom.substring(0, 3);
+        
+
+        if(group_input != ''){
+            $.ajax({
+                      type    : "POST",
+                      url     : "<?php echo site_url('c_operator/check_prod_plan');?>",
+                      data    : "date=" + tgl_input,
+                      
+                      success : function(data){
+                        
+            var jsonData = JSON.parse(data);
+            for (var i = 0; i < jsonData.length; i++) {
+            var kp_pr = jsonData[i].kp_pr;
+            var no_mesin = jsonData[i].no_mesin;
+            var kode_produk = jsonData[i].kode_produk;
+            var material_name = jsonData[i].material_name;
+            var prod_qty = jsonData[i].prod_qty;
+            var cavity = jsonData[i].cavity;
+            var id_bom = jsonData[i].id_bom;
+            var cyt_mc = jsonData[i].cyt_mc;
+            for (var j = 0; j < 23; j++) {
+                if(no_mesin === $('#no_mesin'+[j]).val()){
+                    console.log(no_mesin+" on " + i + " match with "+$('#no_mesin'+[j]).val() + "("+j+")" )
+                    $('#id_bom'+[j]).val(kp_pr)
+                    // $('#kp').html(ui.item.kp_pr); 
+                    $('#id_bomS'+ [j]).val(id_bom);
+                    $('#ct_mc'+ [j]).val(cyt_mc);
+                    $('#cavity'+ [j]).val(cavity); 
+
+                    // var nwt = $('#nwt_mp').val();
+                    // var ot = $('#ot_mp').val();
+                    // var target = (((parseInt(nwt) + parseInt(ot)) * 3600) / (parseInt(ui.item.cyt_mc_bom) + parseInt(ui.item.cyt_mp_bom)));
+                    // //var target = (nwt + ot)
+                    // $('#Target').val(parseInt(target));  
+
+                    //hitung target
+                    var nwt = $('#nwt'+ [j]).val();
+                    var target = prod_qty;
+                    $('#target_ppic' + [j]).val(target);
+                    console.log( $('#id_bomS'+ [j]).val())
+                    console.log( $('#ct_mc'+ [j]).val())
+                    console.log( $('#cavity'+ [j]).val())
+                    console.log( $('#target_mc'+ [j]).val())
+                    
+                }   
+            }
+           
+        }
+        alert("Production Plan Data Found!");
+                         
+                    }});
+        }
+        else{
+        }
+        // $.ajax({
+        //               type    : "POST",
+        //               url     : "<?php echo site_url('c_operator/getdatabomMesinDPR');?>",
+        //               data    : "id_bom=" + id_bom,
+        //               success : function(data){
+        //                   console.log(data);
+        //             }});
+
+        //  var nama     = $("#namaNG").val();
+        //  var kategori = $('#kategoriNG').val();
+        //  var type     = $('#typeNG').val();
+        //  var satuan   = $('#satuanNG').val();
+        //  var qty      = $('#qtyNG').val();
+        //  var markup = "<tr><td><input type='button' value='X'></td><td>"+sv+"</td>"+
+        //  "<td><input type='hidden' name='detail["+save+"][nama]' value='"+nama+"'/>"+nama+"</td>"+
+        //  "<td><input type='hidden' name='detail["+save+"][kategori]' value='"+kategori+"''>"+kategori+"</td>"+
+        //  "<td><input type='hidden' name='detail["+save+"][qty]' value="+qty+" class='nilai'>"+qty+"</td>"+
+        //  "<td><input type='hidden' name='detail["+save+"][satuan]' value="+satuan+">"+satuan+"<input type='hidden' name='detail["+save+"][type]' value="+type+"></td>"+
+        //  "</tr>";
+        //  $('.formNG').val('');
+    }
+
+
+
+
+        
+
+
 
     </script>
 

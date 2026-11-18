@@ -5,26 +5,22 @@
 </div>
 
 <br/>
-<table class="table table-bordered" id="datatable1" style="display: none;">
-                <thead>
-                <tr>
-                    <th></th>
-                    <th>Machine Hours</th>
-                    <th>Available Capacity</th>
-                </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($data_EffGrafik->result_array() as $data)
-                        { 
-                             echo '<tr>';
-                             echo '<th>'.$data['mesin'].'</th>';
-                             echo '<td>'.$data['machine_use'].'</td>';
-                             echo '<td>'.$data['total'].'</td>';
-                            echo '</tr>';
-                        }?>
-
-                </tbody>
-            </table>
+<?php
+$_effRows = $data_EffGrafik->result_array();
+$_categories = [];
+$_machineUse = [];
+$_capacity   = [];
+foreach ($_effRows as $_r) {
+    $_categories[] = (string)$_r['mesin'];
+    $_machineUse[] = (float)$_r['machine_use'];
+    $_capacity[]   = (float)$_r['total'];
+}
+?>
+<script>
+var chart2Categories = <?= json_encode($_categories); ?>;
+var chart2MachineUse = <?= json_encode($_machineUse); ?>;
+var chart2Capacity   = <?= json_encode($_capacity); ?>;
+</script>
 
 
     <br/>

@@ -69,7 +69,7 @@
                   <tr style="text-align: center;">
                     <th>No</th>
                     <th>Tahun</th>
-                    <th>F - Cost (IDR) Target</th>
+                    <th>F - Cost Target</th>
                     <th>Edit</th>
                     <th>Delete</th>
                   </tr>
@@ -98,7 +98,7 @@
                   <tr style="text-align: center;">
                     <th>No</th>
                     <th>Tahun</th>
-                    <th>F - Cost (IDR) Target</th>
+                    <th>F - Cost Target</th>
                     <th>Edit</th>
                     <th>Delete</th>
                   </tr>
@@ -148,8 +148,8 @@
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){

@@ -1,0 +1,494 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class M_import_csv extends CI_Model {
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->database();
+    }
+
+    /**
+     * Preview CSV file and return first 10 rows
+     */
+    public function preview_csv($csv_path)
+    {
+        $data = [];
+        $row = 0;
+
+        if (($handle = fopen($csv_path, "r")) !== FALSE) {
+            // Get headers
+            $headers = fgetcsv($handle, 0, ",");
+
+            // Read data rows
+            while (($rowData = fgetcsv($handle, 0, ",")) !== FALSE && $row < 10) {
+                $data[] = array_combine($headers, $rowData);
+                $row++;
+            }
+            fclose($handle);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Process CSV import into database
+     */
+    public function process_csv_import($csv_path)
+    {
+        $result = [
+            'success' => 0,
+            'failed' => 0,
+            'errors' => [],
+            'total_rows' => 0,
+        ];
+
+        if (($handle = fopen($csv_path, "r")) !== FALSE) {
+            // Get headers
+            $headers = fgetcsv($handle, 0, ",");
+            $result['total_rows'] = 0;
+
+            // Process each row
+            $row_number = 1; // Start from 1 (header is row 0)
+            while (($rowData = fgetcsv($handle, 0, ",")) !== FALSE) {
+                $row_number++;
+
+                if (count($headers) !== count($rowData)) {
+                    $result['errors'][] = "Row $row_number: Column count mismatch";
+                    $result['failed']++;
+                    continue;
+                }
+
+                $row = array_combine($headers, $rowData);
+
+                // Start transaction
+                $this->db->trans_start();
+
+                try {
+                    // Import main production data
+                    $id_production = $this->import_production_data($row, $row_number);
+
+                    if ($id_production) {
+                        // Import NG defects
+                        $this->import_ng_defects($row, $id_production, $row_number);
+
+                        // Import LT loss time
+                        $this->import_lt_loss_time($row, $id_production, $row_number);
+
+                        // Import cutting tools
+                        $this->import_cutting_tools($row, $id_production, $row_number);
+
+                        // Import release data
+                        $this->import_release_data($row, $id_production, $id_bom);
+
+                        // Complete transaction
+                        $this->db->trans_complete();
+
+                        if ($this->db->trans_status() === FALSE) {
+                            throw new Exception("Transaction failed for row $row_number");
+                        }
+
+                        $result['success']++;
+                    } else {
+                        throw new Exception("Failed to import production data for row $row_number");
+                    }
+
+                } catch (Exception $e) {
+                    $this->db->trans_rollback();
+                    $result['errors'][] = "Row $row_number: " . $e->getMessage();
+                    $result['failed']++;
+                }
+            }
+
+            fclose($handle);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Import main production data into t_production_op
+     */
+    private function import_production_data($row, $row_number)
+    {
+        // Convert decimal format from Indonesian (comma) to MySQL (dot)
+        $decimal_fields = ['W H', 'O T', 'CT Std', 'CT Actual', 'Target Qty', 'N-Prod', 'G-Prod', 'Runner', 'Loss Purging Matl'];
+
+        foreach ($decimal_fields as $field) {
+            if (isset($row[$field])) {
+                $row[$field] = $this->convert_decimal($row[$field]);
+            }
+        }
+
+        // Lookup id_bom from Product ID
+        $product_id = trim($row['Product ID']);
+        $id_bom = $this->get_id_bom($product_id);
+
+        if (!$id_bom) {
+            throw new Exception("Product ID '$product_id' not found in select_bom table");
+        }
+
+        // Generate id_production
+        $tanggal = $row['Tanggal'];
+        $mesin = str_pad($row['Mesin'], 2, '0', STR_PAD_LEFT);
+        $shift = $row['Shift'];
+        $lot_global = substr($tanggal, 2, 2) . substr($tanggal, 5, 2) . substr($tanggal, 8, 2) . $mesin . $shift;
+
+        // Generate unique id_production based on timestamp and BOM
+        $timestamp = date('His');
+        $id_production = substr($tanggal, 2, 2) . substr($tanggal, 5, 2) . substr($tanggal, 8, 2) . $timestamp . $id_bom;
+
+        // Check for duplicate
+        $existing = $this->db->get_where('t_production_op', ['id_production' => $id_production])->row();
+        if ($existing) {
+            // Generate alternative ID
+            $id_production = $id_production . rand(100, 999);
+        }
+
+        // Calculate derived fields
+        $nwt_mp = !empty($row['W H']) ? floatval($row['W H']) : 8;
+        $ot_mp = !empty($row['O T']) ? floatval($row['O T']) : 0;
+
+        // Calculate production time if not directly available
+        $qty_ok = intval($row['OK']);
+        $qty_ng = intval($row['Total Defect']);
+        $cavity = 1; // Default, can be enhanced to lookup from select_bom
+        $ct_mc_aktual = !empty($row['CT Actual']) ? floatval($row['CT Actual']) : 0;
+
+        $production_time = 0;
+        if ($qty_ok > 0 && $ct_mc_aktual > 0) {
+            $production_time = (($qty_ok + $qty_ng) / $cavity) * ($ct_mc_aktual / 3600);
+        }
+
+        // Prepare data for insertion
+        $data = [
+            'id_production' => $id_production,
+            'id_bom' => $id_bom,
+            'tanggal' => $tanggal,
+            'shift' => intval($shift),
+            'operator' => trim($row['Operator']),
+            'kanit' => trim($row['Kanit']),
+            'group' => trim($row['Group Shift']),
+            'mesin' => intval($row['Mesin']),
+            'proses' => '', // Can be enhanced to lookup from select_bom
+            'customer' => trim($row['Customer']),
+            'nwt_mp' => $nwt_mp,
+            'ot_mp' => $ot_mp,
+            'lot_global' => $lot_global,
+            'pic' => isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'import',
+            'tanggal_input' => date('Y-m-d H:i:s'),
+            'ct_mc' => !empty($row['CT Std']) ? floatval($row['CT Std']) : 0,
+            'ct_mp' => 0, // Not in CSV
+            'ct_mc_aktual' => $ct_mc_aktual,
+            'ct_mp_aktual' => 0, // Not in CSV
+            'target_mc' => !empty($row['Target Qty']) ? floatval($row['Target Qty']) : 0,
+            'target' => 0, // Not in CSV
+            'qty_ok' => $qty_ok,
+            'qty_ng' => $qty_ng,
+            'qty_lt' => !empty($row['Total LT']) ? floatval($this->convert_decimal($row['Total LT'])) : 0,
+            'runner' => !empty($row['Runner']) ? floatval($row['Runner']) : 0,
+            'loss_purge' => !empty($row['Loss Purging Matl']) ? floatval($row['Loss Purging Matl']) : 0,
+            'cavity' => $cavity,
+            'cavity2' => $cavity,
+            'tooling' => !empty($row['Tool']) ? intval($row['Tool']) : 0,
+            'nett_prod' => !empty($row['N-Prod']) ? floatval($row['N-Prod']) : 0,
+            'gross_prod' => !empty($row['G-Prod']) ? floatval($row['G-Prod']) : 0,
+            'production_time' => round($production_time, 2),
+            'lot_material_no' => !empty($row['Matl Lot No']) ? trim($row['Matl Lot No']) : '',
+            'keterangan' => !empty($row['Keterangan']) ? trim($row['Keterangan']) : '',
+            'cek_kanit' => (trim($row['Verif. Kanit']) == 'V') ? 1 : NULL,
+            'cek_kasi' => (trim($row['Verif. Kasi']) == 'V') ? 1 : NULL,
+            'pic_kasi' => '', // Not in CSV
+        ];
+
+        // Insert main record
+        $this->db->insert('t_production_op', $data);
+
+        return $id_production;
+    }
+
+    /**
+     * Import NG defects into t_production_op_dl
+     */
+    private function import_ng_defects($row, $id_production, $row_number)
+    {
+        $ng_columns = [
+            'NG-Bending', 'NG-Berawan', 'NG-Blackdot', 'NG-Broken', 'NG-Crack',
+            'NG-Dent', 'NG-Dirty', 'NG-Discolour', 'NG-Ejector Mark', 'NG-Flash',
+            'NG-Flow Gate', 'NG-Flow Mark', 'NG-Foreign Material', 'NG-Gas Burn',
+            'NG-Gas Mark', 'NG-Gate Bolong', 'NG-Gate Long', 'NG-Hangus',
+            'NG-Hike', 'NG-Oil', 'NG-Oversize', 'NG-Pin Plong', 'NG-Pin Seret',
+            'NG-Scratch', 'NG-Settingan', 'NG-Short Shoot', 'NG-Silver',
+            'NG-Sink Mark', 'NG-Undercut', 'NG-Undersize', 'NG-Void',
+            'NG-Waving', 'NG-Weld Line', 'NG-White Dot', 'NG-White Mark',
+            'NG Start Up'
+        ];
+
+        foreach ($ng_columns as $column) {
+            if (isset($row[$column]) && !empty($row[$column])) {
+                $qty = intval($row[$column]);
+                if ($qty > 0) {
+                    $nama = str_replace('NG-', '', $column);
+                    $kategori = $this->get_defect_category($nama);
+
+                    $data = [
+                        'id_production' => $id_production,
+                        'nama' => $nama,
+                        'kategori' => $kategori,
+                        'type' => 'NG',
+                        'satuan' => 'Pcs',
+                        'qty' => $qty,
+                    ];
+
+                    $this->db->insert('t_production_op_dl', $data);
+                }
+            }
+        }
+    }
+
+    /**
+     * Import LT loss time into t_production_op_dl
+     */
+    private function import_lt_loss_time($row, $id_production, $row_number)
+    {
+        $lt_columns = [
+            'LT-Adjust Parameter', 'LT-Pre Heating Material', 'LT-Cleaning Hopper & Barrel',
+            'LT-Set Up Mold', 'LT-Set Up Parameter Machine', 'LT-IPQC Inspection',
+            'LT-No Packing', 'LT-No Material', 'LT-Material Problem', 'LT-No Operator',
+            'LT-Daily Checklist', 'LT-Overhoule Mold', 'LT-Mold Problem', 'LT-Trial',
+            'LT-Machine', 'LT-Hopper Dryer', 'LT-Robot', 'LT-MTC', 'LT-Cooling Tower',
+            'LT-Compressor', 'LT-Listrik', 'LT-QC Lolos', 'Set Up Awal', 'Trial'
+        ];
+
+        foreach ($lt_columns as $column) {
+            if (isset($row[$column]) && !empty($row[$column])) {
+                $qty = $this->convert_decimal($row[$column]);
+                $qty_val = floatval($qty);
+
+                if ($qty_val > 0) {
+                    $nama = str_replace('LT-', '', $column);
+                    $kategori = $this->get_lt_category($nama);
+
+                    $data = [
+                        'id_production' => $id_production,
+                        'nama' => $nama,
+                        'kategori' => $kategori,
+                        'type' => 'LT',
+                        'satuan' => 'Jam',
+                        'qty' => $qty_val,
+                    ];
+
+                    $this->db->insert('t_production_op_dl', $data);
+                }
+            }
+        }
+    }
+
+    /**
+     * Import cutting tools into t_production_op_cutting_tools_usage
+     */
+    private function import_cutting_tools($row, $id_production, $row_number)
+    {
+        $cutting_tools_str = trim($row['Cutting Tool']);
+
+        if (!empty($cutting_tools_str)) {
+            // Split by comma if multiple tools
+            $tools = explode(',', $cutting_tools_str);
+
+            foreach ($tools as $tool_code) {
+                $tool_code = trim($tool_code);
+
+                if (!empty($tool_code)) {
+                    // Lookup cutting tool ID
+                    $tool = $this->db->get_where('cutting_tools', ['code' => $tool_code])->row();
+
+                    if ($tool) {
+                        $data = [
+                            'id_production' => $id_production,
+                            'cutting_tools_id' => $tool->id,
+                        ];
+
+                        $this->db->insert('t_production_op_cutting_tools_usage', $data);
+                    } else {
+                        // Log warning but don't fail the import
+                        log_message('warning', "Cutting tool code '$tool_code' not found in database (row $row_number)");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Import release data into t_production_op_release
+     */
+    private function import_release_data($row, $id_production, $id_bom)
+    {
+        // Get id_product from Product ID (kode_product)
+        $product_id = trim($row['Product ID']);
+        $product_id_clean = str_replace('.', '', $product_id); // Remove dots
+        
+        $this->db->select('id_product');
+        $this->db->from('t_product');
+        $this->db->where('kode_product', $product_id_clean);
+        $query = $this->db->get();
+        
+        if ($query->num_rows() > 0) {
+            $id_product = $query->row()->id_product;
+            
+            // Get qty from OK column
+            $qty = !empty($row['OK']) ? floatval($row['OK']) : 0;
+            
+            // Get runner (column "Runner")
+            $runner = !empty($row['Runner']) ? floatval($this->convert_decimal($row['Runner'])) : 0;
+            
+            // Only insert if we have valid data
+            if ($qty > 0 || $runner > 0) {
+                $data = [
+                    'id_production' => $id_production,
+                    'id_bom' => $id_bom,
+                    'id_product' => $id_product,
+                    'qty' => $qty,
+                    'runner' => $runner,
+                ];
+                
+                $this->db->insert('t_production_op_release', $data);
+            }
+        }
+    }
+
+    /**
+     * Convert Indonesian decimal format (comma) to MySQL format (dot)
+     */
+    private function convert_decimal($value)
+    {
+        if (empty($value)) {
+            return 0;
+        }
+
+        // Replace comma with dot for decimal
+        $value = str_replace(',', '.', $value);
+
+        // Remove any thousand separators (dots that are not decimals)
+        // This is a simple approach; may need enhancement for complex formats
+        $value = floatval($value);
+
+        return $value;
+    }
+
+    /**
+     * Get id_bom from Product ID
+     * Handles both formats: with dots (189.674.500) and without (189674500)
+     */
+    private function get_id_bom($product_id)
+    {
+        // Remove dots from Product ID for lookup
+        $product_id_clean = str_replace('.', '', $product_id);
+
+        $this->db->select('id_bom, kp_pr');
+        $this->db->from('select_bom');
+        $this->db->where('kp_pr', $product_id_clean);
+
+        $query = $this->db->get();
+
+        if ($query->num_rows() > 0) {
+            return $query->row()->id_bom;
+        }
+
+        // Try exact match as fallback
+        $this->db->select('id_bom');
+        $this->db->from('select_bom');
+        $this->db->where('kp_pr', $product_id);
+
+        $query = $this->db->get();
+
+        if ($query->num_rows() > 0) {
+            return $query->row()->id_bom;
+        }
+
+        return NULL;
+    }
+
+    /**
+     * Get defect category
+     */
+    private function get_defect_category($nama)
+    {
+        // This can be enhanced to lookup from master_kategori_defect table
+        $categories = [
+            'Bending' => 'Process',
+            'Berawan' => 'Process',
+            'Blackdot' => 'Appearance',
+            'Broken' => 'Process',
+            'Crack' => 'Process',
+            'Dent' => 'Appearance',
+            'Dirty' => 'Appearance',
+            'Discolour' => 'Appearance',
+            'Ejector Mark' => 'Process',
+            'Flash' => 'Process',
+            'Flow Gate' => 'Process',
+            'Flow Mark' => 'Process',
+            'Foreign Material' => 'Material',
+            'Gas Burn' => 'Process',
+            'Gas Mark' => 'Process',
+            'Gate Bolong' => 'Process',
+            'Gate Long' => 'Process',
+            'Hangus' => 'Process',
+            'Hike' => 'Process',
+            'Oil' => 'Material',
+            'Oversize' => 'Dimension',
+            'Pin Plong' => 'Process',
+            'Pin Seret' => 'Process',
+            'Scratch' => 'Appearance',
+            'Settingan' => 'Process',
+            'Short Shoot' => 'Process',
+            'Silver' => 'Appearance',
+            'Sink Mark' => 'Appearance',
+            'Undercut' => 'Process',
+            'Undersize' => 'Dimension',
+            'Void' => 'Process',
+            'Waving' => 'Appearance',
+            'Weld Line' => 'Process',
+            'White Dot' => 'Appearance',
+            'White Mark' => 'Appearance',
+            'Start Up' => 'Process',
+        ];
+
+        return isset($categories[$nama]) ? $categories[$nama] : 'Other';
+    }
+
+    /**
+     * Get loss time category
+     */
+    private function get_lt_category($nama)
+    {
+        // This can be enhanced to lookup from master_losstime table
+        $categories = [
+            'Adjust Parameter' => 'Setting',
+            'Pre Heating Material' => 'Material',
+            'Cleaning Hopper & Barrel' => 'Maintenance',
+            'Set Up Mold' => 'Setting',
+            'Set Up Parameter Machine' => 'Setting',
+            'IPQC Inspection' => 'Quality',
+            'No Packing' => 'Material',
+            'No Material' => 'Material',
+            'Material Problem' => 'Material',
+            'No Operator' => 'Manpower',
+            'Daily Checklist' => 'Maintenance',
+            'Overhoule Mold' => 'Maintenance',
+            'Mold Problem' => 'Machine',
+            'Trial' => 'Setting',
+            'Machine' => 'Machine',
+            'Hopper Dryer' => 'Machine',
+            'Robot' => 'Machine',
+            'MTC' => 'Maintenance',
+            'Cooling Tower' => 'Machine',
+            'Compressor' => 'Machine',
+            'Listrik' => 'Utility',
+            'QC Lolos' => 'Quality',
+            'Set Up Awal' => 'Setting',
+        ];
+
+        return isset($categories[$nama]) ? $categories[$nama] : 'Other';
+    }
+}

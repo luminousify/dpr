@@ -45,12 +45,14 @@
                         {  $no++;
                             echo '<tr>';
                             echo '<td>'.$no;'</td>';
-                            echo '<td>'.substr($data['tanggal'],0,4),'</td>';
-                            echo '<td>'.substr($data['tanggal'],5,2),'</td>';
+                            $tahun_row = substr($data['tanggal'],0,4);
+                            $bulan_row = substr($data['tanggal'],5,2);
+                            echo '<td>'.$tahun_row.'</td>';
+                            echo '<td>'.$bulan_row.'</td>';
                             echo '<td>'.$data['kode_product'],'</td>';
                             echo '<td>'.$data['nama_product'],'</td>';
                             echo '<td>'.$data['totalNG'],'</td>';
-                            echo '<td><center><a href="'.$view_detail.'/'.$data['kode_product'].'/'.$bulan.'"><button class="btn btn-info btn-circle" type="button"><i class="fa fa-search"></i></button></a></td>';
+                            echo '<td><center><a href="'.$view_detail.'/'.$data['kode_product'].'/'.$tahun_row.'/'.$bulan_row.'"><button class="btn btn-info btn-circle" type="button"><i class="fa fa-search"></i></button></a></td>';
                             echo '</tr>';
 
 

@@ -3,9 +3,6 @@
 
 <link rel="stylesheet" href="<?php echo base_url().'assets/css/jquery-ui.css'?>">
 
-<script src="<?php echo base_url().'assets/js/jquery-3.3.1.js'?>" type="text/javascript"></script> 
-
-
 <style>
     th, td { white-space: nowrap; }
     div.dataTables_wrapper {
@@ -28,6 +25,7 @@
                                     <th style="width:50px;"> Ton</th>
                                     <th style="width:350px;">Nama BOM</th>
                                     <th style="width:70px;">CT Run</th>
+                                    <th style="width:50px;">Cavity Run</th>
                                     <th style="width:100px;">Operator</th>
                                     <th style="width:50px;">MP</th>
                                     <th style="width:80px;">Auto / Semi</th>
@@ -44,9 +42,16 @@
                                     <td><?= $data['tonnase']; ?><input type="hidden" name="user[<?= $id; ?>][tonnase]" value="<?= $data['tonnase']; ?>"></td>
                                     <td><input type="search form-control" name="" class="autocompleteBom" style="width: 100%;height: 100%"  id="id_bom<?= $id; ?>" value="<?= $data['kp_pr'].'( '.$data['np_pr'].')'; ?>" onchange="ubahBom(<?= $id; ?>)">
                                     <input type="text" name="user[<?= $id; ?>][id_bom]" id="id_bomS<?= $id; ?>"  class="form-control" style="height: 100%" value="<?= $data['id_bom']; ?>" required>
-                                    
+                                    <input type="hidden" name="user[<?= $id; ?>][tanggal]" value="<?= $data['tanggal']; ?>">
+                                    <input type="hidden" name="user[<?= $id; ?>][shift]" value="<?= $data['shift']; ?>">
+                                    <input type="hidden" name="user[<?= $id; ?>][group]" value="<?= $data['group']; ?>">
+                                    <input type="hidden" name="user[<?= $id; ?>][cavity]" value="<?= $data['cavity']; ?>">
+                                    <input type="hidden" name="user[<?= $id; ?>][ct_std]" value="<?= $data['ct_std']; ?>">
+                                    <input type="hidden" name="user[<?= $id; ?>][target]" value="<?= $data['target']; ?>">
+                                    <input type="hidden" name="user[<?= $id; ?>][target_ppic]" value="<?= $data['target_ppic']; ?>">
                                     </td>
-                                    <td><input type="text" class="form-control" name="user[<?= $id; ?>][ct_running]" value="<?= $data['ct_running']; ?>" onkeyup="ubahBom(<?= $id; ?>)"></td>
+                                    <td><input type="text" class="form-control" name="user[<?= $id; ?>][ct_running]" value="<?= $data['ct_running']; ?>"></td>
+                                    <td><input type="number" class="form-control" name="user[<?= $id; ?>][cavity_run]" value="<?= $data['cavity_run']; ?>"></td>
                                     <td><input type="text" class="form-control" name="user[<?= $id; ?>][operator]" value="<?= $data['operator']; ?>"></td>
                                     <td><input type="text" name="user[<?= $id; ?>][man_power]" class="form-control"  value="<?= $data['man_power']; ?>"></td>
                                     <td><select name="user[<?= $id; ?>][jenis_mesin]" class="form-control">
@@ -64,10 +69,10 @@
                                     </td>
                                     <td>
                                         <select name="user[<?= $id; ?>][line]" class="form-control" onchange="ubahRun(<?= $id; ?>)" id="run<?= $id; ?>">
-                                            <option value="1" <?= ($data['line'] == '1' || $data['line'] == 1 || $data['line'] == 'A' || $data['line'] == '0' || $data['line'] == 0) ? 'selected' : ''; ?>>1</option>
-                                            <option value="2" <?= ($data['line'] == '2' || $data['line'] == 2 || $data['line'] == 'B') ? 'selected' : ''; ?>>2</option>
-                                            <option value="3" <?= ($data['line'] == '3' || $data['line'] == 3 || $data['line'] == 'C') ? 'selected' : ''; ?>>3</option>
-                                            <option value="4" <?= ($data['line'] == '4' || $data['line'] == 4 || $data['line'] == 'D') ? 'selected' : ''; ?>>4</option>
+                                            <option value="A" <?= $data['line'] == 'A' ? 'selected' : ''; ?>>A</option>
+                                            <option value="B" <?= $data['line'] == 'B' ? 'selected' : ''; ?>>B</option>
+                                            <option value="C" <?= $data['line'] == 'C' ? 'selected' : ''; ?>>C</option>
+                                            <option value="D" <?= $data['line'] == 'D' ? 'selected' : ''; ?>>D</option>
                                         </select>
                                     </td>
 
@@ -146,7 +151,7 @@
        function ubahBom(id)
         {
             var bom = $('#id_bom'+id).val();
-            var res = bom.split('(')[0]; 
+            var res = bom.split('(')[0].trim(); 
             //var res = bom.substring(0, 3);
             $('#id_bomS'+id).val(res);
         }
@@ -185,8 +190,8 @@
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){

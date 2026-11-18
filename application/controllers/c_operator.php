@@ -40,7 +40,6 @@ class c_operator extends CI_Controller
 						'id_bom'    		=> $row->id_bom,
 						'cyt_mp_bom'    	=> $row->cyt_mp_bom,
 						'cyt_mc_bom'    	=> $row->cyt_mc_bom,
-						'cyt_quo'    		=> isset($row->cyt_quo) ? $row->cyt_quo : null,
 						'target_shift'  	=> $row->target_shift,
 						'id_pr'  	        => $row->id_product,
 						'cavity_product'  => $row->cavity,
@@ -50,28 +49,6 @@ class c_operator extends CI_Controller
 				echo json_encode($arr_result);
 			}
 		}
-	}
-
-	// Autocomplete: Operator names (t_operator.nama_operator)
-	public function get_autocompleteOperator()
-	{
-		$term = $this->input->get('term');
-		if ($term === null) {
-			echo json_encode([]);
-			return;
-		}
-
-		$result = $this->op->search_operator_name($term, 20);
-		$arr_result = [];
-		foreach ($result as $row) {
-			$label = is_array($row) ? ($row['nama_operator'] ?? '') : '';
-			if ($label === '') continue;
-			$arr_result[] = [
-				'label' => $label,
-				'value' => $label,
-			];
-		}
-		echo json_encode($arr_result);
 	}
 
 
@@ -158,49 +135,6 @@ class c_operator extends CI_Controller
 			$_POST['user'][0]['gross_prod'] = $raw_gross;
 			$lotGlobal           = $this->input->post('lotGlobalSave');
 			$id_production       = $this->input->post('id_production');
-
-			// START FIX: Generate id_production on the server if it's empty
-			if (empty($id_production)) {
-				$tanggal = $this->input->post('user[0][tanggal]');
-				$id_bom = $this->input->post('user[0][id_bom]');
-				
-				if (!empty($tanggal) && !empty($id_bom)) {
-					// Validate date format and value
-					if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal) || !strtotime($tanggal)) {
-						$this->session->set_flashdata('gagal', 'Format atau nilai tanggal tidak valid.');
-						redirect('login_op/input_dpr');
-					}					
-					$ambil_tahun = substr($tanggal, 2, 2);
-					$ambil_bulan = substr($tanggal, 5, 2);
-					$ambil_tanggal = substr($tanggal, 8, 2);
-					
-					// Generate ID with retry logic for uniqueness
-					$max_attempts = 10;
-					$_POST['id_production'] = null; // Initialize
-					for ($i = 0; $i < $max_attempts; $i++) {
-						// Add a 3-digit counter to ensure uniqueness within the same second
-						$waktu = date('His') . sprintf('%03d', $i);
-						$id_production_candidate = $ambil_tahun . $ambil_tanggal . $ambil_bulan . $waktu . $id_bom;
-						
-						// Check if ID already exists using the new method in the model
-						if (!$this->op->id_production_exists($id_production_candidate)) {
-							$_POST['id_production'] = $id_production_candidate;
-							break;
-						}
-					}
-					
-					if (empty($_POST['id_production'])) {
-						$this->session->set_flashdata('gagal', 'Gagal generate ID unik. Silakan coba lagi.');
-						redirect('login_op/input_dpr');
-					}
-				} else {
-					// If critical data is missing, we cannot generate an ID. Redirect back.
-					$this->session->set_flashdata('gagal', 'Gagal menyimpan: Tanggal atau ID BOM kosong. Silakan coba lagi.');
-					redirect('login_op/input_dpr');
-				}
-			}
-			// END FIX
-
 			$this->op->add();
 
 			// --- Cutting Tool Usage: Save selected tools ---
@@ -210,10 +144,6 @@ class c_operator extends CI_Controller
 			}
 			// ------------------------------------------------
 
-			// CRITICAL FIX: Clear query cache after insert so new data shows immediately!
-			$this->db->cache_delete_all();
-			log_message('debug', 'DPR saved and cache cleared for: ' . $id_production);
-
 			redirect('c_operator/hasil_input/' . $id_production);
 		} else {
 			redirect('login_op/input_dpr');
@@ -221,15 +151,8 @@ class c_operator extends CI_Controller
 	}
 
 
-	function hasil_input($id_production = null)
+	function hasil_input($id_production)
 	{
-		// START FIX: Handle missing id_production to prevent fatal error
-		if (empty($id_production)) {
-			$this->session->set_flashdata('gagal', 'ID Produksi tidak ditemukan. Data tidak dapat ditampilkan.');
-			redirect('login_op/list_dpr');
-		}
-		// END FIX
-
 		$data = array(
 			'data_production'            => $this->op->tampil_production($id_production),
 			'data_productionRelease'     => $this->op->tampil_productionRelease($id_production),
@@ -257,5 +180,26 @@ class c_operator extends CI_Controller
 		$this->load->view('online/tes', $data);
 	}
 
-	
+	function check_prod_plan()
+	{
+
+		$result = $this->op->search_prod_plan($_POST['date']);
+		// 
+		// if (isset($_GET['term'])) {
+		//     $result = $this->op->search_Losstime($_GET['term']); 
+		if (count($result) > 0) {
+			foreach ($result as $row)
+				$arr_result[] = array(
+					'kp_pr'     => $row->id_bom . " ( " . $row->kode_produk . " ( " . $row->nama_produk . " ) )",
+					'nama_produk'    => $row->nama_produk,
+					'material_name'  => $row->material_name,
+					'prod_qty'       => $row->prod_qty,
+					'no_mesin'       => $row->no_mesin,
+					'cavity'       => $row->cavity,
+					'id_bom'       => $row->id_bom,
+					'cyt_mc'       => $row->cyt_mc
+				);
+			echo json_encode($arr_result);
+		}
+	}
 }

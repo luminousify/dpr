@@ -816,25 +816,67 @@ $(document).ready(function() {
                         messageTop: 'Monthly Injection Report \n<?php echo $month ?> - <?php echo date('Y') ?>', // Use messageTop for better compatibility, \n for newline in Excel
                         customize: function ( xlsx ) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
-                            
-                            // NG (Pcs) column is at position 18 (0-based index), which is column S in Excel (19th column)
-                            // Find all cells in column S (NG column) and format as text
-                            $('row c[r^="S"]', sheet).each(function () {
-                                // Remove any existing number formatting and set as text
-                                $(this).attr('t', 'str');
-                                
-                                // Get the cell value and remove any thousand separators
-                                var cellValue = $(this).text();
-                                if (cellValue && cellValue.includes('.')) {
-                                    // Remove dots used as thousand separators, keep original number
-                                    cellValue = cellValue.replace(/\./g, '');
-                                    $(this).text(cellValue);
+
+                            // Hard-coded column letters (stable layout — verified by counting
+                            // <td> positions in rep_akunting.php):
+                            //   L = tot_prod (Produksi Pcs)
+                            //   O = tot_ok   (OK Assy Pcs)
+                            //   S = tot_ng   (NG Pcs)
+                            // These are rendered via number_format() + str_replace(',','.')
+                            // producing Indonesian-style strings like "11.060".
+                            // Buttons.html5 detects "11.060" as numeric (matches /[\d.]+/)
+                            // and stores <v>11.060</v> with t="n", so Excel reads it as the
+                            // decimal 11.06. We fix it by stripping the dot and writing the
+                            // plain integer back into <v>.
+                            //
+                            // Dynamic header detection was tried but failed because
+                            // DataTables Buttons only exports the first <thead> row, and the
+                            // sub-headers (Produksi, OK Assy, NG) live in the second row.
+                            var TARGET_COLS = { 'L': true, 'O': true, 'S': true };
+
+                            function colLetter(ref) { return (ref || '').replace(/[0-9]+$/, ''); }
+
+                            // Buttons v1.2.0 does NOT support messageTop — it is silently
+                            // ignored. The workbook has exactly 1 header row, so data starts
+                            // at row 2. Skip only row 1.
+                            var HEADER_ROWS = 1;
+
+                            $('row c', sheet).each(function () {
+                                var $c  = $(this);
+                                var ref = $c.attr('r') || '';
+                                var col = colLetter(ref);
+
+                                // Only exact single-letter match (guards "S" vs "SA" etc.)
+                                if (!TARGET_COLS[col]) return;
+
+                                var rowNum = parseInt(ref.replace(/[^0-9]/g, ''), 10);
+                                if (!rowNum || rowNum <= HEADER_ROWS) return;
+
+                                // Read value from wherever Buttons stored it
+                                var $v  = $c.find('v');
+                                var $is = $c.find('is');
+                                var raw = $v.length  ? $v.text()
+                                        : $is.length ? $is.find('t').text()
+                                        : $c.text();
+                                if (raw === '' || raw == null) return;
+
+                                // "11.060" -> "11060"  (strip Indonesian thousand separator)
+                                var cleaned = raw.replace(/\./g, '');
+                                if (!/^-?\d+$/.test(cleaned)) return;
+
+                                // Remove <is> if present, write integer into <v>
+                                if ($is.length) $is.remove();
+                                if ($v.length) {
+                                    $v.text(cleaned);
+                                } else {
+                                    $c.append('<v>' + cleaned + '</v>');
                                 }
+                                $c.attr('t', 'n');
                             });
                         }
                     },
                     // END Replacement for Excel Button
-                    {extend: 'pdf', title: 'Data_2025_12_09'}, // Keep other buttons as they are
+                    {extend: 'pdf', title: 'ExampleFile'}, // Keep other buttons as they are
 
                     {extend: 'print',
                      customize: function (win){

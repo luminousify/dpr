@@ -219,7 +219,7 @@
                 </thead>
                 <tbody>
                     <?php $i=1; $no=1; $namaBulan = array("","Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"); 
-                        foreach ($data_EffMesinRekap->result_array() as $data) : ?>
+                        foreach ($data_EffMesinRekap as $data) : ?>
                         <tr>
                             <td>
                                 <?php echo $no++ ?>
@@ -695,8 +695,8 @@
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){

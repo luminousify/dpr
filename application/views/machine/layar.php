@@ -1,5 +1,13 @@
  <title>DPR | Screen Monitoring</title>
 <?php $this->load->view('layout/sidebar'); ?>
+<script>
+// Auto-refresh Screen Monitoring every 60 seconds so product/status/qty changes
+// appear live without manual reload. Reloads via GET (no "confirm form resubmission"
+// dialog) and returns to today / current shift — intended for an always-on display.
+setTimeout(function () {
+    window.location.href = "<?php echo site_url('c_machine/layar'); ?>";
+}, 60000);
+</script>
 
 <link href="<?= base_url(); ?>template/css/plugins/dataTables/datatables.min.css" rel="stylesheet">
 
@@ -33,16 +41,6 @@
                             </div>
                         </div>
                     <div class="ibox-content">
-                        <?php if ($this->session->flashdata('error')): ?>
-                            <div class="alert alert-danger" role="alert" style="margin-bottom: 12px;">
-                                <?php echo $this->session->flashdata('error'); ?>
-                            </div>
-                        <?php endif; ?>
-                        <?php if ($this->session->flashdata('success')): ?>
-                            <div class="alert alert-success" role="alert" style="margin-bottom: 12px;">
-                                <?php echo $this->session->flashdata('success'); ?>
-                            </div>
-                        <?php endif; ?>
                         <?php foreach($total_running->result_array() as $running): ?>
                         <?php endforeach; ?>
                         <?php foreach($total_idle->result_array() as $idle): ?>
@@ -88,37 +86,56 @@
                                 if ($cek_running == 0) {
                                         $warna = '#fff';
                                         $back = '#FFD700';
-                                        $product_name_code = '';
+                                        // Show product name for idle machines
+                                        if ($m->np_pr == null || $m->np_pr == '') {
+                                            $product_name_code = '-';
+                                        } else {
+                                            $product_name_code = $m->np_pr.' ('.$m->kp_pr.')';
+                                        }
                                         $aktual_target = '';
-                                        $operator_lot = '';
+                                        // Show operator for idle machines
+                                        if ($m->pic == null || $m->pic == '') {
+                                            $operator_lot = '-';
+                                        } else {
+                                            $operator_lot = $m->pic;
+                                        }
                                         $persentase = 0;
                                         $ncqt = '';
-                                        $ctt_operator = '';
+                                        // Show keterangan for idle machines
+                                        if ($m->keterangan == null || $m->keterangan == '') {
+                                            $ctt_operator = '-';
+                                        } else {
+                                            $ctt_operator = $m->keterangan;
+                                        }
                                 } else {
                                         $warna = '#fff';
                                         $back = '#4ed44e';
                                         $product_name_code = $m->np_pr.' ('.$m->kp_pr.')';
-                                        $aktual_target = $m->qty_ok.' / '.$m->target_mc;
+                                        $qty_ok = ($m->qty_ok === null || $m->qty_ok === '') ? 0 : $m->qty_ok;
+                                        $aktual_target = $qty_ok.' / '.$m->target_mc;
                                         $operator_lot = $m->pic .' / '.$m->lot_global;
-                                        if (!empty($m->qty_ok)) {
+                                        if (!empty($qty_ok)) {
                                             if (!empty($m->target_mc)) {
-                                                $persentase = round(($m->qty_ok / $m->target_mc) * 100);
+                                                $persentase = round(($qty_ok / $m->target_mc) * 100);
                                             } else {
                                                 $persentase = 0;
                                             }
                                         }
                                         else {
                                             $persentase = 0;
-                                        } 
-                                        if ($m->qty_ok > $m->target_mc) {
-                                            $keterangan = '+';
-                                        } else if ($m->qty_ok < $m->target_mc) {
-                                            $keterangan = '-';
-                                        } else {
-                                            $keterangan = '';
                                         }
-                                        
-                                        $ncqt = '('.$keterangan.abs($m->qty_ok-$m->target_mc).')';
+                                        if (!empty($m->belum_input)) {
+                                            $ncqt = '';
+                                        } else {
+                                            if ($qty_ok > $m->target_mc) {
+                                                $keterangan = '+';
+                                            } else if ($qty_ok < $m->target_mc) {
+                                                $keterangan = '-';
+                                            } else {
+                                                $keterangan = '';
+                                            }
+                                            $ncqt = '('.$keterangan.abs($qty_ok-$m->target_mc).')';
+                                        }
                                         if ($m->keterangan == null || $m->keterangan == '') {
                                             $ctt_operator = '-';
                                         } else {
@@ -162,11 +179,7 @@
 
                                     <div class="col-sm-12 text-center">
                                         <!-- <font color="white"><h3>Alarm Message</h3></font> -->
-                                        <?php
-                                            // Use the controller-provided page date to avoid empty $m->tanggal causing .../view_detail_layar//{no_mesin}
-                                            $tgl_detail = isset($tanggal) ? $tanggal : $m->tanggal;
-                                        ?>
-                                        <a href="<?php echo base_url('c_machine/view_detail_layar/'.$tgl_detail.'/'.$m->no_mesin) ?>" class="btn-edit" >
+                                        <a href="<?php echo base_url('c_machine/view_detail_layar/'.$m->tanggal.'/'.$m->no_mesin) ?>" class="btn-edit" >
                                         <button class="btn btn-sm btn-block btn-info border mb-2" style="font-weight: 700">Info Detail</button></a>
                                     </div>
                              </div>
@@ -457,8 +470,8 @@ $(document).ready(function() {
                 buttons: [
                     { extend: 'copy'},
                     {extend: 'csv'},
-                    {extend: 'excel', title: 'Data_2025_12_09'},
-                    {extend: 'pdf', title: 'Data_2025_12_09'},
+                    {extend: 'excel', title: 'ExampleFile'},
+                    {extend: 'pdf', title: 'ExampleFile'},
 
                     {extend: 'print',
                      customize: function (win){
