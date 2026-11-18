@@ -58,7 +58,7 @@
  *   200 {"status":"ok","processed":N,"summary":{...}} - batch drained
  *   403 {"status":"error","error":"Forbidden"}          - non-local caller
  */
-class c_sync extends CI_Controller
+class C_sync extends CI_Controller
 {
     /** How many pending rows to claim per invocation (SPEC 1.3: LIMIT 50). */
     const CLAIM_LIMIT = 50;

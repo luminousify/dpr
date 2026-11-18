@@ -2,7 +2,7 @@
  require 'vendor/autoload.php';
  use WebSocket\Client;
 
-class m_scheduler extends CI_Model
+class M_scheduler extends CI_Model
 {
 	 public function __construct()
         {

@@ -1,5 +1,5 @@
 <?php if (!defined('BASEPATH')) exit ('No direct script access allowed');
-  class login_op extends CI_Controller
+  class Login_op extends CI_Controller
   {
         function __construct()
         {

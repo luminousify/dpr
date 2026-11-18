@@ -1,6 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class m_inventory extends CI_Model
+class M_inventory extends CI_Model
 {
         public function __construct()
         {

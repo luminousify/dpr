@@ -18,7 +18,7 @@
  * The drain worker (Ticket 3) consumes the queue via fetch_pending() +
  * try_claim() + update_status() below.
  */
-class m_sync_queue extends CI_Model
+class M_sync_queue extends CI_Model
 {
     const TABLE = 't_sync_queue';
 

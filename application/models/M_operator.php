@@ -1,6 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class m_operator extends CI_Model
+class M_operator extends CI_Model
 {
 
         function tampilDataDetail($table,$where,$id)
